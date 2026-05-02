@@ -54,18 +54,35 @@ The current Foundation repo has a small root test surface:
 - `Makefile`: local check commands.
 - `.github/workflows/ci.yml`: CI entrypoint.
 - `tests/test_foundation_integrity.py`: repo structure and doc contract checks.
+- `tests/test_contract_models.py`: Pydantic validation for YAML templates and
+  archived packet examples.
 
-The repo still does not have active app code, package code, or product tests.
-Command lists copied from source material remain source/reference examples
-unless corresponding files exist in this repo or in a target project boundary.
+The repo still does not have active app code, product tests, deployment config,
+or a release target. Command lists copied from source material remain
+source/reference examples unless corresponding files exist in this repo or in a
+target project boundary.
 
 ## Current Commands
 
 - `uv sync --frozen --group dev`: install locked test dependencies.
 - `make lint`: run `ruff`.
-- `make typecheck`: run `mypy`.
+- `make typecheck`: run `mypy` with the Pydantic plugin enabled.
 - `make test`: run `pytest`.
+- `make check-contracts`: run Pydantic contract validation tests directly.
+- `make check-cd`: run the deployment-readiness guard directly.
 - `make check-required`: run the local required chain.
+
+## Current Contract And CD Checks
+
+Pydantic validation is used as a dev-only test mechanism. It validates that
+`templates/*.yaml` and `archive/packets/*.yaml` still match the expected
+contract shape, while `mypy` checks the model definitions and test code.
+
+The current CD state is `not_applicable` because this repo has no deployment
+target, deployment workflow, or deployment config. The CD check is therefore a
+guard: it confirms that no active deployment config exists and that CI still
+runs the required local checks. If deployment files are introduced later, add a
+specific deploy smoke check and require human review before release.
 
 ## Source Command Reference
 Copied source command model:

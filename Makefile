@@ -1,6 +1,6 @@
 UV ?= uv
 
-.PHONY: sync lint format typecheck test check-required
+.PHONY: sync lint format typecheck test check-contracts check-cd check-required
 
 sync:
 	$(UV) sync --frozen --group dev
@@ -16,5 +16,11 @@ typecheck:
 
 test:
 	$(UV) run pytest
+
+check-contracts:
+	$(UV) run pytest tests/test_contract_models.py
+
+check-cd:
+	$(UV) run pytest tests/test_foundation_integrity.py -k cd_readiness
 
 check-required: lint typecheck test

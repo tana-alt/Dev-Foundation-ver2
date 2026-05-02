@@ -31,6 +31,16 @@ ARCHIVE_PACKETS = (
     "archive/packets/rework-packet.yaml",
 )
 
+DEPLOYMENT_CONFIGS = (
+    "Dockerfile",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "fly.toml",
+    "netlify.toml",
+    "render.yaml",
+    "vercel.json",
+)
+
 
 def repo_path(relative_path: str) -> Path:
     return ROOT / relative_path
@@ -112,3 +122,15 @@ def test_packet_reference_points_to_existing_archive_packets() -> None:
     for relative_path in ARCHIVE_PACKETS:
         assert repo_path(relative_path).is_file(), relative_path
         assert f"`{relative_path}`" in packet_reference
+
+
+def test_cd_readiness_is_guarded_until_deployment_exists() -> None:
+    workflow = read_text(".github/workflows/ci.yml")
+    verification_reference = read_text("docs/reference/verification-ci-and-pr-reference.md")
+
+    for relative_path in DEPLOYMENT_CONFIGS:
+        assert not repo_path(relative_path).exists(), relative_path
+
+    assert "make check-required" in workflow
+    assert "make check-cd" in verification_reference
+    assert "not_applicable" in verification_reference

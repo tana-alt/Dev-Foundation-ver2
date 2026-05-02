@@ -9,8 +9,11 @@ dependencies = []
 [dependency-groups]
 dev = [
     "mypy>=1.15.0",
+    "pydantic>=2.7.0",
     "pytest>=8.3.0",
+    "pyyaml>=6.0.0",
     "ruff>=0.11.0",
+    "types-PyYAML>=6.0.12",
 ]
 
 [tool.uv]
@@ -37,6 +40,7 @@ pythonpath = ["."]
 python_version = "3.12"
 strict = true
 files = ["tests"]
+plugins = ["pydantic.mypy"]
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
