@@ -1,0 +1,32 @@
+packet_id: harness-handoff-template
+schema_version: "0.6.1"
+from: channel_operator
+to: generate-channel-content
+project_graph:
+  ecosystem_id: example_ecosystem
+  project_id: example_project
+  offer_id: example_offer
+  channel_id: example_channel
+  campaign_id: none
+  owner_agent: channel_operator
+  human_owner: human_owner
+  status: active
+  memo: "Template graph."
+task: "Generate a channel-specific content specification from existing refs."
+content_ref:
+  content_id: content_placeholder
+  project_id: project_placeholder
+  offer_id: offer_placeholder
+  channel_id: channel_placeholder
+  content_type: post
+  status: draft
+  body_ref: projects/project_placeholder/content/content_placeholder/body.md
+  asset_refs: []
+  evidence_refs: []
+  reaction_refs: []
+required_context:
+  - projects/example_project/channels/example_channel/state.yaml
+  - projects/example_project/content/registry.yaml
+expected_output: content_ref_or_evidence_packet
+gate_required: true
+memo: "Packets carry refs only; no content body is embedded."

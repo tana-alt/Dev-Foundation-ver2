@@ -1,0 +1,259 @@
+INFO  2026-05-01 11:29:16,704 serena.cli:health_check:888 - Starting health check for project: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW
+INFO  2026-05-01 11:29:16,704 serena.cli:health_check:892 - Creating SerenaAgent with disabled dashboard...
+INFO  2026-05-01 11:29:16,709 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/projects/_template/.gitignore
+INFO  2026-05-01 11:29:16,713 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/apps/3dtask-swift/.gitignore
+INFO  2026-05-01 11:29:16,716 serena.agent:__init__:337 - Will record tool usage statistics with token count estimator: CHAR_COUNT.
+INFO  2026-05-01 11:29:16,720 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/third_party/agent-skills/openai-skills/.gitignore
+INFO  2026-05-01 11:29:16,721 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/third_party/agent-skills/vercel-agent-skills/.gitignore
+INFO  2026-05-01 11:29:16,721 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/third_party/agent-skills/anthropic-skills/.gitignore
+INFO  2026-05-01 11:29:16,731 serena.agent:__init__:341 - Starting Serena server (version=1.1.2, process id=95126, parent process id=93623; language backend=LSP); Python version=3.13.2, platform=macOS-26.4.1-arm64-arm-64bit-Mach-O
+INFO  2026-05-01 11:29:16,731 serena.agent:__init__:345 - Configuration file: /Users/yamamotokaito/.serena/serena_config.yml
+INFO  2026-05-01 11:29:16,731 serena.agent:__init__:346 - Available projects: Life cordinator, MODEL-APP-FLOW, MODEL-ARCHITECTURE
+INFO  2026-05-01 11:29:16,731 serena.agent:__init__:347 - Loaded tools (44): read_file, create_text_file, list_dir, find_file, replace_content, delete_lines, replace_lines, insert_at_line, search_for_pattern, restart_language_server, get_symbols_overview, find_symbol, find_referencing_symbols, replace_symbol_body, insert_after_symbol, insert_before_symbol, rename_symbol, safe_delete_symbol, write_memory, read_memory, list_memories, delete_memory, rename_memory, edit_memory, execute_shell_command, open_dashboard, activate_project, remove_project, get_current_config, check_onboarding_performed, onboarding, initial_instructions, jet_brains_find_symbol, jet_brains_move, jet_brains_safe_delete, jet_brains_inline_symbol, jet_brains_find_referencing_symbols, jet_brains_get_symbols_overview, jet_brains_type_hierarchy, jet_brains_find_declaration, jet_brains_find_implementations, jet_brains_rename, list_queryable_projects, query_project
+INFO  2026-05-01 11:29:16,732 serena.agent:__init__:359 - Using language backend from global configuration: LSP
+INFO  2026-05-01 11:29:16,738 serena.config.serena_config:start:329 - Loading project instance for RegisteredProject[project_root=/Users/yamamotokaito/Desktop/MODEL-APP-FLOW, project_config=ProjectConfig[project_name=MODEL-APP-FLOW]] starting ...
+INFO  2026-05-01 11:29:16,738 serena.project:__init__:278 - Serena project data folder: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/.serena
+INFO  2026-05-01 11:29:16,738 serena.project:start:329 - Gathering ignore spec for project MODEL-APP-FLOW starting ...
+INFO  2026-05-01 11:29:16,738 serena.config.serena_config:stop:336 - Loading project instance for RegisteredProject[project_root=/Users/yamamotokaito/Desktop/MODEL-APP-FLOW, project_config=ProjectConfig[project_name=MODEL-APP-FLOW]] completed in 0.001 seconds
+INFO  2026-05-01 11:29:16,738 serena.util.file_system:start:329 - Loading of .gitignore files starting ...
+INFO  2026-05-01 11:29:16,739 serena.agent:activate_project_from_path_or_name:874 - Found registered project 'MODEL-APP-FLOW' at path /Users/yamamotokaito/Desktop/MODEL-APP-FLOW
+INFO  2026-05-01 11:29:16,739 serena.agent:_activate_project:821 - Activating MODEL-APP-FLOW at /Users/yamamotokaito/Desktop/MODEL-APP-FLOW
+INFO  2026-05-01 11:29:16,739 serena.task_executor:issue_task:192 - Scheduling Task-1:init_language_server_manager
+INFO  2026-05-01 11:29:16,740 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/.gitignore
+INFO  2026-05-01 11:29:16,743 serena.agent:_create_base_toolset:503 - Number of exposed tools: 26
+INFO  2026-05-01 11:29:16,744 serena.agent:__init__:386 - Number of exposed tools: 26. Exposed tools: ['activate_project', 'check_onboarding_performed', 'create_text_file', 'delete_memory', 'edit_memory', 'execute_shell_command', 'find_file', 'find_referencing_symbols', 'find_symbol', 'get_current_config', 'get_symbols_overview', 'initial_instructions', 'insert_after_symbol', 'insert_before_symbol', 'list_dir', 'list_memories', 'onboarding', 'read_file', 'read_memory', 'rename_memory', 'rename_symbol', 'replace_content', 'replace_symbol_body', 'safe_delete_symbol', 'search_for_pattern', 'write_memory']
+INFO  2026-05-01 11:29:16,744 serena.agent:get_mode_names:228 - Active modes: ['editing', 'interactive']
+INFO  2026-05-01 11:29:16,746 serena.agent:_update_active_tools:768 - Active tools (26): activate_project, check_onboarding_performed, create_text_file, delete_memory, edit_memory, execute_shell_command, find_file, find_referencing_symbols, find_symbol, get_current_config, get_symbols_overview, initial_instructions, insert_after_symbol, insert_before_symbol, list_dir, list_memories, onboarding, read_file, read_memory, rename_memory, rename_symbol, replace_content, replace_symbol_body, safe_delete_symbol, search_for_pattern, write_memory
+INFO  2026-05-01 11:29:16,751 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/projects/_template/.gitignore
+INFO  2026-05-01 11:29:16,752 serena.cli:health_check:895 - SerenaAgent created successfully
+INFO  2026-05-01 11:29:16,752 serena.cli:health_check:898 - Searching for analyzable files...
+INFO  2026-05-01 11:29:16,753 serena.project:_ignore_spec:398 - Waiting for ignore spec to become available ...
+INFO  2026-05-01 11:29:16,756 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/apps/3dtask-swift/.gitignore
+INFO  2026-05-01 11:29:16,761 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/third_party/agent-skills/vercel-agent-skills/packages/react-best-practices-build/.gitignore
+INFO  2026-05-01 11:29:16,763 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/third_party/agent-skills/openai-skills/.gitignore
+INFO  2026-05-01 11:29:16,763 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/third_party/agent-skills/vercel-agent-skills/.gitignore
+INFO  2026-05-01 11:29:16,764 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/third_party/agent-skills/anthropic-skills/.gitignore
+INFO  2026-05-01 11:29:16,789 serena.util.file_system:_load_gitignore_files:152 - Processing .gitignore file: /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/third_party/agent-skills/vercel-agent-skills/packages/react-best-practices-build/.gitignore
+INFO  2026-05-01 11:29:16,823 serena.util.file_system:stop:336 - Loading of .gitignore files completed in 0.126 seconds
+INFO  2026-05-01 11:29:16,824 serena.project:stop:336 - Gathering ignore spec for project MODEL-APP-FLOW completed in 0.127 seconds
+INFO  2026-05-01 11:29:16,824 serena.project:_ignore_spec:400 - Ignore spec is now available for project; proceeding
+INFO  2026-05-01 11:29:16,835 serena.task_executor:_process_task_queue:123 - Starting execution of Task-1:init_language_server_manager
+INFO  2026-05-01 11:29:16,835 serena.task_executor:start:329 - Task-1:init_language_server_manager starting ...
+INFO  2026-05-01 11:29:16,835 serena.agent:start:329 - Language server initialization starting ...
+INFO  2026-05-01 11:29:16,836 serena.project:create_language_server_manager:637 - Creating language server manager for /Users/yamamotokaito/Desktop/MODEL-APP-FLOW
+INFO  2026-05-01 11:29:16,836 serena.project:_ignored_patterns:409 - Waiting for ignored patterns to become available ...
+INFO  2026-05-01 11:29:16,873 serena.util.file_system:stop:336 - Loading of .gitignore files completed in 0.134 seconds
+INFO  2026-05-01 11:29:16,874 serena.project:stop:336 - Gathering ignore spec for project MODEL-APP-FLOW completed in 0.136 seconds
+INFO  2026-05-01 11:29:16,874 serena.project:_ignored_patterns:411 - Ignore patterns are now available for project; proceeding
+INFO  2026-05-01 11:29:16,875 sensai.util.logging:start:329 - Language server startup (language=python) starting ...
+INFO  2026-05-01 11:29:16,875 serena.ls_manager:create_language_server:48 - Creating language server instance for /Users/yamamotokaito/Desktop/MODEL-APP-FLOW, language=python.
+INFO  2026-05-01 11:29:16,875 sensai.util.logging:start:329 - Language server startup (language=swift) starting ...
+INFO  2026-05-01 11:29:16,875 serena.ls_manager:create_language_server:48 - Creating language server instance for /Users/yamamotokaito/Desktop/MODEL-APP-FLOW, language=swift.
+INFO  2026-05-01 11:29:16,888 solidlsp.ls:_load_raw_document_symbols_cache:2439 - Loading document symbols cache from /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/.serena/cache/python/raw_document_symbols.pkl
+INFO  2026-05-01 11:29:16,893 solidlsp.ls:_load_raw_document_symbols_cache:2444 - Loaded 26 entries from raw document symbols cache.
+INFO  2026-05-01 11:29:16,894 solidlsp.ls:_load_document_symbols_cache:2474 - Loading document symbols cache from /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/.serena/cache/python/document_symbols.pkl
+INFO  2026-05-01 11:29:16,928 solidlsp.language_servers.sourcekit_lsp:__init__:52 - Starting sourcekit lsp with version: OVERVIEW: Language Server Protocol implementation for Swift and C-based
+languages
+
+USAGE: sourcekit-lsp [--configuration <configuration>] [--scratch-path <scratch-path>] [-Xcc <Xcc> ...] [-Xcxx <Xcxx> ...] [-Xlinker <Xlinker> ...] [-Xswiftc <Xswiftc> ...] [-Xclangd <Xclangd> ...] [-index-prefix-map <index-prefix-map> ...] [--default-workspace-type <default-workspace-type>] [--compilation-db-search-path <compilation-db-search-path> ...] [--generated-files-path <generated-files-path>] [--experimental-feature <experimental-feature> ...] <subcommand>
+
+OPTIONS:
+  --configuration <configuration>
+                          Build with configuration [debug|release]
+  --scratch-path, --build-path <scratch-path>
+                          Specify build/cache directory (--build-path option is
+                          deprecated, --scratch-path should be used instead)
+  -Xcc <Xcc>              Pass flag through to all C compiler invocations
+  -Xcxx <Xcxx>            Pass flag through to all C++ compiler invocations
+  -Xlinker <Xlinker>      Pass flag through to all linker invocations
+  -Xswiftc <Xswiftc>      Pass flag through to all Swift compiler invocations
+  -Xclangd <Xclangd>      Pass options to clangd command-line
+  -index-prefix-map <index-prefix-map>
+                          Override the prefix map from the build system, values
+                          of form 'remote=local'
+  --default-workspace-type <default-workspace-type>
+                          Override default workspace type selection; one of
+                          'swiftPM', 'compilationDatabase', or 'buildServer'
+  --compilation-db-search-path <compilation-db-search-path>
+                          Specify a relative path where sourcekit-lsp should
+                          search for `compile_commands.json` or
+                          `compile_flags.txt` relative to the root of a
+                          workspace. Multiple search paths may be specified by
+                          repeating this option.
+  --generated-files-path <generated-files-path>
+                          Specify the directory where generated files will be
+                          stored
+  --experimental-feature <experimental-feature>
+                          Enable an experimental sourcekit-lsp feature.
+                          Available features are: on-type-formatting,
+                          structured-logs
+  -h, --help              Show help information.
+
+SUBCOMMANDS:
+  diagnose                Creates a bundle containing information that help
+                          diagnose issues with sourcekit-lsp
+  debug                   Commands to debug sourcekit-lsp. Intended for
+                          developers of sourcekit-lsp
+
+  See 'sourcekit-lsp help <subcommand>' for detailed help.
+INFO  2026-05-01 11:29:16,930 solidlsp.ls:_load_document_symbols_cache:2479 - Loaded 26 entries from document symbols cache.
+INFO  2026-05-01 11:29:16,931 solidlsp.ls:start:2572 - Starting language server with language python for /Users/yamamotokaito/Desktop/MODEL-APP-FLOW
+INFO  2026-05-01 11:29:16,932 solidlsp.language_servers.pyright_server:_start_server:177 - Starting pyright-langserver server process
+INFO  2026-05-01 11:29:16,932 solidlsp.ls_process:start:192 - Starting language server process via command: ['/Users/yamamotokaito/.local/share/uv/tools/serena-agent/bin/python', '-m', 'pyright.langserver', '--stdio']
+INFO  2026-05-01 11:29:16,937 solidlsp.language_servers.pyright_server:_start_server:183 - Sending initialize request from LSP client to pyright server and awaiting response
+ERROR 2026-05-01 11:29:16,955 sensai.util.logging:__exit__:342 - Language server startup (language=swift) failed after 0.080 seconds
+ERROR 2026-05-01 11:29:16,955 serena.ls_manager:_start_language_server:113 - Error starting language server for language swift: [Errno 1] Operation not permitted: '/Users/yamamotokaito/.serena/language_servers/static/SourceKitLSP'
+Traceback (most recent call last):
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/ls_manager.py", line 108, in _start_language_server
+    self.language_server = factory.create_language_server(self.language)
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/ls_manager.py", line 49, in create_language_server
+    return SolidLanguageServer.create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        ls_config,
+        ^^^^^^^^^^
+    ...<6 lines>...
+        ),
+        ^^
+    )
+    ^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/solidlsp/ls.py", line 470, in create
+    ls = ls_class(config, repository_root_path, solidlsp_settings)  # type: ignore
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/solidlsp/language_servers/sourcekit_lsp.py", line 54, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        config, repository_root_path, ProcessLaunchInfo(cmd="sourcekit-lsp", cwd=repository_root_path), "swift", solidlsp_settings
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/solidlsp/ls.py", line 502, in __init__
+    self._ls_resources_dir = self.ls_resources_dir(solidlsp_settings)
+                             ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/solidlsp/ls.py", line 435, in ls_resources_dir
+    os.makedirs(result, exist_ok=True)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen os>", line 227, in makedirs
+PermissionError: [Errno 1] Operation not permitted: '/Users/yamamotokaito/.serena/language_servers/static/SourceKitLSP'
+INFO  2026-05-01 11:29:17,032 serena.cli:health_check:907 - Found analyzable file: archive/2026-04-28-obsolete-node-control-runtime/test_multica_runtime.py
+INFO  2026-05-01 11:29:17,032 serena.cli:health_check:925 - Testing GetSymbolsOverviewTool on file: archive/2026-04-28-obsolete-node-control-runtime/test_multica_runtime.py
+INFO  2026-05-01 11:29:17,033 serena.task_executor:issue_task:192 - Scheduling Task-2:<lambda>
+INFO  2026-05-01 11:29:17,073 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Pyright language server 1.1.403 starting
+INFO  2026-05-01 11:29:17,073 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Server root directory: file:///Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/pyright/dist/dist
+INFO  2026-05-01 11:29:17,075 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Starting service instance "MODEL-APP-FLOW"
+INFO  2026-05-01 11:29:17,075 solidlsp.language_servers.pyright_server:_start_server:185 - Received initialize response from pyright server: {'capabilities': {'textDocumentSync': 2, 'definitionProvider': {'workDoneProgress': True}, 'declarationProvider': {'workDoneProgress': True}, 'typeDefinitionProvider': {'workDoneProgress': True}, 'referencesProvider': {'workDoneProgress': True}, 'documentSymbolProvider': {'workDoneProgress': True}, 'workspaceSymbolProvider': {'workDoneProgress': True}, 'hoverProvider': {'workDoneProgress': True}, 'documentHighlightProvider': {'workDoneProgress': True}, 'renameProvider': {'prepareProvider': True, 'workDoneProgress': True}, 'completionProvider': {'triggerCharacters': ['.', '[', '"', "'"], 'resolveProvider': True, 'workDoneProgress': True, 'completionItem': {'labelDetailsSupport': True}}, 'signatureHelpProvider': {'triggerCharacters': ['(', ',', ')'], 'workDoneProgress': True}, 'codeActionProvider': {'codeActionKinds': ['quickfix', 'source.organizeImports'], 'workDoneProgress': True}, 'executeCommandProvider': {'commands': [], 'workDoneProgress': True}, 'callHierarchyProvider': True, 'workspace': {'workspaceFolders': {'supported': True, 'changeNotifications': True}}}}
+INFO  2026-05-01 11:29:17,075 solidlsp.language_servers.pyright_server:_start_server:197 - Waiting for Pyright to complete initial workspace analysis...
+INFO  2026-05-01 11:29:17,259 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Loading pyproject.toml file at /Users/yamamotokaito/Desktop/MODEL-APP-FLOW/pyproject.toml
+INFO  2026-05-01 11:29:17,260 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: No include entries specified; assuming /Users/yamamotokaito/Desktop/MODEL-APP-FLOW
+INFO  2026-05-01 11:29:17,260 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Auto-excluding **/node_modules
+INFO  2026-05-01 11:29:17,261 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Auto-excluding **/__pycache__
+INFO  2026-05-01 11:29:17,261 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Auto-excluding **/.*
+INFO  2026-05-01 11:29:17,261 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Assuming Python version 3.14.0.final.0
+INFO  2026-05-01 11:29:17,262 solidlsp.language_servers.pyright_server:window_log_message:149 - LSP: window/logMessage: Found 172 source files
+INFO  2026-05-01 11:29:17,262 solidlsp.language_servers.pyright_server:window_log_message:154 - Pyright workspace scanning complete
+INFO  2026-05-01 11:29:17,262 solidlsp.language_servers.pyright_server:_start_server:199 - Pyright initial analysis complete, server ready
+INFO  2026-05-01 11:29:17,263 sensai.util.logging:stop:336 - Language server startup (language=python) completed in 0.388 seconds
+INFO  2026-05-01 11:29:17,263 solidlsp.ls:_shutdown:667 - Initiating final robust shutdown with a 2.0s timeout...
+INFO  2026-05-01 11:29:17,263 solidlsp.ls_process:shutdown:302 - Sending shutdown request to server
+INFO  2026-05-01 11:29:17,264 solidlsp.ls_process:shutdown:304 - Received shutdown response from server
+INFO  2026-05-01 11:29:17,264 solidlsp.ls_process:shutdown:305 - Sending exit notification to server
+INFO  2026-05-01 11:29:17,264 solidlsp.ls_process:shutdown:307 - Sent exit notification to server
+INFO  2026-05-01 11:29:17,266 solidlsp.ls:_shutdown:704 - Language server process terminated successfully with exit code -15.
+ERROR 2026-05-01 11:29:17,266 serena.agent:__exit__:342 - Language server initialization failed after 0.431 seconds
+ERROR 2026-05-01 11:29:17,266 serena.task_executor:__exit__:342 - Task-1:init_language_server_manager failed after 0.431 seconds
+ERROR 2026-05-01 11:29:17,266 serena.task_executor:run_task:62 - Error during execution of Task-1:init_language_server_manager: Failed to start 1 language server(s):
+swift: [Errno 1] Operation not permitted: '/Users/yamamotokaito/.serena/language_servers/static/SourceKitLSP'
+Traceback (most recent call last):
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/task_executor.py", line 57, in run_task
+    result = self._function()
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/agent.py", line 850, in init_language_server_manager
+    self.reset_language_server_manager()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/agent.py", line 959, in reset_language_server_manager
+    self.get_active_project_or_raise().create_language_server_manager()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/project.py", line 649, in create_language_server_manager
+    self.language_server_manager = LanguageServerManager.from_languages(self.project_config.languages, factory)
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/ls_manager.py", line 142, in from_languages
+    raise LanguageServerManagerInitialisationError(f"Failed to start {len(exceptions)} language server(s):\n{failure_messages}")
+serena.ls_manager.LanguageServerManagerInitialisationError: Failed to start 1 language server(s):
+swift: [Errno 1] Operation not permitted: '/Users/yamamotokaito/.serena/language_servers/static/SourceKitLSP'
+INFO  2026-05-01 11:29:17,268 solidlsp.ls_process:_read_ls_process_stderr:394 - Language server stderr reader thread has terminated
+INFO  2026-05-01 11:29:17,268 solidlsp.ls_process:_read_ls_process_stdout:367 - Language server stdout reader thread has terminated
+INFO  2026-05-01 11:29:17,269 serena.task_executor:_process_task_queue:123 - Starting execution of Task-2:<lambda>
+INFO  2026-05-01 11:29:17,269 serena.task_executor:start:329 - Task-2:<lambda> starting ...
+ERROR 2026-05-01 11:29:17,270 serena.task_executor:__exit__:342 - Task-2:<lambda> failed after 0.000 seconds
+ERROR 2026-05-01 11:29:17,270 serena.task_executor:run_task:62 - Error during execution of Task-2:<lambda>: The language server manager is not initialized, indicating a problem during project initialisation.
+Failed to start 1 language server(s):
+swift: [Errno 1] Operation not permitted: '/Users/yamamotokaito/.serena/language_servers/static/SourceKitLSP'
+For details, please check the logs. Unfortunately, logs are not available. We recommend enabling the web dashboard/logging in general.
+IMPORTANT: Stop, do not attempt workarounds. Inform the user and wait for further instructions before you continue!
+Traceback (most recent call last):
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/task_executor.py", line 57, in run_task
+    result = self._function()
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/cli.py", line 926, in <lambda>
+    overview_data = agent.execute_task(lambda: overview_tool.get_symbol_overview(target_file))
+                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/tools/symbol_tools.py", line 87, in get_symbol_overview
+    symbol_retriever = self.create_language_server_symbol_retriever()
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/tools/tools_base.py", line 54, in create_language_server_symbol_retriever
+    return LanguageServerSymbolRetriever(self.project)
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/symbol.py", line 565, in __init__
+    self._ls_manager: LanguageServerManager = project.get_language_server_manager_or_raise()
+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/project.py", line 665, in get_language_server_manager_or_raise
+    raise Exception(msg.build())
+Exception: The language server manager is not initialized, indicating a problem during project initialisation.
+Failed to start 1 language server(s):
+swift: [Errno 1] Operation not permitted: '/Users/yamamotokaito/.serena/language_servers/static/SourceKitLSP'
+For details, please check the logs. Unfortunately, logs are not available. We recommend enabling the web dashboard/logging in general.
+IMPORTANT: Stop, do not attempt workarounds. Inform the user and wait for further instructions before you continue!
+ERROR 2026-05-01 11:29:17,272 serena.cli:health_check:1000 - Health check failed with exception: The language server manager is not initialized, indicating a problem during project initialisation.
+Failed to start 1 language server(s):
+swift: [Errno 1] Operation not permitted: '/Users/yamamotokaito/.serena/language_servers/static/SourceKitLSP'
+For details, please check the logs. Unfortunately, logs are not available. We recommend enabling the web dashboard/logging in general.
+IMPORTANT: Stop, do not attempt workarounds. Inform the user and wait for further instructions before you continue!
+Traceback (most recent call last):
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/cli.py", line 926, in health_check
+    overview_data = agent.execute_task(lambda: overview_tool.get_symbol_overview(target_file))
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/agent.py", line 805, in execute_task
+    return self._task_executor.execute_task(task, name=name, logged=logged, timeout=timeout)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/task_executor.py", line 209, in execute_task
+    return task_obj.result()
+           ~~~~~~~~~~~~~~~^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/task_executor.py", line 85, in result
+    return self.future.result(timeout=timeout)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/task_executor.py", line 104, in wait_until_done
+    self.future.result(timeout=timeout)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/task_executor.py", line 57, in run_task
+    result = self._function()
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/cli.py", line 926, in <lambda>
+    overview_data = agent.execute_task(lambda: overview_tool.get_symbol_overview(target_file))
+                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/tools/symbol_tools.py", line 87, in get_symbol_overview
+    symbol_retriever = self.create_language_server_symbol_retriever()
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/tools/tools_base.py", line 54, in create_language_server_symbol_retriever
+    return LanguageServerSymbolRetriever(self.project)
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/symbol.py", line 565, in __init__
+    self._ls_manager: LanguageServerManager = project.get_language_server_manager_or_raise()
+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/yamamotokaito/.local/share/uv/tools/serena-agent/lib/python3.13/site-packages/serena/project.py", line 665, in get_language_server_manager_or_raise
+    raise Exception(msg.build())
+Exception: The language server manager is not initialized, indicating a problem during project initialisation.
+Failed to start 1 language server(s):
+swift: [Errno 1] Operation not permitted: '/Users/yamamotokaito/.serena/language_servers/static/SourceKitLSP'
+For details, please check the logs. Unfortunately, logs are not available. We recommend enabling the web dashboard/logging in general.
+IMPORTANT: Stop, do not attempt workarounds. Inform the user and wait for further instructions before you continue!

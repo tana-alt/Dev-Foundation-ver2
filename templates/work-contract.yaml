@@ -1,0 +1,53 @@
+schema_version: "0.1"
+record_type: work_contract
+status: draft
+
+identity:
+  work_id: example_work_id
+  project_id: example_project
+  work_type: implementation | research | planning | design | review | verification | release | docs
+  created_at: "YYYY-MM-DD"
+
+intent:
+  task_intent: "Short description of the work."
+  success_criteria:
+    - "Observable condition that means the work is done."
+  non_goals:
+    - "Explicitly out-of-scope item."
+
+inputs:
+  source_refs:
+    - path/or/url
+  required_context:
+    - "Context that must be read or supplied."
+  optional_context: []
+  templates: []
+
+boundaries:
+  allowed_write_targets:
+    - path/
+  denied_context:
+    - archive
+    - secrets
+    - unrelated_project_logs
+  risk_flags: []
+
+outputs:
+  expected_outputs:
+    - "Artifact or change expected from this work."
+  artifact_refs: []
+  changed_paths: []
+  decision_refs: []
+
+evidence_and_verification:
+  evidence_required:
+    - "Source refs and reasoning needed to trust the result."
+  verification_required:
+    - "Check that should be run or explicitly skipped."
+  verification_results: []
+  residual_risk: []
+
+continuation:
+  blockers: []
+  open_questions: []
+  next_action: "complete | rework | review | continue | release | archive"

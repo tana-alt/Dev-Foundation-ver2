@@ -1,0 +1,30 @@
+packet_id: harness-rework-template
+schema_version: "0.6.1"
+from: project_supervisor
+to: channel_operator
+project_graph:
+  ecosystem_id: example_ecosystem
+  project_id: example_project
+  offer_id: example_offer
+  channel_id: example_channel
+  campaign_id: none
+  owner_agent: project_supervisor
+  human_owner: human_owner
+  status: active
+  memo: "Template graph."
+reason: "Channel operation evidence is insufficient for a project-level decision."
+evidence_refs: []
+requested_change: "Collect one more reaction window and emit an operation_packet."
+severity: medium
+content_ref:
+  content_id: content_placeholder
+  project_id: project_placeholder
+  offer_id: offer_placeholder
+  channel_id: channel_placeholder
+  content_type: post
+  status: draft
+  body_ref: projects/project_placeholder/content/content_placeholder/body.md
+  asset_refs: []
+  evidence_refs: []
+  reaction_refs: []
+memo: "Return the smallest missing artifact; do not request broad rewrites."

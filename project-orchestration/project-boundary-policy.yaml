@@ -1,0 +1,109 @@
+schema_version: "0.8.0"
+registry_id: project-boundary-policy
+status: active
+updated: "2026-04-28"
+owner_agent: steward
+source_of_truth_level: primary
+purpose: "Keep parent-agent orchestration project-scoped: artifacts, logs, packets, and reports belong to the project that produced them."
+principles:
+  - "The parent agent chooses subagents; there is no central runtime authority for live work."
+  - "Each project is its own artifact and log repository under projects/{project_id}/."
+  - "App bundle notes are navigation overlays, not a shared artifact store for every project."
+  - "Shared root artifacts are templates, orchestration maps, smoke fixtures, or archive records."
+  - "Reusable lessons are shared; raw logs are project-local."
+project_local_required_paths:
+  agents: projects/{project_id}/AGENTS.md
+  manifest: projects/{project_id}/project-manifest.yaml
+  readme: projects/{project_id}/README.md
+  storage_map: projects/{project_id}/storage-map.yaml
+  state: projects/{project_id}/state.yaml
+  logs: projects/{project_id}/logs/
+  packets: projects/{project_id}/artifacts/packets/
+  handoffs: projects/{project_id}/artifacts/handoffs/
+  reports: projects/{project_id}/artifacts/reports/
+  metrics: projects/{project_id}/artifacts/metrics/
+  research: projects/{project_id}/artifacts/research/
+  content: projects/{project_id}/content/
+shared_lesson_ref: knowledge/shared/agent-lessons-index.md
+project_repo_policy:
+  harness_git_scope: "The harness tracks orchestration maps, templates, policies, validators, and explicit fixtures only."
+  project_instance_scope: "Each active or productized projects/{project_id}/ directory is a standalone git repository."
+  template_ref: projects/_template/
+  manifest_ref: projects/{project_id}/project-manifest.yaml
+  harness_ignore_rule: "The harness .gitignore ignores projects/* by default and unignores projects/_template/**. Other project fixture exceptions must be explicit and temporary."
+  project_creation_rule:
+    - "Copy projects/_template to projects/{project_id}."
+    - "Replace template identifiers in AGENTS.md, project-manifest.yaml, state.yaml, storage-map.yaml, runtime-location.yaml, and registry refs."
+    - "Add or update the project-registry/app-project-index entry before operation."
+    - "Initialize git inside projects/{project_id}/ when the project becomes active or productized."
+    - "Do not commit project-local logs, packets, reports, metrics, research, content, generated assets, or implementation evidence to the harness repo."
+  nested_repo_rule: "A project repo may be committed and pushed from inside projects/{project_id}/; the harness records only templates, policies, and registry references."
+lesson_policy:
+  default_runtime_surface: projects/{project_id}/artifacts/runtime/latest-lessons.yaml
+  project_local_gate: projects/{project_id}/artifacts/registry/lesson-gate-policy.yaml
+  project_local_taxonomy: projects/{project_id}/artifacts/registry/lesson-taxonomy.yaml
+  promote_to_shared_only_when:
+    - "The lesson affects more than one project."
+    - "The lesson changes agent routing, read scope, git/test policy, or repeated failure handling."
+    - "The lesson is actionable without reading raw logs or archive."
+  keep_project_local_when:
+    - "The lesson is about a single project path migration."
+    - "The lesson is a release or productization decision still pending."
+    - "The lesson depends on raw debug history."
+log_policy:
+  default_write_target: projects/{project_id}/logs/
+  shared_logs_allowed: false
+  cross_project_rollups:
+    allowed_when: steward_or_human_requested
+    must_reference_project_logs: true
+    must_not_embed_full_project_logs: true
+artifact_policy:
+  default_mode: create_new
+  default_write_target: projects/{project_id}/artifacts/
+  scattered_artifact_consolidation_ref: artifacts/project-orchestration/scattered-artifact-consolidation-plan.yaml
+  commit_rule: "Active/productized project repositories may be committed; scratch runs and generated local outputs stay ignored."
+  revise_existing_requires:
+    - explicit_base_artifact_ref
+    - expected_output_names
+    - allowed_write_targets
+  evaluate_existing_requires:
+    - explicit_evaluation_target_ref
+    - evidence_refs
+session_resilience_policy:
+  before_creating_new_artifact:
+    - "Resolve project_id."
+    - "Read projects/{project_id}/storage-map.yaml."
+    - "Read projects/{project_id}/artifacts/runtime/current-state.yaml and latest-delta.yaml when present."
+    - "Prefer revising or referencing existing project-local artifacts over creating new roots."
+  reject_patterns:
+    - "new root artifacts for live project output"
+    - "new project directory without project-registry or app-project-index entry"
+    - "Obsidian-only authoritative output"
+apps_overlay_policy:
+  allowed_use:
+    - human navigation
+    - project note summaries
+    - backlinks to project-local artifacts
+    - release or planning summaries scoped to one app_slug
+  disallowed_use:
+    - default artifact repository for all projects
+    - shared log across roles or projects
+    - hidden source of truth that replaces projects/{project_id}/storage-map.yaml
+legacy_runtime_policy:
+  legacy_map_root: artifacts/runtime/
+  interpretation: "Compatibility path for orchestration maps and dry-run fixtures only."
+  must_not_treat_as:
+    - executable_runtime
+    - shared_live_output_repo
+    - shared_agent_log_repo
+  migration_target_for_new_maps: artifacts/project-orchestration/
+  active_subagent_selection_map: artifacts/runtime/skill-directory-map.yaml
+archive_policy:
+  obsolete_runtime_or_node_control_refs:
+    target_root: archive/2026-04-28-obsolete-node-control-runtime/
+    rule: "Archive stale docs/tests/assets with a manifest before removing or moving production code."
+verification:
+  required_checks:
+    - "No new live output path points only to obsidian-vault/Apps/{app_slug}/artifacts/."
+    - "No new subagent write target uses a shared root log."
+    - "Every concrete output path contains projects/{project_id}/ or an explicit archive path."

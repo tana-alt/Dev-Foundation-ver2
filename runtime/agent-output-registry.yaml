@@ -1,0 +1,243 @@
+schema_version: "0.7.1"
+registry_id: agent-output-registry
+status: active_legacy_path
+updated: "2026-04-25"
+owner_agent: steward
+purpose: "Make every parent-selected owner writable/output surface discoverable without broad repo context. This file remains in artifacts/runtime as a legacy map path."
+write_policy:
+  packet_bodies: "Packets must not embed raw content bodies; use content_ref/body_ref."
+  concrete_projects: "Concrete project instances use projects/{project_id}/... as their artifact and log repository."
+  foundation_templates: "Committed artifacts are templates or foundation smoke records."
+  project_local_logs: "Subagent activity and working logs are project-local under projects/{project_id}/logs/."
+  shared_log_rule: "Shared/global logs are rollup indexes only; subagents must not append live work into a common log."
+  apps_overlay_rule: "obsidian-vault/Apps/{app_slug} may summarize or link project outputs but is not the default artifact repository."
+  legacy_runtime_path: "artifacts/runtime stores compatibility maps and fixtures only; new orchestration policy belongs under artifacts/project-orchestration/."
+storage_roots:
+  packet_templates: artifacts/packets/
+  runtime_maps: artifacts/runtime/
+  project_orchestration_maps: artifacts/project-orchestration/
+  organization_templates: organizations/_template/
+  ecosystem_templates: ecosystems/_template/
+  project_templates: projects/_template/
+  organization_instance_pattern: organizations/{organization_id}/
+  project_instance_pattern: projects/{project_id}/
+  ecosystem_instance_pattern: ecosystems/{ecosystem_id}/
+  shared_knowledge: knowledge/shared/
+required_output_boundary:
+  concrete_work_default: projects/{project_id}/artifacts/
+  concrete_log_default: projects/{project_id}/logs/
+  reject_new_write_targets:
+    - shared_root_log_without_rollup_scope
+    - obsidian_apps_artifact_as_only_output_repo
+    - artifacts_runtime_live_output_without_dry_run_or_fixture_scope
+owners:
+  - owner_role: main_lane
+    scope: workflow
+    reads:
+      - AGENTS.md
+      - ARCHITECTURE.md
+      - artifacts/runtime/workflow-loop.yaml
+      - artifacts/runtime/agent-output-registry.yaml
+      - artifacts/runtime/agent-io-contract-map.yaml
+      - artifacts/runtime/capability-registry.yaml
+      - artifacts/runtime/company-operating-system.yaml
+      - artifacts/runtime/idea-proposal-loop.yaml
+      - artifacts/runtime/social-publish-executor-policy.yaml
+      - artifacts/runtime/social-account-connector-registry.yaml
+      - artifacts/packets/decision-directive-packet.yaml
+      - artifacts/packets/idea-intake-packet.yaml
+      - artifacts/packets/agent-proposal-packet.yaml
+      - artifacts/packets/proposal-evaluation-packet.yaml
+      - artifacts/packets/social-auth-connect-request.yaml
+      - organizations/_template/operating-model.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    writes:
+      - artifacts/packets/main-lane-loop-record.yaml
+      - artifacts/packets/idea-intake-packet.yaml
+      - artifacts/packets/social-auth-connect-request.yaml
+      - artifacts/packets/work-diagnosis-packet.yaml
+      - artifacts/packets/routing-decision-packet.yaml
+      - artifacts/packets/organization-structure-packet.yaml
+      - artifacts/packets/execution-management-packet.yaml
+      - organizations/_template/logs/idea-inbox.md
+      - organizations/_template/logs/proposal-log.md
+      - organizations/_template/logs/social-connector-log.md
+      - organizations/_template/logs/decision-log.md
+      - projects/_template/logs/agent-activity-log.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    output_types:
+      - main_lane_loop_record
+      - idea_intake_packet
+      - social_auth_connect_request
+      - work_diagnosis_packet
+      - routing_decision_packet
+      - organization_structure_packet
+      - execution_management_packet
+    next_owner: channel_operator
+  - owner_role: channel_operator
+    scope: channel
+    reads:
+      - artifacts/packets/execution-brief.yaml
+      - projects/_template/agent-position.yaml
+      - projects/_template/storage-map.yaml
+      - projects/_template/state.yaml
+      - projects/_template/channels/_template/state.yaml
+      - projects/_template/channels/_template/content-log.md
+      - projects/_template/content/recent-index.yaml
+      - projects/_template/runtime/cron/scheduled-call-requests.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+      - artifacts/runtime/social-publish-executor-policy.yaml
+      - artifacts/runtime/social-account-connector-registry.yaml
+    writes:
+      - artifacts/packets/handoff-packet.yaml
+      - artifacts/packets/evidence-packet.yaml
+      - artifacts/packets/operation-packet.yaml
+      - artifacts/packets/social-publish-request.yaml
+      - projects/_template/artifacts/packets/
+      - projects/_template/artifacts/handoffs/
+      - projects/_template/artifacts/metrics/
+      - projects/_template/channels/_template/content-log.md
+      - projects/_template/logs/agent-activity-log.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    output_types:
+      - content_ref
+      - handoff_packet
+      - evidence_packet
+      - operation_packet
+      - social_publish_request
+      - channel_state_update
+    next_owner: workflow_evaluator
+  - owner_role: workflow_evaluator
+    scope: workflow_evaluation
+    reads:
+      - artifacts/packets/work-diagnosis-packet.yaml
+      - artifacts/packets/routing-decision-packet.yaml
+      - artifacts/packets/operation-packet.yaml
+      - artifacts/packets/rework-packet.yaml
+      - projects/_template/agent-position.yaml
+      - projects/_template/storage-map.yaml
+      - projects/_template/logs/ops-log.md
+      - projects/_template/logs/agent-recent-activity.yaml
+    writes:
+      - artifacts/packets/workflow-evaluation-record.yaml
+      - projects/_template/logs/agent-activity-log.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+      - projects/_template/artifacts/reports/
+    output_types:
+      - workflow_evaluation_record
+      - rework_packet
+    next_owner: artifact_evaluator
+  - owner_role: artifact_evaluator
+    scope: artifact_evaluation
+    reads:
+      - artifacts/packets/workflow-evaluation-record.yaml
+      - artifacts/packets/operation-packet.yaml
+      - projects/_template/content/registry.yaml
+      - projects/_template/artifacts/metrics/
+      - projects/_template/agent-position.yaml
+      - projects/_template/storage-map.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    writes:
+      - artifacts/packets/artifact-outcome-record.yaml
+      - projects/_template/artifacts/reports/
+      - projects/_template/logs/agent-activity-log.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    output_types:
+      - artifact_outcome_record
+      - rework_packet
+    next_owner: performance_analyst
+  - owner_role: performance_analyst
+    scope: performance_analysis
+    reads:
+      - artifacts/packets/workflow-evaluation-record.yaml
+      - artifacts/packets/artifact-outcome-record.yaml
+      - artifacts/runtime/pattern-registry.yaml
+      - projects/_template/artifacts/metrics/
+      - projects/_template/agent-position.yaml
+      - projects/_template/storage-map.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    writes:
+      - artifacts/packets/synthetic-metric-record.yaml
+      - artifacts/packets/pattern-registry-packet.yaml
+      - projects/_template/artifacts/reports/
+      - projects/_template/logs/agent-activity-log.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    output_types:
+      - synthetic_metric_record
+      - pattern_registry_update
+      - derived_signal_summary
+      - rework_packet
+    next_owner: project_supervisor
+  - owner_role: project_supervisor
+    scope: project
+    reads:
+      - artifacts/runtime/project-registry.yaml
+      - artifacts/runtime/offer-registry.yaml
+      - artifacts/runtime/project-direction-strategy-policy.yaml
+      - artifacts/packets/workflow-evaluation-record.yaml
+      - artifacts/packets/artifact-outcome-record.yaml
+      - artifacts/packets/operation-packet.yaml
+      - artifacts/packets/project-direction-strategy-packet.yaml
+      - artifacts/packets/idea-intake-packet.yaml
+      - artifacts/packets/agent-proposal-packet.yaml
+      - artifacts/packets/proposal-evaluation-packet.yaml
+      - projects/_template/agent-position.yaml
+      - projects/_template/storage-map.yaml
+      - projects/_template/state.yaml
+      - projects/_template/logs/ops-log.md
+      - projects/_template/logs/strategy-log.md
+      - projects/_template/logs/agent-recent-activity.yaml
+      - projects/_template/runtime/cron/scheduled-call-requests.yaml
+      - knowledge/shared/strategy-knowledge-candidates.yaml
+      - projects/_template/logs/agent-activity-log.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    writes:
+      - artifacts/packets/project-monitor-record.yaml
+      - artifacts/packets/project-direction-strategy-packet.yaml
+      - artifacts/packets/proposal-evaluation-packet.yaml
+      - projects/_template/logs/agent-activity-log.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+      - artifacts/packets/strategy-packet.yaml
+      - artifacts/packets/execution-brief.yaml
+      - projects/_template/artifacts/packets/
+      - projects/_template/artifacts/reports/
+      - projects/_template/artifacts/assets/
+      - projects/_template/logs/decision-log.md
+      - projects/_template/logs/strategy-log.md
+      - projects/_template/state.yaml
+      - knowledge/shared/strategy-knowledge-candidates.yaml
+    output_types:
+      - project_monitor_record
+      - strategy_packet
+      - execution_brief
+      - project_direction_strategy_packet
+      - proposal_evaluation_packet
+      - project_state_update
+    next_owner: ecosystem_monitor
+  - owner_role: ecosystem_monitor
+    implemented_by: ecosystem_monitor_lane
+    scope: ecosystem
+    reads:
+      - ecosystems/_template/overview.md
+      - ecosystems/_template/projects-index.yaml
+      - artifacts/runtime/ecosystem-registry.yaml
+      - artifacts/runtime/project-registry.yaml
+      - artifacts/runtime/offer-registry.yaml
+      - artifacts/runtime/platform-relationship-map.yaml
+      - artifacts/runtime/agent-io-contract-map.yaml
+      - artifacts/packets/project-monitor-record.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    writes:
+      - artifacts/packets/ecosystem-monitor-record.yaml
+      - artifacts/runtime/platform-relationship-map.yaml
+      - ecosystems/_template/logs/ops-log.md
+      - knowledge/shared/platform-lessons.yaml
+      - knowledge/shared/offer-lessons.yaml
+      - projects/_template/logs/agent-activity-log.yaml
+      - projects/_template/logs/agent-recent-activity.yaml
+    output_types:
+      - ecosystem_monitor_record
+      - platform_relationship_update
+      - shared_knowledge_update
+    next_owner: main_lane
+memo: "This registry is a map, not broad context for specialist agents. main_lane owns task routing; monitor lanes detect anomalies and hand findings back to main_lane or project owners."

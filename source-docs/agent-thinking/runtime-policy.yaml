@@ -1,0 +1,146 @@
+schema_version: "0.6.2"
+registry_id: parent-orchestration-policy-legacy-runtime-path
+status: active_legacy_path
+updated: "2026-04-25"
+runtime_principle: "Legacy wording only. The parent agent resolves target_skill and scopes a subagent call; no shared runtime owns live artifacts or logs."
+project_boundary_policy_ref: artifacts/project-orchestration/project-boundary-policy.yaml
+invocation_policy_ref: artifacts/runtime/agent-invocation-policy.yaml
+session_policy_ref: artifacts/runtime/runtime-session-policy.yaml
+runtime_responsibilities:
+  - invocation_source_resolution
+  - call_decider_validation
+  - target_skill_resolution
+  - project_graph_injection
+  - runtime_identity_refs_injection
+  - agent_io_contract_resolution
+  - working_directory_selection
+  - runtime_session_resolution
+  - session_strategy_validation
+  - session_ledger_update
+  - minimal_preflight_validation
+  - packet_log_content_registry_save
+  - agent_activity_log_append
+  - agent_recent_activity_index_update
+  - rate_limit_check
+  - secret_boundary_check
+  - lightweight_grounding_check
+deprecated_runtime_assumptions:
+  - shared_runtime_as_output_repo
+  - shared_agent_log_for_live_work
+  - obsidian_apps_as_universal_artifact_repo
+parent_agent_responsibilities:
+  - subagent_selection
+  - project_graph_scoping
+  - project_local_write_target_selection
+  - handoff_quality_check
+  - archive_routing_for_obsolete_surfaces
+preflight_validator:
+  reject_if:
+    - target_skill_missing
+    - invocation_source_missing
+    - call_decider_missing
+    - actual_invoker_not_runtime
+    - call_decider_not_allowed_for_source
+    - specialist_attempts_direct_agent_start
+    - runtime_backend_not_codex_cli
+    - workflow_run_id_missing
+    - attempt_id_missing
+    - session_strategy_missing
+    - resume_existing_without_runtime_session_id
+    - repair_same_session_without_runtime_session_id
+    - force_new_without_session_switch_reason
+    - target_skill_not_in_root_agent_map
+    - target_skill_directory_missing
+    - local_agents_missing
+    - skill_file_missing
+    - runtime_identity_refs_missing
+    - project_position_ref_missing
+    - storage_map_ref_missing
+    - agent_io_contract_missing
+    - cron_request_ref_missing
+    - cron_source_ref_missing
+    - project_premise_ref_missing_for_content_task
+    - recent_posts_ref_missing_for_content_task
+    - agent_activity_log_ref_missing
+    - agent_recent_activity_ref_missing
+    - project_local_storage_map_missing
+    - shared_log_write_target_for_live_work
+    - apps_overlay_used_as_only_artifact_repo
+    - project_id_missing
+    - channel_id_missing_when_channel_task
+    - secret_path_requested
+    - rate_limit_exceeded
+postflight_validator:
+  reject_if:
+    - expected_output_missing
+    - content_body_embedded_in_packet
+    - content_ref_missing_when_content_created
+    - evidence_refs_missing_when_required
+    - next_owner_missing
+    - output_path_not_in_project_storage_map
+    - emitted_packet_not_in_output_contract
+    - unsupported_fact_claim_without_evidence_ref
+    - insufficient_context_without_rework_packet
+    - runtime_activity_log_not_recorded
+    - output_saved_outside_registered_write_target
+    - output_saved_outside_project_repo_without_archive_or_template_scope
+    - runtime_session_id_not_recorded
+    - attempt_record_not_written
+activity_log_policy:
+  policy_ref: artifacts/runtime/agent-activity-log-policy.yaml
+  append_log_ref: projects/{project_id}/logs/agent-activity-log.yaml
+  recent_index_ref: projects/{project_id}/logs/agent-recent-activity.yaml
+  max_recent_items_per_agent: 3
+  parent_records_agent_use: true
+  runtime_records_agent_use: true
+  runtime_records_agent_use_interpretation: "Compatibility flag; parent agent records project-local activity."
+  agents_write_activity_log_directly: false
+decision_layer_policy:
+  applies_to:
+    - main_lane
+    - project_supervisor
+  fixed_procedure_required: true
+  flexible_reasoning_inside_procedure: true
+  must_not_invent_missing_facts: true
+  uncertainty_requires_rework_research_or_escalation: true
+gate_policy:
+  complexity_rule: "Keep gate checks few and legible; gates catch unsupported facts and incoherence, not every creative divergence."
+  entropy_rule: "Do not reject novelty solely because it differs from premise or recent posts."
+  grounding_refs:
+    - project_premise_ref
+    - recent_posts_ref
+model_policy:
+  channel_operator:
+    default: codex_pro
+    escalate_to_claude_when:
+      - strategic_uncertainty
+      - compliance_gray_area
+      - project_stop_or_pivot
+  project_supervisor:
+    default: codex_pro
+    escalate_to_claude_when:
+      - major_project_decision
+      - unclear_risk
+      - public_responsibility_risk
+  generate-channel-content:
+    default: codex_pro
+    escalate_to_claude_when:
+      - brand_or_positioning_uncertainty
+      - public_responsibility_risk
+  background-researcher:
+    default: codex_pro
+    escalate_to_claude_when:
+      - evidence_conflict
+      - high_impact_market_claim
+secret_policy:
+  current_state:
+    - no_secrets_in_env_for_sns_login
+    - no_secrets_in_prompts
+    - no_secrets_in_logs
+    - no_secrets_in_packets
+    - manual_or_safe_limited_execution
+  target_state:
+    - brokered_runtime_access
+    - infisical_or_equivalent
+    - executor_only_access
+    - per_project_and_per_platform_scope

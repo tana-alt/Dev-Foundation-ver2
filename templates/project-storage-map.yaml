@@ -1,0 +1,30 @@
+schema_version: "0.1"
+record_type: project_storage_map
+status: draft
+
+project:
+  project_id: example_project
+  canonical_root: projects/example_project
+
+canonical_records:
+  brief: projects/example_project/brief.md
+  state: projects/example_project/state.yaml
+  storage_map: projects/example_project/storage-map.yaml
+  work_notes: projects/example_project/notes/
+  decisions: projects/example_project/notes/09-decisions.md
+  artifacts: projects/example_project/artifacts/
+  evidence: projects/example_project/artifacts/evidence/
+  verification: projects/example_project/artifacts/verification/
+  implementation_refs: projects/example_project/implementation/
+  logs: projects/example_project/logs/
+
+overlays:
+  - name: example_overlay
+    path: obsidian-vault/Apps/example_project
+    role: read_sync_overlay
+    canonical_ref: projects/example_project/
+
+rules:
+  source_of_truth: project_local
+  overlay_conflict_resolution: "project-local record wins unless a migration record says otherwise"
+  generated_exports_are_canonical: false

@@ -1,0 +1,10 @@
+# Optional repo-scoped overrides for the app repo.
+# Flow-specific Codex profiles are disabled by default for normal repo chat.
+# Re-enable the workflow profile only when the agent flow is ready to use.
+# Matching profile definitions currently live under:
+# AGENTIC-FLOW/obsidian_codex_workflow_starter/Codex-Global/config.toml
+# profile = "research"
+
+[agents]
+max_threads = 6
+max_depth = 1

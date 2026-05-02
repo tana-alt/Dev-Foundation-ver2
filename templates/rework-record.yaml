@@ -1,0 +1,24 @@
+schema_version: "0.1"
+record_type: rework_record
+status: draft
+
+identity:
+  rework_id: example_rework_id
+  work_id: example_work_id
+  project_id: example_project
+  created_at: "YYYY-MM-DD"
+
+rework:
+  type: missing_context | ambiguous_instruction | contract_mismatch | verification_failed | evidence_gap | unsafe_assumption | blocked_dependency | scope_conflict
+  blocker_summary: "Short explanation of what prevents completion."
+  failed_or_missing_requirement: "Contract item, context ref, or verification that failed."
+  evidence_refs:
+    - path/or/url
+  requested_repair:
+    - "Smallest useful repair request."
+  suggested_next_action: "Provide X, update Y, rerun Z, or close as abandoned."
+
+closure:
+  closed_at: null
+  closure_reason: null
+  follow_up_ref: null

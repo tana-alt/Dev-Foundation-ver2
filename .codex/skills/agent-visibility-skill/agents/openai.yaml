@@ -1,0 +1,7 @@
+interface:
+  display_name: "Agent Visibility Skill"
+  short_description: "Prove browser behavior with Playwright and screenshot evidence"
+  default_prompt: "Use $agent-visibility-skill to verify this requested behavior end-to-end in the browser with Playwright, capture screenshot evidence, and then fix any failing step."
+
+policy:
+  allow_implicit_invocation: true

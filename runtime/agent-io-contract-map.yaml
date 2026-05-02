@@ -1,0 +1,560 @@
+schema_version: "0.7.3"
+registry_id: agent-io-contract-map
+status: active
+updated: "2026-04-25"
+purpose: "Make agent input contracts, output contracts, and dependency edges explicit so workflow order can be derived from contracts."
+principle:
+  - "Workflow is derived from output -> input compatibility, not from a hand-written narrative."
+  - "Specialist agents receive scoped runtime_identity_refs and source_refs only."
+  - "Cron uses the same contracts as human or main_lane calls."
+  - "Do not resolve missing information by inventing content, strategy, requirements, or implementation assumptions."
+  - "Keep metrics and gates simple enough to preserve creative entropy while catching unsupported facts."
+  - "Monitor lanes detect anomalies; main_lane owns task routing and human-facing accountability."
+contract_schema:
+  required:
+    - agent_id
+    - role_type
+    - target_skill
+    - scope
+    - input_contract
+    - output_contract
+    - dependency_edges
+    - storage_contract
+agents:
+  - agent_id: main_lane
+    role_type: orchestrator
+    target_skill: none
+    scope: workflow
+    input_contract:
+      required_refs:
+        - AGENTS.md
+        - ARCHITECTURE.md
+        - artifacts/runtime/agent-map.yaml
+        - artifacts/runtime/agent-io-contract-map.yaml
+        - artifacts/runtime/skill-call-request.yaml
+        - artifacts/runtime/capability-registry.yaml
+        - artifacts/runtime/agent-output-registry.yaml
+        - artifacts/runtime/company-operating-system.yaml
+        - artifacts/runtime/idea-proposal-loop.yaml
+        - artifacts/runtime/social-account-connector-registry.yaml
+        - artifacts/packets/decision-directive-packet.yaml
+        - projects/{project_id}/logs/agent-recent-activity.yaml
+      required_packets:
+        - skill_call_request
+      optional_refs:
+        - artifacts/runtime/scheduled-jobs.yaml
+        - artifacts/runtime/context-scope.yaml
+    output_contract:
+      emits:
+        - idea_intake_packet
+        - social_auth_connect_request
+        - organization_structure_packet
+        - execution_management_packet
+        - work_diagnosis_packet
+        - routing_decision_packet
+        - main_lane_loop_record
+      required_fields:
+        - next_owner
+        - target_skill
+        - runtime_identity_refs
+        - source_refs
+        - decision_authority_or_review_path
+    dependency_edges:
+      consumes_from:
+        - decision_maker
+        - human_owner
+        - scheduled_jobs
+        - ecosystem_monitor
+      can_call:
+        - channel_operator
+        - project_supervisor
+        - background_researcher
+      next_default: channel_operator
+    storage_contract:
+      writes:
+        - artifacts/packets/idea-intake-packet.yaml
+        - artifacts/packets/social-auth-connect-request.yaml
+        - artifacts/packets/work-diagnosis-packet.yaml
+        - artifacts/packets/routing-decision-packet.yaml
+        - artifacts/packets/main-lane-loop-record.yaml
+        - artifacts/packets/organization-structure-packet.yaml
+        - artifacts/packets/execution-management-packet.yaml
+        - organizations/{organization_id}/logs/idea-inbox.md
+        - organizations/{organization_id}/logs/proposal-log.md
+        - organizations/{organization_id}/logs/decision-log.md
+  - agent_id: channel_operator
+    role_type: agent
+    target_skill: channel_operator
+    scope: channel
+    input_contract:
+      required_refs:
+        - runtime_identity_refs.ecosystem_summary_ref
+        - runtime_identity_refs.project_position_ref
+        - runtime_identity_refs.project_state_ref
+        - runtime_identity_refs.runtime_location_ref
+        - runtime_identity_refs.storage_map_ref
+        - runtime_identity_refs.content_registry_ref
+        - runtime_identity_refs.project_premise_ref
+        - runtime_identity_refs.recent_posts_ref
+        - runtime_identity_refs.agent_recent_activity_ref
+        - projects/{project_id}/channels/{channel_id}/state.yaml
+        - projects/{project_id}/channels/{channel_id}/content-log.md
+      required_packets:
+        - execution_brief
+      optional_refs:
+        - projects/{project_id}/content/recent-index.yaml
+        - artifacts/runtime/scheduled-jobs.yaml
+        - artifacts/runtime/platform-relationship-map.yaml
+        - artifacts/runtime/social-account-connector-registry.yaml
+      must_not_receive:
+        - raw_secret
+        - raw_content_body_inside_packet
+        - hidden_strategy_state
+        - platform_credentials
+    output_contract:
+      emits:
+        - content_ref
+        - handoff_packet
+        - evidence_packet
+        - operation_packet
+        - social_publish_request
+        - channel_state_update
+        - rework_packet
+      required_fields:
+        - project_graph
+        - content_ref_or_reason
+        - next_owner
+        - evidence_refs
+      packet_rules:
+        - operation_packet.result.metric_type is required
+        - packet carries content_ref only, never raw body text
+        - insufficient context emits rework_packet rather than inferred content or strategy
+        - premise and latest-three-post refs are grounding refs, not style constraints
+        - social_publish_request may include content_ref and gate refs only; credentials remain external
+    dependency_edges:
+      consumes_from:
+        - main_lane
+        - project_supervisor
+        - scheduled_jobs
+      can_call:
+        - generate_channel_content
+        - background_researcher
+        - compliance_reviewer
+        - social_launch_executor
+      next_default: workflow_evaluator
+    storage_contract:
+      writes:
+        - projects/{project_id}/channels/{channel_id}/state.yaml
+        - projects/{project_id}/channels/{channel_id}/content-log.md
+        - projects/{project_id}/content/registry.yaml
+        - projects/{project_id}/artifacts/packets/
+        - projects/{project_id}/artifacts/handoffs/
+        - projects/{project_id}/artifacts/metrics/
+        - artifacts/packets/social-publish-request.yaml
+  - agent_id: workflow_evaluator
+    role_type: agent
+    target_skill: workflow_evaluator
+    scope: workflow_evaluation
+    input_contract:
+      required_refs:
+        - runtime_identity_refs.project_position_ref
+        - runtime_identity_refs.storage_map_ref
+        - runtime_identity_refs.agent_recent_activity_ref
+        - artifacts/packets/work-diagnosis-packet.yaml
+        - artifacts/packets/routing-decision-packet.yaml
+        - artifacts/packets/operation-packet.yaml
+      required_packets:
+        - work_diagnosis_packet
+        - routing_decision_packet
+      optional_refs:
+        - artifacts/packets/rework-packet.yaml
+        - artifacts/packets/handoff-packet.yaml
+        - projects/{project_id}/logs/ops-log.md
+      must_not_receive:
+        - raw_secret
+        - raw_content_body_inside_packet
+        - synthetic_origin
+        - injected_event_schedule
+    output_contract:
+      emits:
+        - workflow_evaluation_record
+        - rework_packet
+      required_fields:
+        - workflow_run_id
+        - project_id
+        - content_id
+        - agent_steps
+        - gate_attempts
+        - evidence_refs
+        - next_owner
+      packet_rules:
+        - evaluate capability and gate effectiveness, not SNS outcome
+        - missing refs emit rework_packet instead of inferred analysis
+    dependency_edges:
+      consumes_from:
+        - channel_operator
+        - main_lane
+      can_call: []
+      next_default: artifact_evaluator
+    storage_contract:
+      writes:
+        - artifacts/packets/workflow-evaluation-record.yaml
+        - projects/{project_id}/artifacts/reports/
+  - agent_id: artifact_evaluator
+    role_type: agent
+    target_skill: artifact_evaluator
+    scope: artifact_evaluation
+    input_contract:
+      required_refs:
+        - runtime_identity_refs.project_position_ref
+        - runtime_identity_refs.storage_map_ref
+        - runtime_identity_refs.agent_recent_activity_ref
+        - artifacts/packets/workflow-evaluation-record.yaml
+        - projects/{project_id}/content/registry.yaml
+      required_packets:
+        - workflow_evaluation_record
+      optional_refs:
+        - projects/{project_id}/artifacts/metrics/
+        - artifacts/packets/operation-packet.yaml
+      must_not_receive:
+        - raw_secret
+        - raw_content_body_inside_packet
+        - synthetic_origin
+        - injected_event_schedule
+        - hidden_strategy_state
+    output_contract:
+      emits:
+        - artifact_outcome_record
+        - rework_packet
+      required_fields:
+        - content_id
+        - project_id
+        - channel_id
+        - workflow_run_id
+        - content_features
+        - workflow_features
+        - evidence_refs
+        - next_owner
+      packet_rules:
+        - keep artifact outcome separate from workflow evaluation
+        - do not promote patterns or write strategy
+    dependency_edges:
+      consumes_from:
+        - workflow_evaluator
+      can_call: []
+      next_default: performance_analyst
+    storage_contract:
+      writes:
+        - artifacts/packets/artifact-outcome-record.yaml
+        - projects/{project_id}/artifacts/reports/
+  - agent_id: performance_analyst
+    role_type: agent
+    target_skill: performance_analyst
+    scope: performance_analysis
+    input_contract:
+      required_refs:
+        - runtime_identity_refs.project_position_ref
+        - runtime_identity_refs.storage_map_ref
+        - runtime_identity_refs.agent_recent_activity_ref
+        - artifacts/packets/workflow-evaluation-record.yaml
+        - artifacts/packets/artifact-outcome-record.yaml
+        - artifacts/runtime/pattern-registry.yaml
+      required_packets:
+        - workflow_evaluation_record
+        - artifact_outcome_record
+      optional_refs:
+        - projects/{project_id}/artifacts/metrics/
+      must_not_receive:
+        - raw_secret
+        - raw_content_body_inside_packet
+        - synthetic_origin
+        - injected_event_schedule
+        - hidden_strategy_state
+    output_contract:
+      emits:
+        - synthetic_metric_record
+        - pattern_registry_update
+        - derived_signal_summary
+        - rework_packet
+      required_fields:
+        - project_id
+        - content_id
+        - metric_layers_used
+        - baseline_interpretation
+        - buzz_interpretation
+        - pattern_candidate_status
+        - evidence_refs
+        - next_owner
+      packet_rules:
+        - a single buzz outlier cannot promote a validated pattern
+        - 7d and 28d baselines must both support strong signal claims
+        - hand analysis to project_supervisor rather than writing strategy
+    dependency_edges:
+      consumes_from:
+        - artifact_evaluator
+      can_call: []
+      next_default: project_supervisor
+    storage_contract:
+      writes:
+        - artifacts/packets/synthetic-metric-record.yaml
+        - artifacts/packets/pattern-registry-packet.yaml
+        - projects/{project_id}/artifacts/reports/
+  - agent_id: project_supervisor
+    role_type: agent
+    target_skill: project_supervisor
+    scope: project
+    input_contract:
+      required_refs:
+        - runtime_identity_refs.ecosystem_summary_ref
+        - runtime_identity_refs.project_position_ref
+        - runtime_identity_refs.project_state_ref
+        - runtime_identity_refs.runtime_location_ref
+        - runtime_identity_refs.storage_map_ref
+        - runtime_identity_refs.project_premise_ref
+        - runtime_identity_refs.agent_recent_activity_ref
+        - artifacts/runtime/project-registry.yaml
+        - artifacts/runtime/offer-registry.yaml
+        - artifacts/runtime/project-direction-strategy-policy.yaml
+        - artifacts/runtime/idea-proposal-loop.yaml
+      required_packets:
+        - operation_packet
+        - workflow_evaluation_record
+        - artifact_outcome_record
+      optional_refs:
+        - artifacts/packets/evidence-packet.yaml
+        - artifacts/packets/workflow-evaluation-record.yaml
+        - artifacts/packets/artifact-outcome-record.yaml
+        - artifacts/packets/synthetic-metric-record.yaml
+        - artifacts/packets/pattern-registry-packet.yaml
+        - artifacts/packets/project-direction-strategy-packet.yaml
+        - artifacts/packets/idea-intake-packet.yaml
+        - artifacts/packets/agent-proposal-packet.yaml
+        - artifacts/packets/proposal-evaluation-packet.yaml
+        - imagegen_asset_refs
+        - image_prompt_refs
+        - oss_research_refs
+        - open_source_candidate_refs
+        - projects/{project_id}/logs/ops-log.md
+        - projects/{project_id}/logs/strategy-log.md
+        - knowledge/shared/strategy-knowledge-candidates.yaml
+      must_not_receive:
+        - raw_secret
+        - direct_publish_credentials
+    output_contract:
+      emits:
+        - project_monitor_record
+        - strategy_packet
+        - execution_brief
+        - project_direction_strategy_packet
+        - proposal_evaluation_packet
+        - operation_packet
+        - rework_packet
+        - handoff_packet
+        - project_state_update
+      required_fields:
+        - project_graph
+        - project_health_interpretation
+        - next_owner
+        - evidence_refs
+      packet_rules:
+        - weak or insufficient evidence routes to research, rework, or human escalation
+        - major continue, stop, productization, or strategy changes require evidence refs
+        - strategy log separates hypotheses from knowledge candidate usage
+        - knowledge candidate score changes require usage refs and effectiveness evidence
+        - weekly operational strategy must not finalize fixed project direction
+        - imagegen and OSS candidates stay as refs until monthly confirmation
+        - idea/proposal candidates stay unaccepted until evaluation and required human review
+    dependency_edges:
+      consumes_from:
+        - channel_operator
+        - workflow_evaluator
+        - artifact_evaluator
+        - performance_analyst
+        - background_researcher
+        - main_lane
+        - scheduled_jobs
+      can_call:
+        - background_researcher
+        - on_demand_researcher
+        - workflow_planner
+        - commercial_workflow_planner
+        - compliance_reviewer
+      next_default: ecosystem_monitor
+    storage_contract:
+      writes:
+        - projects/{project_id}/state.yaml
+        - projects/{project_id}/logs/decision-log.md
+        - projects/{project_id}/logs/ops-log.md
+        - projects/{project_id}/logs/strategy-log.md
+        - projects/{project_id}/artifacts/packets/
+        - projects/{project_id}/artifacts/reports/
+        - artifacts/packets/project-monitor-record.yaml
+        - artifacts/packets/strategy-packet.yaml
+        - artifacts/packets/execution-brief.yaml
+        - artifacts/packets/project-direction-strategy-packet.yaml
+        - artifacts/packets/proposal-evaluation-packet.yaml
+        - knowledge/shared/strategy-knowledge-candidates.yaml
+  - agent_id: ecosystem_monitor
+    role_type: monitor_lane
+    target_skill: ecosystem_monitor
+    implemented_by: ecosystem_monitor_lane
+    scope: ecosystem
+    input_contract:
+      required_refs:
+        - runtime_identity_refs.ecosystem_summary_ref
+        - ecosystems/{ecosystem_id}/projects-index.yaml
+        - artifacts/runtime/ecosystem-registry.yaml
+        - artifacts/runtime/project-registry.yaml
+        - artifacts/runtime/offer-registry.yaml
+        - artifacts/runtime/platform-relationship-map.yaml
+      required_packets:
+        - project_monitor_record
+      optional_refs:
+        - projects/{project_id}/artifacts/reports/
+        - knowledge/shared/platform-lessons.yaml
+        - knowledge/shared/offer-lessons.yaml
+        - knowledge/shared/strategy-knowledge-candidates.yaml
+    output_contract:
+      emits:
+        - ecosystem_monitor_record
+        - platform_relationship_update
+        - shared_knowledge_update
+      required_fields:
+        - ecosystem_id
+        - project_ids
+        - next_owner
+        - evidence_refs
+    dependency_edges:
+      consumes_from:
+        - project_supervisor
+      can_call:
+        - main_lane
+        - background_researcher
+      next_default: main_lane
+    storage_contract:
+      writes:
+        - artifacts/packets/ecosystem-monitor-record.yaml
+        - artifacts/runtime/platform-relationship-map.yaml
+        - ecosystems/{ecosystem_id}/logs/ops-log.md
+        - knowledge/shared/platform-lessons.yaml
+        - knowledge/shared/offer-lessons.yaml
+  - agent_id: generate_channel_content
+    role_type: skill
+    target_skill: generate-channel-content
+    scope: content
+    input_contract:
+      required_refs:
+        - runtime_identity_refs.project_position_ref
+        - runtime_identity_refs.storage_map_ref
+        - runtime_identity_refs.content_registry_ref
+        - runtime_identity_refs.project_premise_ref
+        - runtime_identity_refs.recent_posts_ref
+        - projects/{project_id}/channels/{channel_id}/state.yaml
+      required_packets:
+        - handoff_packet
+      optional_refs:
+        - projects/{project_id}/content/recent-index.yaml
+        - artifacts/packets/evidence-packet.yaml
+    output_contract:
+      emits:
+        - content_ref
+        - evidence_packet
+        - rework_packet
+      required_fields:
+        - content_ref_or_rework_packet
+        - source_sufficiency
+        - claim_boundary_checked
+        - next_owner
+    dependency_edges:
+      consumes_from:
+        - channel_operator
+      can_call: []
+      next_default: channel_operator
+    storage_contract:
+      writes:
+        - projects/{project_id}/content/
+        - projects/{project_id}/artifacts/packets/
+  - agent_id: background_researcher
+    role_type: skill
+    target_skill: background-researcher
+    scope: research_watch
+    input_contract:
+      required_refs:
+        - runtime_identity_refs.ecosystem_summary_ref
+        - runtime_identity_refs.project_position_ref
+        - runtime_identity_refs.storage_map_ref
+        - source_refs.named_watch_manifest
+      required_packets: []
+      optional_refs:
+        - artifacts/runtime/platform-relationship-map.yaml
+        - projects/{project_id}/logs/ops-log.md
+    output_contract:
+      emits:
+        - evidence_packet
+        - operation_packet
+        - watch_summary
+        - rework_packet
+      required_fields:
+        - evidence_refs
+        - confidence
+        - next_owner
+    dependency_edges:
+      consumes_from:
+        - project_supervisor
+        - channel_operator
+        - scheduled_jobs
+        - main_lane
+      can_call: []
+      next_default: project_supervisor
+    storage_contract:
+      writes:
+        - projects/{project_id}/artifacts/research/
+        - projects/{project_id}/artifacts/packets/
+derived_workflows:
+  idea_and_agent_proposal_loop:
+    edge_order:
+      - decision_maker.outputs.chat_idea -> main_lane.inputs.idea_intake
+      - main_lane.outputs.idea_intake_packet -> project_supervisor.inputs.proposal_evaluation_inputs
+      - proposing_agent.outputs.agent_proposal_packet -> project_supervisor.inputs.proposal_evaluation_inputs
+      - project_supervisor.outputs.proposal_evaluation_packet -> main_lane.inputs.routing_or_execution_management
+      - main_lane.outputs.scoped_handoff_packet -> background_researcher_or_project_supervisor_or_decision_maker.inputs.next_action
+  social_publish_handoff:
+    edge_order:
+      - channel_operator.outputs.social_publish_request -> external_social_publish_executor.inputs.content_ref_and_gate_refs_only
+      - external_social_publish_executor.outputs.publish_result_ref -> channel_operator.inputs.evidence_or_operation_result
+  social_auth_connect_handoff:
+    edge_order:
+      - main_lane.outputs.social_auth_connect_request -> external_social_publish_executor.inputs.platform_account_ref_and_requested_scopes_only
+      - external_social_publish_executor.outputs.connector_record_ref -> main_lane.inputs.auth_status_and_verification_refs
+  daily_channel_operation:
+    edge_order:
+      - project_supervisor.outputs.execution_brief -> channel_operator.inputs.execution_brief
+      - channel_operator.outputs.operation_packet -> workflow_evaluator.inputs.operation_packet
+      - workflow_evaluator.outputs.workflow_evaluation_record -> artifact_evaluator.inputs.workflow_evaluation_record
+      - artifact_evaluator.outputs.artifact_outcome_record -> performance_analyst.inputs.artifact_outcome_record
+      - performance_analyst.outputs.derived_signal_summary -> project_supervisor.inputs.analysis_records
+      - project_supervisor.outputs.project_monitor_record -> ecosystem_monitor.inputs.project_monitor_record
+      - ecosystem_monitor.outputs.ecosystem_monitor_record -> main_lane.inputs.skill_call_request
+  weekly_research_refresh:
+    edge_order:
+      - scheduled_jobs.outputs.skill_call_request -> background_researcher.inputs.source_refs.named_watch_manifest
+      - background_researcher.outputs.evidence_packet -> project_supervisor.inputs.evidence_packet
+      - project_supervisor.outputs.strategy_packet -> channel_operator.inputs.execution_brief
+cron_rule:
+  request_source: projects/{project_id}/runtime/cron/scheduled-call-requests.yaml
+  must_include:
+    - target_skill
+    - task_intent
+    - project_graph
+    - runtime_identity_refs
+    - source_refs
+    - expected_outputs
+    - write_targets
+  missing_context_behavior: "Do not broaden context; emit rework_packet or fail preflight."
+grounding_rule:
+  premise_ref: projects/{project_id}/knowledge/premise-summary.md
+  recent_posts_ref: projects/{project_id}/content/recent-posts.yaml
+  max_recent_posts: 3
+  use_as_refs_not_constraints: true
+  contradiction_policy: "Unsupported factual contradiction returns rework; creative divergence is allowed."
+memo: "This map is read by main_lane and cron preflight. Specialist agents should receive the narrowed request, not this entire map."

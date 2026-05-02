@@ -1,0 +1,7 @@
+interface:
+  display_name: "LLM Wiki Skill Builder"
+  short_description: "Convert raw LLM wiki research into structured skill drafts"
+  default_prompt: "Use $llm-wiki-skill-builder to transform the raw research note into a complete skill with SKILL.md and agents/openai.yaml for both Codex and Claude layouts."
+
+policy:
+  allow_implicit_invocation: true

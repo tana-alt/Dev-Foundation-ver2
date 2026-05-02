@@ -1,0 +1,335 @@
+schema_version: "0.6.2"
+registry_id: harness-context-scope
+status: active
+updated: "2026-04-25"
+principle: "main_lane may read maps; specialist agents read only input docs, output docs, and skill docs unless a packet explicitly widens scope."
+main_lane:
+  role_ids:
+    - steward
+    - workflow_planner
+    - main_lane
+  allowed_surfaces:
+    - AGENTS.md
+    - ARCHITECTURE.md
+    - docs/agent-map.md
+    - docs/agent-io-dependency-map.md
+    - docs/company-operating-system.md
+    - docs/idea-proposal-operating-loop.md
+    - docs/social-publish-executor-boundary.md
+    - docs/context-scope-policy.md
+    - AGENTIC-FLOW/obsidian_codex_workflow_starter/Project-App/agent-contracts.yaml
+    - AGENTIC-FLOW/obsidian_codex_workflow_starter/Project-App/packet-contracts.yaml
+    - artifacts/runtime/agent-activity-log-policy.yaml
+    - artifacts/runtime/company-operating-system.yaml
+    - artifacts/runtime/idea-proposal-loop.yaml
+    - artifacts/runtime/social-publish-executor-policy.yaml
+    - artifacts/runtime/social-account-connector-registry.yaml
+    - artifacts/packets/decision-directive-packet.yaml
+    - artifacts/packets/idea-intake-packet.yaml
+    - artifacts/packets/agent-proposal-packet.yaml
+    - artifacts/packets/proposal-evaluation-packet.yaml
+    - artifacts/packets/social-publish-request.yaml
+    - artifacts/packets/social-auth-connect-request.yaml
+    - artifacts/packets/organization-structure-packet.yaml
+    - artifacts/packets/execution-management-packet.yaml
+    - projects/{project_id}/storage-map.yaml
+    - projects/{project_id}/artifacts/runtime/current-state.yaml
+    - projects/{project_id}/artifacts/runtime/latest-delta.yaml
+    - projects/{project_id}/artifacts/runtime/latest-lessons.yaml
+    - projects/{project_id}/artifacts/registry/agent-readable-index.yaml
+    - projects/{project_id}/artifacts/registry/lesson-gate-policy.yaml
+    - projects/{project_id}/artifacts/registry/repo-structure-governance.yaml
+    - organizations/{organization_id}/operating-model.yaml
+    - organizations/{organization_id}/logs/decision-log.md
+    - obsidian-vault/Apps/{app_slug}/00-hub.md
+    - obsidian-vault/Apps/{app_slug}/10-log.md
+    - obsidian-vault/Apps/{app_slug}/11-agent-map.md
+    - obsidian-vault/Apps/{app_slug}/12-agent-evals.md
+    - obsidian-vault/Apps/{app_slug}/13-storage-map.md
+  memo: "main lane owns routing, agent map awareness, contract drift, and handoff shape."
+specialist_default:
+  allowed_surface_classes:
+    - input_docs
+    - output_docs
+    - common_skill_agents_md
+    - skill_docs
+    - packet_templates_named_by_handoff
+    - compact_lesson_packet_named_by_handoff
+  denied_by_default:
+    - AGENTS.md
+    - ARCHITECTURE.md
+    - docs/agent-map.md
+    - obsidian-vault/Apps/{app_slug}/11-agent-map.md
+    - obsidian-vault/Apps/{app_slug}/12-agent-evals.md
+    - broad_repo_history
+    - archive
+    - all_runtime_maps
+    - long_logs
+  escalation_rule: "If missing context blocks execution, emit a rework_packet or ask main_lane/steward for a scoped handoff instead of self-expanding."
+  common_skill_agents_md: skills/AGENTS.md
+  compact_lesson_packet: projects/{project_id}/artifacts/runtime/latest-lessons.yaml
+role_scopes:
+  market_researcher:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/01-work-item.md
+      - obsidian-vault/Apps/{app_slug}/02-research.md
+      - obsidian-vault/Raw/
+      - obsidian-vault/Summaries/
+      - obsidian-vault/Reviews/
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/02-research.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+    skill_docs:
+      - app-research-skill-pack/
+      - .agents/skills/research-coordinator/SKILL.md
+      - .agents/skills/research-return-gate/SKILL.md
+  product_planner:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/02-research.md
+      - obsidian-vault/Apps/{app_slug}/03-plan.md
+      - obsidian-vault/Apps/{app_slug}/artifacts/packets/planner-packet-bundle.yaml
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/03-plan.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+      - obsidian-vault/Apps/{app_slug}/artifacts/packets/planner-packet-bundle.yaml
+    skill_docs:
+      - planner-skill-suite/AGENTS.md
+      - planner-skill-suite/CONTRACT_SUMMARY.md
+      - .agents/skills/app-prd-gate/SKILL.md
+      - .agents/skills/planning-stronger-monetization/SKILL.md
+  ux_designer:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/03-plan.md
+      - obsidian-vault/Apps/{app_slug}/04-ux.md
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/04-ux.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+    skill_docs:
+      - ui-ux-skill-suite/
+      - .codex/skills/ui-anthropic-frontend-design/SKILL.md
+      - .codex/skills/ui-vercel-web-design-guidelines/SKILL.md
+  frontend_engineer:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/03-plan.md
+      - obsidian-vault/Apps/{app_slug}/04-ux.md
+      - obsidian-vault/Apps/{app_slug}/05-frontend.md
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/05-frontend.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+    skill_docs:
+      - .agents/skills/agent-visibility-skill/SKILL.md
+      - .codex/skills/ui-vercel-react-best-practices/SKILL.md
+      - .codex/skills/ui-vercel-web-design-guidelines/SKILL.md
+  backend_engineer:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/03-plan.md
+      - obsidian-vault/Apps/{app_slug}/04-ux.md
+      - obsidian-vault/Apps/{app_slug}/06-backend.md
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/06-backend.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+    skill_docs:
+      - .github/instructions/backend.instructions.md
+      - .agents/skills/security-precheck/SKILL.md
+  app_tester:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/04-ux.md
+      - obsidian-vault/Apps/{app_slug}/05-frontend.md
+      - obsidian-vault/Apps/{app_slug}/06-backend.md
+      - obsidian-vault/Apps/{app_slug}/07-qa.md
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/07-qa.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+    skill_docs:
+      - .agents/skills/agent-visibility-skill/SKILL.md
+      - .agents/skills/review-to-actions/SKILL.md
+  qa_gatekeeper:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/07-qa.md
+      - obsidian-vault/Apps/{app_slug}/08-release.md
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/08-release.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+    skill_docs:
+      - .agents/skills/release-gate/SKILL.md
+      - .agents/skills/review-to-actions/SKILL.md
+  security_reviewer:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/06-backend.md
+      - obsidian-vault/Apps/{app_slug}/07-qa.md
+      - obsidian-vault/Apps/{app_slug}/08-release.md
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/08-release.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+    skill_docs:
+      - security-review/
+      - .agents/skills/security-precheck/SKILL.md
+  release_engineer:
+    input_docs:
+      - obsidian-vault/Apps/{app_slug}/07-qa.md
+      - obsidian-vault/Apps/{app_slug}/08-release.md
+      - obsidian-vault/Apps/{app_slug}/artifacts/packets/release-requirements.yaml
+    output_docs:
+      - obsidian-vault/Apps/{app_slug}/08-release.md
+      - obsidian-vault/Apps/{app_slug}/10-log.md
+    skill_docs:
+      - .agents/skills/release-gate/SKILL.md
+      - .agents/skills/obsidian-handoff/SKILL.md
+  project_supervisor:
+    input_docs:
+      - artifacts/runtime/idea-proposal-loop.yaml
+      - artifacts/runtime/ecosystem-registry.yaml
+      - artifacts/runtime/project-registry.yaml
+      - artifacts/runtime/offer-registry.yaml
+      - artifacts/runtime/agent-runtime-state.yaml
+      - artifacts/runtime/agent-io-contract-map.yaml
+      - artifacts/runtime/platform-relationship-map.yaml
+      - artifacts/runtime/project-direction-strategy-policy.yaml
+      - ecosystems/{ecosystem_id}/overview.md
+      - projects/{project_id}/agent-position.yaml
+      - projects/{project_id}/storage-map.yaml
+      - projects/{project_id}/state.yaml
+      - projects/{project_id}/runtime-location.yaml
+      - projects/{project_id}/logs/
+      - projects/{project_id}/logs/agent-recent-activity.yaml
+      - projects/{project_id}/content/
+      - knowledge/shared/strategy-knowledge-candidates.yaml
+      - artifacts/packets/operation-packet.yaml
+      - artifacts/packets/evidence-packet.yaml
+      - artifacts/packets/idea-intake-packet.yaml
+      - artifacts/packets/agent-proposal-packet.yaml
+      - artifacts/packets/proposal-evaluation-packet.yaml
+      - artifacts/packets/project-direction-strategy-packet.yaml
+      - imagegen_asset_refs
+      - image_prompt_refs
+      - oss_research_refs
+    output_docs:
+      - projects/{project_id}/state.yaml
+      - projects/{project_id}/logs/ops-log.md
+      - projects/{project_id}/logs/strategy-log.md
+      - projects/{project_id}/logs/agent-recent-activity.yaml
+      - artifacts/packets/operation-packet.yaml
+      - artifacts/packets/rework-packet.yaml
+      - artifacts/packets/handoff-packet.yaml
+      - artifacts/packets/proposal-evaluation-packet.yaml
+      - artifacts/packets/project-direction-strategy-packet.yaml
+      - knowledge/shared/strategy-knowledge-candidates.yaml
+    skill_docs:
+      - skills/orchestration/project-supervisor/SKILL.md
+      - docs/harness-contract.md
+      - docs/project-direction-strategy-policy.md
+      - docs/secret-boundary-contract.md
+      - docs/content-generation-harness.md
+  channel_operator:
+    input_docs:
+      - artifacts/runtime/ecosystem-registry.yaml
+      - artifacts/runtime/project-registry.yaml
+      - artifacts/runtime/offer-registry.yaml
+      - artifacts/runtime/agent-runtime-state.yaml
+      - artifacts/runtime/scheduled-jobs.yaml
+      - artifacts/runtime/agent-io-contract-map.yaml
+      - artifacts/runtime/platform-relationship-map.yaml
+      - artifacts/runtime/social-publish-executor-policy.yaml
+      - artifacts/runtime/social-account-connector-registry.yaml
+      - ecosystems/{ecosystem_id}/overview.md
+      - projects/{project_id}/agent-position.yaml
+      - projects/{project_id}/storage-map.yaml
+      - projects/{project_id}/state.yaml
+      - projects/{project_id}/runtime-location.yaml
+      - projects/{project_id}/channels/{channel_id}/state.yaml
+      - projects/{project_id}/channels/{channel_id}/content-log.md
+      - projects/{project_id}/logs/agent-recent-activity.yaml
+      - projects/{project_id}/content/
+    output_docs:
+      - projects/{project_id}/channels/{channel_id}/state.yaml
+      - projects/{project_id}/channels/{channel_id}/content-log.md
+      - artifacts/packets/handoff-packet.yaml
+      - artifacts/packets/evidence-packet.yaml
+      - artifacts/packets/operation-packet.yaml
+      - artifacts/packets/social-publish-request.yaml
+    skill_docs:
+      - skills/orchestration/channel-operator/SKILL.md
+      - docs/gate-policy.md
+      - docs/scheduled-jobs-policy.md
+  workflow_evaluator:
+    input_docs:
+      - artifacts/packets/work-diagnosis-packet.yaml
+      - artifacts/packets/routing-decision-packet.yaml
+      - artifacts/packets/operation-packet.yaml
+      - artifacts/packets/rework-packet.yaml
+      - projects/{project_id}/agent-position.yaml
+      - projects/{project_id}/storage-map.yaml
+      - projects/{project_id}/logs/agent-recent-activity.yaml
+      - projects/{project_id}/logs/ops-log.md
+    output_docs:
+      - artifacts/packets/workflow-evaluation-record.yaml
+      - projects/{project_id}/artifacts/reports/
+    skill_docs:
+      - skills/analysis/workflow-evaluator/SKILL.md
+  artifact_evaluator:
+    input_docs:
+      - artifacts/packets/workflow-evaluation-record.yaml
+      - artifacts/packets/operation-packet.yaml
+      - projects/{project_id}/content/registry.yaml
+      - projects/{project_id}/artifacts/metrics/
+      - projects/{project_id}/logs/agent-recent-activity.yaml
+      - projects/{project_id}/agent-position.yaml
+      - projects/{project_id}/storage-map.yaml
+    output_docs:
+      - artifacts/packets/artifact-outcome-record.yaml
+      - projects/{project_id}/artifacts/reports/
+    skill_docs:
+      - skills/analysis/artifact-evaluator/SKILL.md
+  performance_analyst:
+    input_docs:
+      - artifacts/packets/workflow-evaluation-record.yaml
+      - artifacts/packets/artifact-outcome-record.yaml
+      - artifacts/runtime/pattern-registry.yaml
+      - projects/{project_id}/artifacts/metrics/
+      - projects/{project_id}/logs/agent-recent-activity.yaml
+      - projects/{project_id}/agent-position.yaml
+      - projects/{project_id}/storage-map.yaml
+    output_docs:
+      - artifacts/packets/synthetic-metric-record.yaml
+      - artifacts/packets/pattern-registry-packet.yaml
+      - projects/{project_id}/artifacts/reports/
+    skill_docs:
+      - skills/analysis/performance-analyst/SKILL.md
+  ecosystem_monitor:
+    input_docs:
+      - artifacts/runtime/ecosystem-registry.yaml
+      - artifacts/runtime/project-registry.yaml
+      - artifacts/runtime/offer-registry.yaml
+      - artifacts/runtime/platform-relationship-map.yaml
+      - artifacts/runtime/agent-output-registry.yaml
+      - artifacts/runtime/agent-io-contract-map.yaml
+      - artifacts/runtime/ecosystem-project-content-map.yaml
+      - ecosystems/{ecosystem_id}/overview.md
+      - ecosystems/{ecosystem_id}/projects-index.yaml
+      - artifacts/packets/project-monitor-record.yaml
+    output_docs:
+      - artifacts/packets/ecosystem-monitor-record.yaml
+      - artifacts/runtime/platform-relationship-map.yaml
+      - knowledge/shared/platform-lessons.yaml
+      - knowledge/shared/offer-lessons.yaml
+      - knowledge/shared/strategy-knowledge-candidates.yaml
+    skill_docs:
+      - skills/monitoring/ecosystem-monitor/SKILL.md
+      - docs/harness-contract.md
+      - docs/content-generation-harness.md
+      - docs/project-operation-harness.md
+knowledge_sharing:
+  owner: project_supervisor
+  cadence: weekly_or_after_decision
+  input_docs:
+    - projects/{project_id}/logs/ops-log.md
+    - projects/{project_id}/logs/strategy-log.md
+    - artifacts/packets/evidence-packet.yaml
+    - artifacts/packets/operation-packet.yaml
+  output_docs:
+    - knowledge/shared/strategy-knowledge-candidates.yaml
+    - knowledge/shared/validated-patterns.md
+    - knowledge/shared/failed-patterns.md
+    - knowledge/shared/platform-lessons.yaml
+    - knowledge/shared/offer-lessons.yaml
+  rule: "Strategy logs separate hypotheses and knowledge candidate usage; shared docs store reusable candidates and validated lessons only."

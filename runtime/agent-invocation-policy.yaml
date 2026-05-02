@@ -1,0 +1,185 @@
+schema_version: "0.7.6"
+registry_id: agent-invocation-policy
+status: active
+updated: "2026-04-25"
+owner_agent: main_lane
+source_of_truth_level: primary
+purpose: "Define what decides agent calls and what actually invokes agents before dry_run."
+principle:
+  - "Do not let specialist agents self-select broad work."
+  - "A trigger creates a call request; main_lane or a registered scheduler resolves target_skill; runtime executes the resolved skill."
+  - "Runtime is not a reasoning manager. It validates, starts the skill directory, and records outputs."
+  - "Specialists may request another agent only by emitting a handoff_packet, rework_packet, operation_packet, or next_owner field."
+call_decision_authority:
+  main_lane:
+    decides:
+      - human_requested_work
+      - decision_maker_directive_routing
+      - ambiguous_or_multi_step_work
+      - rework_routing
+      - monitor_escalation_routing
+      - app_or_productization_handoff
+    reads:
+      - AGENTS.md
+      - ARCHITECTURE.md
+      - artifacts/runtime/agent-map.yaml
+      - artifacts/runtime/agent-io-contract-map.yaml
+      - artifacts/runtime/skill-directory-map.yaml
+      - artifacts/runtime/agent-invocation-policy.yaml
+      - artifacts/runtime/runtime-session-policy.yaml
+      - artifacts/runtime/skill-call-request.yaml
+      - artifacts/runtime/capability-registry.yaml
+      - artifacts/runtime/agent-output-registry.yaml
+      - artifacts/runtime/company-operating-system.yaml
+      - artifacts/runtime/idea-proposal-loop.yaml
+      - artifacts/runtime/social-publish-executor-policy.yaml
+      - artifacts/packets/decision-directive-packet.yaml
+      - artifacts/packets/idea-intake-packet.yaml
+      - artifacts/packets/agent-proposal-packet.yaml
+      - artifacts/packets/proposal-evaluation-packet.yaml
+    emits:
+      - idea_intake_packet
+      - work_diagnosis_packet
+      - routing_decision_packet
+      - organization_structure_packet
+      - execution_management_packet
+      - skill_call_request
+  scheduled_jobs:
+    decides:
+      - registered_cron_call_only
+    reads:
+      - artifacts/runtime/scheduled-jobs.yaml
+      - projects/{project_id}/runtime/cron/scheduled-call-requests.yaml
+      - artifacts/runtime/agent-invocation-policy.yaml
+      - artifacts/runtime/runtime-session-policy.yaml
+    emits:
+      - skill_call_request
+    constraints:
+      - target_skill_must_match_registered_job
+      - project_graph_required
+      - runtime_identity_refs_required
+      - rate_limit_must_pass
+  project_supervisor:
+    decides:
+      - project_health_followup_request
+      - additional_research_request
+      - content_rework_request
+      - app_or_productization_trigger_request
+    emits:
+      - handoff_packet
+      - rework_packet
+      - operation_packet
+      - execution_brief
+    cannot_start_agents_directly: true
+  ecosystem_monitor:
+    decides:
+      - ecosystem_anomaly_report
+      - platform_relationship_update_request
+      - cross_project_signal_escalation
+    emits:
+      - ecosystem_monitor_record
+      - operation_packet
+      - handoff_packet
+    cannot_start_agents_directly: true
+actual_invoker:
+  executor: runtime
+  starts:
+    - target_skill_directory_as_cwd
+  injects:
+    - skill_call_request
+    - project_graph
+    - runtime_identity_refs
+    - source_refs
+    - expected_outputs
+    - write_targets
+  reads_before_start:
+    - artifacts/runtime/skill-directory-map.yaml
+    - artifacts/runtime/agent-invocation-policy.yaml
+    - artifacts/runtime/runtime-session-policy.yaml
+    - artifacts/runtime/skill-call-request.yaml
+    - artifacts/runtime/runtime-policy.yaml
+    - artifacts/runtime/agent-io-contract-map.yaml
+    - artifacts/runtime/context-scope.yaml
+  records:
+    - projects/{project_id}/logs/agent-activity-log.yaml
+    - projects/{project_id}/logs/agent-recent-activity.yaml
+  cannot_decide_strategy: true
+  cannot_inject_broad_repo_context: true
+  cannot_expose_secrets: true
+trigger_sources:
+  decision_maker:
+    entrypoint: main_lane
+    call_decider: main_lane
+    invoker: runtime
+  human:
+    entrypoint: main_lane
+    call_decider: main_lane
+    invoker: runtime
+  cron:
+    entrypoint: scheduled_jobs
+    call_decider: scheduled_jobs
+    invoker: runtime
+    fallback_when_ambiguous: main_lane
+  rework_packet:
+    entrypoint: main_lane
+    call_decider: main_lane
+    invoker: runtime
+  monitor_signal:
+    entrypoint: main_lane
+    call_decider: main_lane
+    invoker: runtime
+  project_supervisor_handoff:
+    entrypoint: main_lane
+    call_decider: main_lane
+    invoker: runtime
+  agent_proposal:
+    entrypoint: main_lane
+    call_decider: main_lane
+    invoker: runtime
+call_request_contract:
+  required_fields:
+    - invocation_source
+    - call_decider
+    - actual_invoker
+    - runtime_backend
+    - workflow_run_id
+    - attempt_id
+    - parent_attempt_id
+    - runtime_session_id
+    - session_strategy
+    - session_switch_reason
+    - target_skill
+    - task_intent
+    - project_graph
+    - runtime_identity_refs
+    - source_refs
+    - expected_outputs
+    - write_targets
+    - instruction
+  allowed_invocation_sources:
+    - decision_maker
+    - human
+    - cron
+    - rework_packet
+    - monitor_signal
+    - project_supervisor_handoff
+    - agent_proposal
+  allowed_call_deciders:
+    - main_lane
+    - scheduled_jobs
+  actual_invoker_required: runtime
+  runtime_backend_required: codex_cli
+preflight:
+  reject_if:
+    - invocation_source_missing
+    - call_decider_missing
+    - actual_invoker_not_runtime
+    - target_skill_not_registered
+    - call_decider_not_allowed_for_source
+    - specialist_attempts_direct_agent_start
+postflight:
+  require:
+    - runtime_activity_log_recorded
+    - next_owner_or_terminal_status
+    - output_saved_to_registered_write_target
+memo: "This policy answers: what calls agents = runtime; what decides calls = main_lane or registered scheduled_jobs. Other agents request handoff, they do not directly invoke."

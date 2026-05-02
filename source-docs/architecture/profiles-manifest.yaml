@@ -1,0 +1,119 @@
+version: 1
+
+kernel:
+  description: Shared execution kernel that remains in the core repo.
+  code_paths:
+    - apps/api
+    - apps/obsidian-plugin
+    - apps/web
+    - src/db
+    - src/graph
+    - src/schemas
+    - src/services/docs
+    - src/services/git
+    - src/services/knowledge
+    - src/services/llm
+    - src/services/multica
+    - src/services/obsidian
+    - src/services/steward
+    - src/services/verification
+    - src/services/workflows
+  prompt_paths:
+    - src/prompts/base
+    - src/prompts/manifests
+    - src/prompts/roles
+    - src/prompts/templates
+  canonical_docs:
+    - AGENTS.md
+    - ARCHITECTURE.md
+    - docs/rules.md
+    - docs/workflows/build-test-pr.md
+    - docs/specs/repo-profile-split.md
+
+profiles:
+  shared:
+    description: Repo-scoped skills used by both app and quant repos.
+    template_roots:
+      - templates/shared
+    vendor_paths:
+      - AGENTS.md
+      - ARCHITECTURE.md
+      - .github/pull_request_template.md
+      - docs/index.md
+      - docs/rules.md
+      - docs/tasks/active/.gitkeep
+      - docs/tasks/active/_template
+      - docs/tasks/completed/.gitkeep
+      - docs/tasks/templates
+      - docs/workflows/build-test-pr.md
+      - docs/evals/regression.md
+      - docs/specs/repo-profile-split.md
+      - .github/instructions/backend.instructions.md
+      - .github/instructions/docs.instructions.md
+      - .github/instructions/frontend.instructions.md
+      - .github/instructions/infra.instructions.md
+      - src/prompts/base/global.md
+      - src/prompts/manifests/orchestrator.yaml
+      - src/prompts/manifests/builder.yaml
+      - src/prompts/manifests/verifier.yaml
+      - src/prompts/manifests/steward.yaml
+      - src/prompts/manifests/wiki-steward.yaml
+      - src/prompts/roles/orchestrator.md
+      - src/prompts/roles/builder.md
+      - src/prompts/roles/verifier.md
+      - src/prompts/roles/steward.md
+      - src/prompts/roles/wiki-steward.md
+      - src/prompts/templates/code-review.md
+      - src/prompts/templates/research-and-report.md
+      - src/prompts/templates/task-executor.md
+    recommended_global_skills:
+      - .codex/skills/agent-visibility-skill
+      - .codex/skills/llm-wiki-skill-builder
+
+  app:
+    description: App delivery overlay for product, UX, implementation, QA, and release.
+    extends:
+      - shared
+    template_roots:
+      - templates/app
+    focus_paths:
+      - .github/instructions/backend.instructions.md
+      - .github/instructions/frontend.instructions.md
+      - .github/instructions/infra.instructions.md
+      - apps/api
+      - src/services/knowledge
+      - src/services/obsidian
+      - apps/web
+      - apps/obsidian-plugin
+      - docs/workflows/build-test-pr.md
+      - docs/evals/regression.md
+      - tests
+    recommended_global_skills:
+      - .agents/skills/app-prd-gate
+      - .agents/skills/obsidian-handoff
+      - .agents/skills/release-gate
+      - .agents/skills/work-item-intake
+      - .codex/skills/agent-visibility-skill
+      - .codex/skills/ui-anthropic-frontend-design
+      - .codex/skills/ui-openai-figma-implement-design
+      - .codex/skills/ui-openai-frontend-design
+      - .codex/skills/ui-vercel-react-best-practices
+      - .codex/skills/ui-vercel-web-design-guidelines
+
+  quant:
+    description: Quant research and execution-readiness overlay.
+    extends:
+      - shared
+    template_roots:
+      - templates/quant
+    vendor_paths:
+      - docs/specs/knowledge-loop.md
+      - obsidian-vault/README.md
+      - obsidian-vault/Templates
+      - scripts/onyx
+    focus_paths:
+      - docs/specs/knowledge-loop.md
+      - obsidian-vault
+      - scripts/onyx
+    recommended_global_skills:
+      - .codex/skills/llm-wiki-skill-builder

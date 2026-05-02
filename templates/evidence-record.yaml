@@ -1,0 +1,30 @@
+schema_version: "0.1"
+record_type: evidence_record
+status: draft
+
+identity:
+  evidence_id: example_evidence_id
+  work_id: example_work_id
+  project_id: example_project
+  created_at: "YYYY-MM-DD"
+
+sources:
+  source_refs:
+    - path/or/url
+  commands: []
+  screenshots: []
+  external_refs: []
+
+observations:
+  facts:
+    - "Observed fact with source ref."
+  inferences:
+    - "Inference explicitly marked as inference."
+  decisions:
+    - "Decision made from the evidence."
+
+limits:
+  missing_evidence: []
+  stale_refs: []
+  confidence: low | medium | high
+  residual_risk: []
