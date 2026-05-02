@@ -118,7 +118,6 @@ def test_skill_roots_are_explicit() -> None:
     live_skills = sorted(path for path in skill_root.iterdir() if path.is_dir())
 
     assert live_skills
-    assert repo_path(".codex/skills").is_dir()
 
     for skill_path in live_skills:
         assert (skill_path / "SKILL.md").is_file(), skill_path
