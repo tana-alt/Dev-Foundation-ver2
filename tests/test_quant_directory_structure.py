@@ -56,3 +56,14 @@ def test_artifact_policy_documents_sanitized_outputs_only() -> None:
     assert "sanitized reports" in policy
     assert "raw market data" in policy
     assert "secrets" in policy
+
+
+def test_quant_agent_guide_routes_stack_and_storage_boundaries() -> None:
+    guide = (ROOT / "docs/quant-agent-guide.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+    assert "`docs/quant-agent-guide.md`" in agents
+    assert "src/qlab/data/crypto/" in guide
+    assert "uv sync --frozen --all-groups" in guide
+    assert "Root `/data/` and `/runtime/` are local ignored state" in guide
+    assert "vectorbt: optional only after license review" in guide

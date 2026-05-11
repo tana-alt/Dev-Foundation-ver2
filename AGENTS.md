@@ -19,6 +19,8 @@ or unrelated history by default.
   `docs/02-output-verification-contract.md`
 - Repo paths, storage, secrets, skills, or plugins:
   `docs/03-repo-boundary-and-storage-contract.md`
+- Quant stack, dependency groups, or directory routing:
+  `docs/quant-agent-guide.md`
 
 ## Reference Map
 
