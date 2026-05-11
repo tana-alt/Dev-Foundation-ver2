@@ -7,6 +7,8 @@ directory routing. It is a map, not an implementation spec.
 
 - Decision: `docs/stack_decision.md`
 - License gates: `docs/license_review.md`
+- Next implementation lanes: `docs/quant-implementation-plan.md`
+- Data and artifact policy: `docs/data_policy.md`
 - Source review artifact: `artifact/Gpt-pro-review`
 - Runtime: Pydantic, Pydantic Settings, Typer, Rich.
 - Data: Polars, DuckDB, PyArrow, NumPy, pandas, Pandera.
@@ -55,10 +57,8 @@ directory routing. It is a map, not an implementation spec.
 
 ## Storage Rules
 
+- Source of truth: `docs/data_policy.md`
 - Track code, contracts, templates, tests, docs, and sanitized artifacts.
-- Do not track raw market data, raw book text, extracted book text, embedding
-  indexes, exchange account state, logs, caches, secrets, `.env` files,
-  `mlruns/`, `optuna.db`, DuckDB runtime files, or live order payloads.
 - Root `/data/` and `/runtime/` are local ignored state. Package and test
   directories named `data` remain trackable.
 

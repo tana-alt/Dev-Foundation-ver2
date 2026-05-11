@@ -65,5 +65,21 @@ def test_quant_agent_guide_routes_stack_and_storage_boundaries() -> None:
     assert "`docs/quant-agent-guide.md`" in agents
     assert "src/qlab/data/crypto/" in guide
     assert "uv sync --frozen --all-groups" in guide
-    assert "Root `/data/` and `/runtime/` are local ignored state" in guide
+    assert "docs/quant-implementation-plan.md" in guide
+    assert "docs/data_policy.md" in guide
     assert "vectorbt: optional only after license review" in guide
+
+
+def test_quant_implementation_plan_and_data_policy_are_agent_readable() -> None:
+    plan = (ROOT / "docs/quant-implementation-plan.md").read_text(encoding="utf-8")
+    policy = (ROOT / "docs/data_policy.md").read_text(encoding="utf-8")
+
+    assert "Search layer: already handled outside this plan" in plan
+    assert "one isolated worktree per lane" in plan
+    assert "Core contracts" in plan
+    assert "Crypto data schema" in plan
+    assert "Synthetic fixtures" in plan
+    assert "Raw exchange or vendor data is never repo truth" in policy
+    assert "The search layer is separate from this quant environment" in policy
+    assert "Root `/data/`" in policy
+    assert "Root `/runtime/`" in policy
