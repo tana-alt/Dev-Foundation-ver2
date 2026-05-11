@@ -8,3 +8,14 @@ __pycache__/
 archive/
 agent_docs_rebuild_scope_ref/
 Foundation-development/
+/data/
+/runtime/
+mlruns/
+optuna.db
+*.duckdb
+*.duckdb.wal
+.env
+.env.*
+secrets/
+notebooks/.ipynb_checkpoints/
+.marimo/

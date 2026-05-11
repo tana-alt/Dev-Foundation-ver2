@@ -1,0 +1,1267 @@
+# 結論
+
+**暗号資産メインにしても、最終判断は大きくは変わりません。**
+ただし、前回案から重要な補正があります。
+
+```text
+Crypto-first contract-first layered hybrid architecture
+
+Research / data:
+  Polars + DuckDB + PyArrow / Parquet
+
+Crypto data ingestion:
+  CCXT / exchange-native importers
+  ※ live executionのsource of truthにはしない
+
+Fast screening:
+  Polars + NumPy + Numba
+  vectorbtはoptional / license-gated
+
+Baseline correctness:
+  小さい自前deterministic bar-level engine
+
+Event-driven validation / paper / live:
+  NautilusTrader
+
+Crypto market making / DEX / bot fleet:
+  Hummingbot optional executor
+  ※ strategy typeによってはNautilusTraderと並列評価
+
+HFT / L2-L3 / queue-position検証:
+  HftBacktest optional
+
+Experiment:
+  MLflow + Optuna local
+
+Monitoring:
+  structured logs + local ledger
+  Prometheus / Grafana / OpenTelemetry optional
+
+Profit:
+  custom profit ledger
+```
+
+つまり、**NautilusTrader中心の判断は維持**します。
+理由は、暗号資産だけでなく、将来FXの通貨ペアも扱う可能性があるためです。NautilusTrader は crypto CEX/DEX、Interactive Brokers、Tardis 等の integration を持ち、`CurrencyPair`、`CryptoPerpetual`、`CryptoFuture`、`CryptoOption` などの instrument model も用意されています。([NautilusTrader][1])
+
+ただし、**Hummingbot の評価は上げるべき**です。
+特に CEX/DEX market making、grid、funding/arbitrage、multi-bot operation、bot fleet、Dashboard/API 連携を重視するなら、Hummingbot は NautilusTrader の単なる下位候補ではなく、**専門 executor 候補**になります。Hummingbot は CEX/DEX 上で automated trading strategies を動かす Python framework で、connector、Gateway、Dashboard、API などを持つ crypto 専用寄りの実運用フレームワークです。([Hummingbot][2])
+
+レビュー文書が求めている「research、検証、paper/live、monitoring、profit tracking を接続する」要件には、単一 bot framework ではなく layered architecture が最も合います。
+
+---
+
+# 1. 暗号資産メインで何が変わるか
+
+## 変わる点
+
+暗号資産では、株式・ETF・通常のbar-level factor researchよりも以下が重要になります。
+
+```text
+24/7 market
+CEX / DEX
+spot / margin / perpetual / dated futures / options
+funding rate
+maker/taker fee
+post-only / reduce-only
+partial fill
+liquidation / ADL
+exchange-specific symbol
+wallet / transfer / subaccount
+WebSocket stale data
+API rate limit
+exchange outage
+stablecoin quote currency
+cross-exchange arbitrage
+order-book depth
+latency / queue position
+```
+
+そのため、**単なるOHLCV backtest engineでは不十分**です。
+自前 engine を production engine にする案は、crypto main ではさらに弱くなります。
+
+## 変わらない点
+
+一方で、最初の repo 要件は変わりません。
+
+```text
+Python 3.12 first
+uv / lock-first
+strict mypy
+pytest / hypothesis
+CI reproducibility
+raw market dataはrepo外
+secretsはrepo外
+artifactはsanitizedのみ
+parallel worktree対応
+backtest correctness重視
+```
+
+暗号資産メインでも、研究・検証・実運用・監視・利益評価を分離する必要があります。したがって、**HummingbotやFreqtradeを丸ごとcore repoに取り込むより、contract-firstに境界を切る方が安全**です。
+
+---
+
+# 2. crypto系OSS候補の再評価
+
+## 2.1 NautilusTrader
+
+**判断: 採用。event-driven validation / paper / live core。**
+
+NautilusTrader は、Rust-native の multi-asset / multi-venue trading engine で、research、deterministic simulation、live execution を単一の event-driven architecture で扱う設計です。GitHub README では、同じ execution semantics と deterministic time model が research/live の両方で動作し、strategy を research から production へ code changes なしで移せると説明されています。([GitHub][3])
+
+暗号資産面でも、Binance、Coinbase、BitMEX、Bybit、Deribit、dYdX、Hyperliquid、Kraken、OKX、Polymarket、Tardis などの integration が列挙されています。([NautilusTrader][1])
+
+また Binance adapter は spot、USDT-M futures、COIN-M futures に対応し、HTTP client、WebSocket client、instrument provider、data client、execution client を持ちます。([NautilusTrader][4])
+
+**crypto mainでの強み**
+
+| 観点              | 評価                                     |
+| --------------- | -------------------------------------- |
+| spot / perp     | 強い                                     |
+| multi-venue     | 強い                                     |
+| order lifecycle | 強い                                     |
+| live parity     | 強い                                     |
+| FX通貨ペアの拡張       | 強い                                     |
+| strict repo設計   | dependency group分離で対応可能                |
+| 弱点              | Beta / API change risk、学習コスト、catalog変換 |
+
+**結論:**
+暗号資産メインでも、**NautilusTrader は live parity core として残す**のが妥当です。
+
+---
+
+## 2.2 Hummingbot
+
+**判断: optional specialized executor。market making / DEX / bot fleet なら強い。**
+
+Hummingbot は CEX/DEX 向けの automated trading strategy framework で、Apache 2.0 license です。公式 docs では、strategy、connectors、Gateway、Dashboard、API などが説明されており、connectors は CLOB centralized/decentralized exchanges と AMM DEX connectors を扱います。([Hummingbot][2])
+
+GitHub README では、many centralized or decentralized exchanges 上で automated trading bots を設計・deploy できる framework とされ、Apache 2.0 license と明記されています。([GitHub][5])
+
+**crypto mainでの強み**
+
+| 観点                       | 評価                  |
+| ------------------------ | ------------------- |
+| CEX/DEX connector        | 強い                  |
+| market making            | 強い                  |
+| grid / arbitrage         | 強い                  |
+| multi-bot operation      | 強い                  |
+| Dashboard/API            | 強い                  |
+| research reproducibility | Nautilus/Polarsより弱い |
+| uv / strict mypy repo統合  | やや弱い                |
+| runtime separation       | Docker/API境界なら対応可能  |
+
+**重要:**
+Hummingbot を uv project の通常 dependency に入れるより、**外部 runtime / Docker / API-controlled executor として扱う**方が repo 方針と合います。Hummingbot は Docker setup や Gateway など運用コンポーネントが大きく、repo 内に state や config が混ざりやすいためです。([GitHub][5])
+
+**結論:**
+方向性が **market making / DEX / bot fleet** なら Hummingbot を採用候補に上げる。
+ただし core research/backtest engine ではなく、**specialized production executor** として分離する。
+
+---
+
+## 2.3 Freqtrade
+
+**判断: reject core。crypto botとしては強いが、repo中核にはしない。**
+
+Freqtrade は crypto trading bot としては非常に実用的です。公式 README/docs では、Python製、主要 exchange 対応、Telegram/WebUI、backtesting、plotting、money management、ML optimization を持つと説明されています。([GitHub][6])
+
+spot exchange と futures exchange の対応も広く、Binance、Bybit、OKX、Kraken、Bitget、Gate.io、Hyperliquid などが列挙されています。([GitHub][6])
+
+しかし、core としては reject です。
+
+**reject理由**
+
+```text
+GPLv3
+strategyがFreqtrade流pandas bot構造に寄る
+sqlite / webui / telegram / runtime stateがrepo方針と衝突しやすい
+NautilusTraderほどのevent-driven / multi-asset live parity基盤ではない
+FX通貨ペアへの拡張性が弱い
+```
+
+Freqtrade の pyproject は Python `>=3.11`、GPLv3、Python 3.12/3.13/3.14 classifier、ccxt、SQLAlchemy、pandas、TA-Lib、FastAPI 等の依存を持ちます。([GitHub][7])
+
+**結論:**
+個人用 crypto bot としては有力。
+この repo の core にはしない。
+
+---
+
+## 2.4 Jesse
+
+**判断: reject core。MITで良いが、crypto bot frameworkに寄る。**
+
+Jesse は MIT license の crypto trading framework で、backtesting、optimization、live trading を簡単にする設計です。複数 timeframe / symbol、market/limit/stop order、risk management、metrics 等を掲げています。([GitHub][8])
+
+PyPI でも MIT license、Python `>=3.10` とされています。([PyPI][9])
+
+**reject理由**
+
+```text
+crypto専用bot frameworkに寄る
+multi-asset / FX / broker extensionではNautilusTraderより弱い
+research data processingやmanifest設計は別途必要
+production-grade execution modelのsource of truthにはしにくい
+```
+
+**結論:**
+crypto directional strategy の素早い試作には良い。
+ただし、初期 repo の中核ではない。
+
+---
+
+## 2.5 CCXT
+
+**判断: data ingestion / exchange metadata adapter として採用。live execution coreにはしない。**
+
+CCXT は 100以上の暗号資産 exchange に接続する JavaScript / TypeScript / Python / C# / PHP / Go ライブラリで、market data、order execution、account access、cross-exchange analytics 等に使える unified API を提供します。([GitHub][10])
+
+**採用する場所**
+
+```text
+historical data download
+exchange metadata import
+symbol normalization
+fee / market info snapshot
+research dataset bootstrap
+paper前のexchange capability check
+```
+
+**採用しない場所**
+
+```text
+live execution source of truth
+order lifecycle reconciliation
+production risk engine
+kill switch本体
+```
+
+理由は、CCXT は connector library であり、trading engine ではないためです。live execution は NautilusTrader または Hummingbot 側の execution/risk/reconciliation を使うべきです。
+
+---
+
+## 2.6 HftBacktest
+
+**判断: optional。L2/L3・market making・latency-sensitive戦略なら採用。**
+
+HftBacktest は high-frequency trading / market-making strategy 用の backtesting tool で、feed/order latency、order queue position、full order book、trade tick feed を使った market replay backtest を重視します。([HftBacktest][11])
+
+PyPI でも、limit orders、queue positions、latencies、full tick data/order books を使う high-frequency / market-making backtesting tool と説明されています。([PyPI][12])
+
+**採用条件**
+
+```text
+order book imbalance
+market making
+grid / quote placement
+latency-sensitive execution
+queue-position modeling
+L2/L3 historical dataあり
+```
+
+**採用しない条件**
+
+```text
+daily/bar-level factor strategy
+simple directional strategy
+dataがOHLCVしかない
+CIを軽く保ちたい初期段階
+```
+
+**結論:**
+crypto main では HftBacktest の価値は上がります。
+ただし初期 core ではなく、**hft dependency group の optional engine** にする。
+
+---
+
+## 2.7 vectorbt
+
+**判断: optional / license-gated。strict OSS modeでは使わない。**
+
+vectorbt は高速 screening には有用ですが、Apache 2.0 with Commons Clause であり、strict OSS としては扱いにくいです。PyPI は Commons Clause 条件を明記しています。([PyPI][13])
+
+**結論:**
+crypto mainでも core にはしない。
+strict OSS mode では **Polars + NumPy + Numba self screening** を第一候補にする。
+
+---
+
+# 3. 候補案比較
+
+## 案1: performance/data-heavy + minimal self engine
+
+```text
+Polars / DuckDB / PyArrow
++ CCXT ingestion
++ 自前bar-level deterministic engine
++ MLflow / Optuna
+```
+
+| 評価軸                          | 評価 |
+| ---------------------------- | -- |
+| research velocity            | 高  |
+| reproducibility              | 高  |
+| CI compatibility             | 高  |
+| crypto live parity           | 低  |
+| perp / funding / liquidation | 弱い |
+| order lifecycle              | 弱い |
+| market making                | 弱い |
+| FX拡張                         | 中  |
+
+**判断:** reject as final。
+研究基盤としては採用するが、crypto main の実運用 core には足りない。
+
+---
+
+## 案2: crypto-bot-centered stack
+
+```text
+Freqtrade or Jesse or Hummingbot
++ CCXT
++ WebUI / Telegram / bot runtime
+```
+
+| 評価軸              | 評価                               |
+| ---------------- | -------------------------------- |
+| crypto実装速度       | 高                                |
+| live bot導入       | 高                                |
+| market making    | Hummingbotなら高                    |
+| reproducibility  | 中〜低                              |
+| repo hygiene     | 中〜低                              |
+| strict mypy / uv | 中〜低                              |
+| FX拡張             | 低                                |
+| license risk     | Freqtradeは高、Jesse/Hummingbotは低〜中 |
+
+**判断:** reject as core。
+crypto-only bot を早く動かすなら有力だが、初期 repo の設計思想とは衝突しやすい。
+
+---
+
+## 案3: crypto-first layered hybrid
+
+```text
+Research:
+  Polars / DuckDB / PyArrow / Parquet
+
+Crypto data:
+  CCXT / exchange-native importers / Tardis optional
+
+Fast screening:
+  Polars + NumPy + Numba
+  vectorbt optional
+
+Baseline correctness:
+  minimal self deterministic engine
+
+Event-driven validation / paper / live:
+  NautilusTrader
+
+Crypto market making / DEX:
+  Hummingbot optional executor
+
+HFT / L2-L3:
+  HftBacktest optional
+
+Monitoring:
+  structured logs + local ledger
+  Prometheus / Grafana / OpenTelemetry optional
+
+Profit:
+  custom profit ledger
+```
+
+| 評価軸                  | 評価  |
+| -------------------- | --- |
+| research velocity    | 高   |
+| backtest correctness | 高   |
+| live parity          | 高   |
+| crypto coverage      | 高   |
+| FX通貨ペア拡張             | 高   |
+| monitoring readiness | 高   |
+| reproducibility      | 高   |
+| CI compatibility     | 中〜高 |
+| maintenance burden   | 中   |
+| learning curve       | 中〜高 |
+
+**判断: 採用。**
+
+---
+
+# 4. 最終推奨 stack
+
+## 役割別スタック表
+
+| 役割                      | 第一候補                                      | 第二候補                          | 採用理由                                                                                                                    | 不採用理由 / 注意点                           |
+| ----------------------- | ----------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| data processing         | **Polars + DuckDB + PyArrow**             | pandas adapter                | 高速、Parquet、CI fixture、raw data外部化に強い。Polars は lazy/eager、streaming、query optimization、multi-threading を掲げる。([PyPI][14]) | pandas を core にしない                    |
+| storage                 | **partitioned Parquet + manifest**        | DuckDB local file             | DuckDB は Parquet read/write と filter/projection pushdown に対応。([DuckDB][15])                                             | `.duckdb` runtime file は tracked しない  |
+| crypto data ingestion   | **CCXT + exchange-native importer**       | Nautilus data adapter         | exchange coverage が広い                                                                                                   | live execution source of truth にはしない  |
+| fast screening          | **Polars + NumPy + Numba**                | vectorbt optional             | strict OSS modeで成立                                                                                                      | vectorbt は Commons Clause             |
+| research backtest       | **minimal self engine**                   | vectorbt optional             | golden tests / no-lookahead / accounting 検証に使う                                                                          | production engine化しない                 |
+| event-driven validation | **NautilusTrader**                        | HftBacktest for HFT           | order lifecycle / event-driven / live parity                                                                            | Beta/API change risk                  |
+| crypto market making    | **NautilusTrader or Hummingbot**          | HftBacktest for simulation    | Hummingbot は CEX/DEX bot operationに強い                                                                                   | Hummingbot runtimeはrepo外              |
+| paper trading           | **NautilusTrader paper/live**             | Hummingbot dry-run            | strategy-to-live parity重視                                                                                               | exchangeごとにadapter maturity確認         |
+| live trading            | **NautilusTrader**                        | Hummingbot for DEX/MM         | spot/perp/FX拡張を統一しやすい                                                                                                   | runtime stateはrepo外                   |
+| monitoring              | **structured logs + local ledger**        | Prometheus/Grafana/Otel       | local-firstで堅牢                                                                                                          | dashboardは後段                          |
+| reporting               | **custom report**                         | QuantStats / pyfolio-reloaded | reportはsource of truthにしない                                                                                              | crypto固有costは自前ledgerで扱う              |
+| profit tracking         | **custom profit ledger**                  | skfolio/Riskfolio             | funding, fee, slippage, borrow, capital allocationを統一                                                                   | package任せにしない                         |
+| experiment tracking     | **MLflow + Optuna local**                 | SQLite manifest only          | SaaS不要                                                                                                                  | `mlruns/`, `optuna.db` ignored        |
+| CI / verification       | **pytest + hypothesis + golden + parity** | pytest-benchmark/asv          | narrow verificationから拡張                                                                                                 | Nautilus/Hummingbot/HFTはdedicated job |
+
+---
+
+# 5. なぜ他案をrejectするか
+
+## Reject A: Freqtrade core
+
+**理由**
+
+```text
+GPLv3
+bot runtime, sqlite, webui, telegramがrepo方針と衝突しやすい
+strategyがFreqtrade構造に密結合する
+FX通貨ペアへの拡張が弱い
+NautilusTraderよりresearch-to-live parityの抽象度が低い
+```
+
+Freqtrade は crypto bot として有用ですが、この repo の core ではなく、外部比較対象または別 runtime として扱うべきです。
+
+---
+
+## Reject B: Jesse core
+
+**理由**
+
+```text
+MITでlicenseは良い
+ただしcrypto bot frameworkに寄る
+multi-asset / FX / production execution abstractionではNautilusTraderに劣る
+repo全体のcontract-first設計よりframework-first設計になりやすい
+```
+
+短期試作には良いが、初期 stack の中核にはしない。
+
+---
+
+## Reject C: Hummingbot-only
+
+**理由**
+
+```text
+CEX/DEX market makingには強い
+ただしresearch data processing / OOS / factor research / manifest設計が弱くなる
+uv / strict mypy / narrow CIとの相性がNautilusTraderやPolars層より弱い
+FX通貨ペアや非cryptoへの拡張が弱い
+runtime stateがrepoに混ざりやすい
+```
+
+**ただし例外:**
+目的が「CEX/DEX market making bot fleet」に限定されるなら、Hummingbot を production executor の第一候補にしてよいです。その場合でも、research/data/manifest/ledger は repo 側に残します。
+
+---
+
+## Reject D: CCXT-only execution stack
+
+**理由**
+
+```text
+CCXTはconnector libraryでありtrading engineではない
+order lifecycle / risk engine / reconciliation / kill switchを自前で作る必要がある
+production safetyの責務が膨らむ
+```
+
+CCXT は data ingestion と exchange metadata に使う。live execution coreにはしない。
+
+---
+
+## Reject E: self-owned engine production stack
+
+**理由**
+
+```text
+cryptoではperp, funding, liquidation, ADL, margin, partial fill, venue-specific order behaviorが重要
+これを自前で作るとtrading engine開発が主目的になる
+correctness保証どころか未検証リスクが増える
+```
+
+自前 engine は **baseline/golden-test oracle** に限定。
+
+---
+
+## Reject F: vectorbt core
+
+**理由**
+
+```text
+Commons Clause
+event-driven / live parityのsource of truthにできない
+partial fill / order lifecycle / exchange reconciliationを扱えない
+過剰最適化を助長しやすい
+```
+
+optional screening adapter のみ。
+
+---
+
+## Reject G: HftBacktest core
+
+**理由**
+
+```text
+HFT / market making / order book replayには強い
+ただしgeneral crypto portfolio research / paper-live promotion の主軸としては専門的すぎる
+L2/L3 dataがないと価値が出にくい
+```
+
+HFT strategy が入った段階で optional group として採用。
+
+---
+
+# 6. 推奨 directory structure
+
+```text
+.
+├── src/
+│   └── qlab/
+│       ├── core/
+│       │   ├── config.py
+│       │   ├── types.py
+│       │   ├── time.py
+│       │   └── errors.py
+│       ├── data/
+│       │   ├── io.py
+│       │   ├── schemas.py
+│       │   ├── manifest.py
+│       │   ├── catalog.py
+│       │   ├── synthetic.py
+│       │   └── crypto/
+│       │       ├── symbols.py
+│       │       ├── fees.py
+│       │       ├── funding.py
+│       │       ├── ccxt_importer.py
+│       │       └── exchange_metadata.py
+│       ├── research/
+│       │   ├── factors.py
+│       │   ├── features.py
+│       │   ├── splits.py
+│       │   └── walk_forward.py
+│       ├── screening/
+│       │   ├── self_screen.py
+│       │   └── vectorbt_adapter.py       # optional
+│       ├── baseline/
+│       │   ├── engine.py
+│       │   ├── orders.py
+│       │   ├── fills.py
+│       │   ├── accounting.py
+│       │   └── golden.py
+│       ├── execution/
+│       │   ├── strategy_contract.py
+│       │   ├── order_intent.py
+│       │   ├── risk_limits.py
+│       │   ├── nautilus/
+│       │   │   ├── catalog_adapter.py
+│       │   │   ├── strategy_adapter.py
+│       │   │   └── parity.py
+│       │   └── hummingbot/
+│       │       ├── config_adapter.py      # optional
+│       │       └── api_adapter.py         # optional
+│       ├── hft/
+│       │   └── hftbacktest_adapter.py     # optional
+│       ├── monitoring/
+│       │   ├── events.py
+│       │   ├── ledger_sink.py
+│       │   ├── freshness.py
+│       │   ├── reconciliation.py
+│       │   └── alerts.py
+│       ├── profit/
+│       │   ├── ledger.py
+│       │   ├── attribution.py
+│       │   ├── costs.py
+│       │   └── capital_allocation.py
+│       └── experiments/
+│           ├── tracking.py
+│           └── sweep.py
+├── configs/
+│   ├── data/
+│   ├── crypto/
+│   ├── baseline/
+│   ├── nautilus/
+│   ├── hummingbot/
+│   ├── monitoring/
+│   └── live/templates/
+├── tests/
+│   ├── unit/
+│   ├── schema/
+│   ├── data/
+│   ├── crypto/
+│   ├── screening/
+│   ├── baseline/
+│   ├── golden/
+│   ├── nautilus/
+│   ├── hummingbot/
+│   ├── hft/
+│   ├── parity/
+│   ├── monitoring/
+│   └── profit/
+├── docs/
+│   ├── stack_decision.md
+│   ├── license_review.md
+│   ├── data_policy.md
+│   ├── crypto_market_policy.md
+│   ├── backtest_correctness.md
+│   ├── live_trading_policy.md
+│   ├── monitoring_policy.md
+│   └── profit_policy.md
+├── artifact/
+│   ├── README.md
+│   ├── sanitized_reports/
+│   └── sanitized_benchmarks/
+└── scripts/
+    ├── verify_narrow.sh
+    ├── verify_data.sh
+    ├── verify_crypto.sh
+    ├── verify_nautilus.sh
+    ├── verify_monitoring.sh
+    └── verify_full.sh
+```
+
+---
+
+# 7. pyproject.toml dependency group 案
+
+uv は dependency groups に group-level `requires-python` を設定できます。重い crypto / nautilus / hft group は dev default に混ぜない方がよいです。([Astral Docs][16])
+
+```toml
+[project]
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "pydantic>=2.10",
+  "pydantic-settings>=2.6",
+  "typer>=0.15",
+  "rich>=13.9",
+]
+
+[dependency-groups]
+dev = [
+  "ruff",
+  "mypy",
+  "pytest",
+  "pytest-cov",
+  "hypothesis",
+]
+
+data = [
+  "numpy",
+  "pandas>=2.2,<3.0",
+  "polars",
+  "duckdb",
+  "pyarrow",
+  "pandera[polars]",
+]
+
+crypto-data = [
+  { include-group = "data" },
+  "ccxt",
+  "orjson",
+  "aiohttp",
+  "websockets",
+]
+
+research = [
+  { include-group = "crypto-data" },
+  "scipy",
+  "scikit-learn",
+  "statsmodels",
+  "cvxpy",
+  "optuna",
+  "mlflow",
+]
+
+screening = [
+  { include-group = "research" },
+  "numba",
+]
+
+screening-vectorbt = [
+  { include-group = "screening" },
+  "vectorbt",
+]
+
+baseline = [
+  { include-group = "crypto-data" },
+  "numba",
+]
+
+nautilus = [
+  { include-group = "crypto-data" },
+  "nautilus_trader",
+]
+
+hft = [
+  { include-group = "crypto-data" },
+  "hftbacktest",
+]
+
+hummingbot-api = [
+  "hummingbot-api-client",
+]
+
+monitoring = [
+  "prometheus-client",
+  "opentelemetry-api",
+  "opentelemetry-sdk",
+]
+
+reporting = [
+  "quantstats",
+  "pyfolio-reloaded",
+]
+
+notebooks = [
+  { include-group = "research" },
+  "marimo",
+  "jupyterlab",
+  "jupytext",
+  "ipykernel",
+]
+
+performance = [
+  "pytest-benchmark",
+  "pyinstrument",
+  "memray",
+]
+
+[tool.uv.dependency-groups]
+crypto-data = { requires-python = ">=3.12,<3.14" }
+research = { requires-python = ">=3.12,<3.14" }
+screening = { requires-python = ">=3.12,<3.14" }
+screening-vectorbt = { requires-python = ">=3.12,<3.14" }
+baseline = { requires-python = ">=3.12,<3.14" }
+nautilus = { requires-python = ">=3.12,<3.15" }
+hft = { requires-python = ">=3.12,<3.14" }
+```
+
+注意:
+
+```text
+vectorbt:
+  license review後のみ
+
+Hummingbot:
+  full frameworkはuv dependencyではなく外部runtime/Docker/API境界で扱う
+
+NautilusTrader:
+  dedicated CI jobに分離
+
+HftBacktest:
+  L2/L3戦略が始まるまで入れない
+```
+
+---
+
+# 8. verification strategy
+
+## default gate
+
+```bash
+uv sync --frozen --group dev
+uv run ruff check .
+uv run mypy src tests
+uv run pytest tests/unit tests/schema tests/golden -q
+```
+
+## crypto data gate
+
+```bash
+uv sync --frozen --group dev --group crypto-data
+uv run pytest tests/data tests/crypto -q
+```
+
+## baseline gate
+
+```bash
+uv sync --frozen --group dev --group baseline
+uv run pytest tests/baseline tests/golden -q
+```
+
+## nautilus gate
+
+```bash
+uv sync --frozen --group dev --group nautilus
+uv run pytest tests/nautilus tests/parity -q
+```
+
+## hft gate
+
+```bash
+uv sync --frozen --group dev --group hft
+uv run pytest tests/hft -q
+```
+
+## monitoring gate
+
+```bash
+uv sync --frozen --group dev --group monitoring
+uv run pytest tests/monitoring tests/profit -q
+```
+
+---
+
+## crypto-specific tests
+
+| Test                     | 内容                                                       |
+| ------------------------ | -------------------------------------------------------- |
+| symbol normalization     | `BTC/USDT`, `BTCUSDT`, `BTCUSDT-PERP.BINANCE` などを明示的に正規化 |
+| 24/7 session test        | crypto calendar は equities calendar と分離                  |
+| maker/taker fee test     | fee tier / maker-taker を固定fixtureで検証                     |
+| funding test             | funding rate accrual を deterministic に検証                 |
+| inverse/linear perp test | USDT-M / coin-M のPnL計算差異を検証                              |
+| liquidation guard test   | margin ratio / max leverage / reduce-only を検証            |
+| order lifecycle test     | submitted / accepted / partial / canceled / filled       |
+| stale data test          | WebSocket更新停止時のhalt条件                                    |
+| reconciliation test      | local position と exchange position の差分                   |
+| parity test              | baseline vs NautilusTrader                               |
+| Hummingbot adapter smoke | config生成、runtime path分離、no secrets                       |
+| HftBacktest smoke        | L2 synthetic order book replay                           |
+
+---
+
+# 9. data / artifact policy
+
+## tracked に置くもの
+
+```text
+src/
+tests/
+configs/templates/
+docs/
+scripts/
+artifact/README.md
+tests/fixtures/synthetic_crypto_ohlcv.parquet
+tests/fixtures/synthetic_orderbook_l2.parquet
+tests/fixtures/synthetic_funding.csv
+tests/golden/*.csv
+```
+
+## repo外 / ignored
+
+```text
+data/raw/
+data/vendor/
+data/cache/
+data/ccxt/
+data/tardis/
+data/nautilus_catalog/
+data/hummingbot/
+runtime/
+runtime/logs/
+runtime/orders/
+runtime/fills/
+runtime/positions/
+runtime/pnl/
+runtime/reconciliation/
+runtime/hummingbot/
+runtime/nautilus/
+runtime/broker_state/
+mlruns/
+optuna.db
+*.duckdb
+*.duckdb.wal
+.env
+.env.*
+secrets/
+```
+
+## artifact/ に置けるもの
+
+```text
+sanitized synthetic backtest report
+sanitized benchmark report
+schema validation summary
+golden test summary
+no raw exchange data
+no account ID
+no wallet address if sensitive
+no API key
+no live order payload
+```
+
+## raw crypto market data
+
+raw data は repo に入れない。
+
+```text
+CEX OHLCV
+CEX trades
+CEX order book
+funding rates
+liquidation feeds
+DEX pool state
+wallet/balance snapshots
+exchange account state
+```
+
+これらはすべて repo 外。repo には manifest のみ。
+
+---
+
+# 10. Strategy promotion pipeline
+
+```text
+idea
+→ fast screen
+→ research backtest
+→ baseline deterministic check
+→ Nautilus event-driven backtest
+→ paper trading
+→ limited live
+→ scaled live
+→ retired / paused
+```
+
+| Stage                 | Input                                 | Output                       | Gate                                    | Failure時         |
+| --------------------- | ------------------------------------- | ---------------------------- | --------------------------------------- | ---------------- |
+| idea                  | hypothesis, venue, pair, product type | StrategySpec draft           | product type / data / venueが明確          | park             |
+| fast screen           | OHLCV/factor data                     | CandidateReport              | trade count, rough edge, fee耐性          | reject           |
+| research backtest     | walk-forward/OOS                      | ResearchReport               | OOS stability, parameter stability      | revise           |
+| baseline check        | SignalFrame                           | expected orders/fills/equity | no-lookahead, accounting, fee/funding   | block            |
+| event-driven backtest | Nautilus catalog                      | EventBacktestReport          | order lifecycle, slippage, partial fill | revise execution |
+| paper trading         | live/paper venue                      | PaperLedger                  | signal parity, order reconciliation     | pause            |
+| limited live          | small capital                         | LiveLedger                   | max loss, stale data, position limit    | halt             |
+| scaled live           | approved capital                      | ProductionLedger             | net PnL, capacity, drawdown             | reduce/retire    |
+
+## live昇格条件
+
+```text
+unit/schema/golden tests pass
+crypto fee/funding tests pass
+baseline deterministic check pass
+baseline vs Nautilus parity pass
+Nautilus historical event backtest pass
+paper signal parity pass
+paper order reconciliation pass
+stale data halt test pass
+kill switch test pass
+max daily loss test pass
+position limit test pass
+manual approval
+```
+
+## live停止条件
+
+```text
+max daily loss breach
+max drawdown breach
+exchange position mismatch
+wallet/balance mismatch
+stale market data
+unexpected order state
+unexpected partial fill behavior
+funding/cost drift
+latency threshold breach
+API error storm
+exchange maintenance/outage
+manual kill switch
+```
+
+---
+
+# 11. phased implementation plan
+
+## Phase 0: stack decision and license review
+
+```text
+docs/stack_decision.md
+docs/license_review.md
+pyproject.toml
+uv.lock
+```
+
+判定:
+
+```text
+NautilusTrader:採用
+Hummingbot:optional executor
+CCXT:data ingestion
+Freqtrade:core reject
+Jesse:core reject
+vectorbt:optional / license-gated
+HftBacktest:optional hft
+```
+
+---
+
+## Phase 1: crypto data layer
+
+```text
+src/qlab/data/crypto/
+tests/crypto/
+configs/crypto/
+```
+
+実装:
+
+```text
+symbol normalization
+exchange metadata schema
+OHLCV schema
+trade schema
+funding schema
+fee schema
+synthetic crypto fixtures
+```
+
+---
+
+## Phase 2: CCXT ingestion adapter
+
+```text
+src/qlab/data/crypto/ccxt_importer.py
+tests/crypto/test_ccxt_importer.py
+```
+
+実装:
+
+```text
+no network unit tests
+mocked exchange responses
+symbol mapping
+manifest generation
+rate-limit config template
+```
+
+---
+
+## Phase 3: fast screening self harness
+
+```text
+src/qlab/screening/self_screen.py
+tests/screening/
+```
+
+実装:
+
+```text
+Polars -> NumPy
+Numba kernels optional
+CandidateReport
+fee-aware quick backtest
+overfit guard
+```
+
+---
+
+## Phase 4: minimal baseline engine
+
+```text
+src/qlab/baseline/
+tests/baseline/
+tests/golden/
+```
+
+実装:
+
+```text
+bar-level execution
+maker/taker fee
+funding accrual
+cash/position/equity
+golden outputs
+```
+
+---
+
+## Phase 5: NautilusTrader prototype
+
+```text
+src/qlab/execution/nautilus/
+tests/nautilus/
+configs/nautilus/
+```
+
+実装:
+
+```text
+synthetic crypto catalog
+single strategy
+Binance-style spot/perp fixture
+no real API
+no secrets
+```
+
+---
+
+## Phase 6: baseline vs Nautilus parity
+
+```text
+tests/parity/
+docs/backtest_correctness.md
+```
+
+実装:
+
+```text
+same StrategySpec
+same synthetic bars
+same fee/funding rule
+compare orders/fills/positions/equity
+document accepted divergence
+```
+
+---
+
+## Phase 7: Hummingbot optional executor boundary
+
+```text
+src/qlab/execution/hummingbot/
+configs/hummingbot/templates/
+tests/hummingbot/
+```
+
+実装:
+
+```text
+config template generation
+runtime path separation
+API client smoke
+no secrets
+no live exchange
+```
+
+---
+
+## Phase 8: monitoring and alerting
+
+```text
+src/qlab/monitoring/
+tests/monitoring/
+docs/monitoring_policy.md
+```
+
+実装:
+
+```text
+structured JSONL logs
+order/fill/position snapshots
+data freshness
+reconciliation
+alert dry-run
+```
+
+---
+
+## Phase 9: limited live trading gate
+
+```text
+docs/live_trading_policy.md
+tests/live_safety/
+```
+
+実装:
+
+```text
+manual approval required
+small capital only
+max order size
+max daily loss
+max leverage
+max position
+kill switch
+rollback procedure
+```
+
+---
+
+## Phase 10: profit tracking
+
+```text
+src/qlab/profit/
+tests/profit/
+docs/profit_policy.md
+```
+
+実装:
+
+```text
+net PnL
+maker/taker fees
+funding cost
+slippage
+borrow/funding placeholders
+venue-level attribution
+strategy-level attribution
+portfolio-level attribution
+capital allocation
+```
+
+---
+
+# 最終判断
+
+暗号資産メインでも、採用すべき最終 stack はこれです。
+
+```text
+Crypto-first contract-first layered hybrid architecture
+
+Research:
+  Polars + DuckDB + PyArrow
+
+Crypto data:
+  CCXT / exchange-native importers
+  raw exchange dataはrepo外
+
+Fast screening:
+  Polars + NumPy + Numba
+  vectorbt optional only
+
+Baseline correctness:
+  minimal self-owned deterministic engine
+
+Event-driven validation / paper / live:
+  NautilusTrader
+
+Crypto MM / DEX / bot fleet:
+  Hummingbot optional executor
+
+HFT / L2-L3:
+  HftBacktest optional
+
+Monitoring:
+  structured logs + local ledger
+
+Profit:
+  custom profit ledger
+```
+
+**判断が変わるケース**は限定的です。
+
+```text
+主目的がCEX/DEX market making bot fleet:
+  Hummingbotをproduction executor第一候補に上げる
+
+主目的がL2/L3 HFT / latency / queue-position:
+  HftBacktestを検証engineとして上げる
+
+主目的がspot/perp directional + maybe FX通貨ペア:
+  NautilusTrader coreの判断は変えない
+```
+
+この repo の初期要件では、**NautilusTraderをexecution/live parity coreにし、Hummingbot/HftBacktestをcrypto専門optionalにする構成**が最も堅牢です。
+
+[1]: https://nautilustrader.io/docs/latest/integrations/ "NautilusTrader Documentation"
+[2]: https://hummingbot.org/docs/ "Documentation - Hummingbot"
+[3]: https://github.com/nautechsystems/nautilus_trader "GitHub - nautechsystems/nautilus_trader: Production-grade Rust-native trading engine with deterministic event-driven architecture · GitHub"
+[4]: https://nautilustrader.io/docs/latest/integrations/binance/ "NautilusTrader Documentation"
+[5]: https://github.com/hummingbot/hummingbot "GitHub - hummingbot/hummingbot: Open source software that helps you create and deploy high-frequency crypto trading bots · GitHub"
+[6]: https://github.com/freqtrade/freqtrade "GitHub - freqtrade/freqtrade: Free, open source crypto trading bot · GitHub"
+[7]: https://github.com/freqtrade/freqtrade/blob/develop/pyproject.toml "freqtrade/pyproject.toml at develop · freqtrade/freqtrade · GitHub"
+[8]: https://github.com/jesse-ai/jesse "GitHub - jesse-ai/jesse: An advanced crypto trading bot written in Python · GitHub"
+[9]: https://pypi.org/project/jesse/?utm_source=chatgpt.com "jesse"
+[10]: https://github.com/ccxt/ccxt "GitHub - ccxt/ccxt: A cryptocurrency trading API with more than 100 exchanges in JavaScript / TypeScript / Python / C# / PHP / Go · GitHub"
+[11]: https://hftbacktest.readthedocs.io/?utm_source=chatgpt.com "HftBacktest - Read the Docs"
+[12]: https://pypi.org/project/hftbacktest/?utm_source=chatgpt.com "hftbacktest"
+[13]: https://pypi.org/project/vectorbt/?utm_source=chatgpt.com "vectorbt"
+[14]: https://pypi.org/project/polars/?utm_source=chatgpt.com "polars"
+[15]: https://duckdb.org/docs/current/data/parquet/overview.html?utm_source=chatgpt.com "Reading and Writing Parquet Files"
+[16]: https://docs.astral.sh/uv/concepts/projects/dependencies/?utm_source=chatgpt.com "Managing dependencies | uv"

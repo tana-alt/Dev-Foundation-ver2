@@ -32,6 +32,26 @@ guard. It expects `shellcheck` and `gitleaks` on `PATH`. CI installs those OSS
 check tools, then runs the same gate through `.github/workflows/ci.yml`. Run
 `make doctor` for a read-only local environment inspection.
 
+## Quant Environment
+
+The quant stack is split into `uv` dependency groups so worktrees can install
+only the layer they own:
+
+```sh
+make sync-data
+make sync-crypto
+make sync-research
+make sync-baseline
+```
+
+Use `make check-quant-runtime`, `make check-quant-data`, and
+`make check-quant-research` as smoke checks when changing the quant environment.
+NautilusTrader, HftBacktest, Hummingbot API-boundary tooling, notebooks,
+profiling, monitoring, and reporting stay in dedicated groups.
+
+The stack decision and non-core choices are summarized in
+`docs/stack_decision.md`.
+
 ## Restore Agent Environment
 
 This repo tracks the recipe for a local agent environment, not local runtime

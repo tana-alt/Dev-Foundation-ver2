@@ -82,6 +82,7 @@ EXPECTED_TRACKED_TOP_LEVELS = {
     "README.md",
     "app",
     "artifact",
+    "configs",
     "docs",
     "hooks",
     "plugins",
