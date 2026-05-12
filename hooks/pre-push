@@ -18,6 +18,7 @@ done
 
 ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/scripts/check-agent-worktree-policy.sh"
+"$ROOT/scripts/check-project-scoped-changes.sh"
 
 cd "$ROOT"
 # Git hooks export local repository variables. Clear them before running tests

@@ -6,6 +6,8 @@ This index is for humans. Codex discovers skills from each skill's YAML front ma
 
 - `research-before-build`
 - `doc-lookup`
+- `project-worktree-scope`
+- `project-storage-placement`
 - `api-contract`
 - `frontend-implementation`
 - `backend-implementation`

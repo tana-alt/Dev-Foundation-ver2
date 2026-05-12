@@ -19,5 +19,7 @@ artifact/<project_id>/
   cleanup notes.
 - Evidence and verification artifacts must be source-ref based and free of
   secrets, raw browser sessions, credentials, and runtime ledgers.
+- Cross-project artifact edits require `FOUNDATION_PROJECT_SCOPE=multi`,
+  `FOUNDATION_ALLOWED_PROJECT_IDS`, and `FOUNDATION_PROJECT_SCOPE_REASON`.
 - Temporary command output, broad logs, caches, and unowned project data do not
   belong here.

@@ -22,4 +22,6 @@ Plan/<project_id>/
   `log_ref`.
 - The log frontmatter must include `plan_id`, `project_id`, and `plan_ref`.
 - `index.yaml` records every plan ID, status, plan path, and log path.
+- Cross-project plan/log edits require `FOUNDATION_PROJECT_SCOPE=multi`,
+  `FOUNDATION_ALLOWED_PROJECT_IDS`, and `FOUNDATION_PROJECT_SCOPE_REASON`.
 - For small read-only reviews or quick checks, a Plan record is not required.

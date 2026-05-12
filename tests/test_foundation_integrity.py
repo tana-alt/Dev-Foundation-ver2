@@ -53,6 +53,7 @@ HOOKS = (
 RESTORE_SCRIPTS = (
     "scripts/setup-agent-environment.sh",
     "scripts/check-agent-worktree-policy.sh",
+    "scripts/check-project-scoped-changes.sh",
     "scripts/check-dev-environment.sh",
     "scripts/check-repo-hygiene.sh",
     "scripts/check-secrets.sh",
@@ -193,6 +194,7 @@ def test_docs_root_stays_contract_only() -> None:
 
 def test_project_storage_routes_are_documented() -> None:
     reference = read_text("docs/reference/repo-boundary-and-storage-reference.md")
+    agents = read_text("AGENTS.md")
 
     for relative_path in ROOT_READMES:
         assert f"`{relative_path}`" in reference
@@ -207,6 +209,9 @@ def test_project_storage_routes_are_documented() -> None:
     ):
         assert required_text in reference
 
+    assert "`project-worktree-scope`" in agents
+    assert "`project-storage-placement`" in agents
+
 
 def test_project_plan_artifact_and_source_rules_are_project_scoped() -> None:
     plan_readme = read_text("Plan/README.md")
@@ -214,6 +219,7 @@ def test_project_plan_artifact_and_source_rules_are_project_scoped() -> None:
     templates_readme = read_text("templates/README.md")
     src_readme = read_text("src/README.md")
     git_reference = read_text("docs/reference/git-worktree-and-branch-reference.md")
+    skill_index = read_text(".agents/skills/SKILL_INDEX.md")
 
     for required_text in (
         "Plan/<project_id>/",
@@ -230,6 +236,23 @@ def test_project_plan_artifact_and_source_rules_are_project_scoped() -> None:
     assert "src/<project_id>/" in src_readme
     assert "project_id" in git_reference
     assert "do not share a\nworktree across project IDs" in git_reference
+    assert "FOUNDATION_PROJECT_SCOPE=multi" in git_reference
+    assert "FOUNDATION_ALLOWED_PROJECT_IDS" in git_reference
+    assert "FOUNDATION_PROJECT_SCOPE_REASON" in git_reference
+    assert "`project-worktree-scope`" in skill_index
+    assert "`project-storage-placement`" in skill_index
+
+
+def test_project_scope_skills_are_action_scoped() -> None:
+    worktree_skill = read_text(".agents/skills/project-worktree-scope/SKILL.md")
+    storage_skill = read_text(".agents/skills/project-storage-placement/SKILL.md")
+
+    assert "FOUNDATION_PROJECT_ID" in worktree_skill
+    assert "FOUNDATION_PROJECT_SCOPE=multi" in worktree_skill
+    assert "branch/task scoped" in worktree_skill
+    assert "scripts/check-agent-worktree-policy.sh" in worktree_skill
+    assert "Plan/<project_id>/index.yaml" in storage_skill
+    assert "scripts/check-project-scoped-changes.sh" in storage_skill
 
 
 def test_project_scoped_roots_do_not_accept_loose_files() -> None:
@@ -404,16 +427,25 @@ def test_tracked_hooks_enforce_agent_policy_and_checks() -> None:
     worktree_policy = read_text("scripts/check-agent-worktree-policy.sh")
     verification_reference = read_text("docs/reference/verification-ci-and-pr-reference.md")
 
-    for relative_path in (*HOOKS, "scripts/check-agent-worktree-policy.sh"):
+    for relative_path in (
+        *HOOKS,
+        "scripts/check-agent-worktree-policy.sh",
+        "scripts/check-project-scoped-changes.sh",
+    ):
         assert repo_path(relative_path).stat().st_mode & 0o111, relative_path
 
     assert "scripts/check-agent-worktree-policy.sh" in pre_commit
+    assert "scripts/check-project-scoped-changes.sh" in pre_commit
     assert "scripts/check-agent-worktree-policy.sh" in pre_push
+    assert "scripts/check-project-scoped-changes.sh" in pre_push
     assert "make check-foundation" in pre_push
 
     for required_text in (
         "agent/<work_id>/<lane>/<slug>",
         "FOUNDATION_PROJECT_ID",
+        "FOUNDATION_PROJECT_SCOPE",
+        "FOUNDATION_ALLOWED_PROJECT_IDS",
+        "FOUNDATION_PROJECT_SCOPE_REASON",
         "foundation.canonicalRoot",
         "main",
         "canonical repo root",
@@ -465,6 +497,30 @@ def run_pre_push_hook(repo: Path, stdin: str) -> subprocess.CompletedProcess[str
         ["sh", str(repo_path("hooks/pre-push")), "origin", "git@example.invalid:repo.git"],
         cwd=repo,
         input=stdin,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
+def write_repo_file(repo: Path, relative_path: str, content: str = "x\n") -> None:
+    path = repo / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def run_project_scoped_changes(
+    repo: Path,
+    extra_env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    if extra_env is not None:
+        env.update(extra_env)
+
+    return subprocess.run(
+        ["sh", str(repo_path("scripts/check-project-scoped-changes.sh"))],
+        cwd=repo,
+        env=env,
         check=False,
         capture_output=True,
         text=True,
@@ -527,6 +583,48 @@ def test_worktree_policy_behavior(tmp_path: Path) -> None:
     assert matched_result.returncode == 0
     assert "agent worktree policy: passed" in matched_result.stdout
 
+    multi_repo = tmp_path / "multi-worktree"
+    init_git_repo(multi_repo, "agent/multi-alpha-beta/migration/storage", canonical_root)
+    multi_result = run_worktree_policy(
+        multi_repo,
+        {
+            "FOUNDATION_PROJECT_SCOPE": "multi",
+            "FOUNDATION_ALLOWED_PROJECT_IDS": "alpha,beta",
+            "FOUNDATION_PROJECT_SCOPE_REASON": "align records",
+        },
+    )
+    assert multi_result.returncode == 0
+    assert "agent worktree policy: passed" in multi_result.stdout
+
+    multi_without_reason_repo = tmp_path / "multi-no-reason"
+    init_git_repo(
+        multi_without_reason_repo,
+        "agent/multi-alpha-beta/migration/storage",
+        canonical_root,
+    )
+    multi_without_reason = run_worktree_policy(
+        multi_without_reason_repo,
+        {
+            "FOUNDATION_PROJECT_SCOPE": "multi",
+            "FOUNDATION_ALLOWED_PROJECT_IDS": "alpha,beta",
+        },
+    )
+    assert multi_without_reason.returncode == 2
+    assert "FOUNDATION_PROJECT_SCOPE_REASON is required" in multi_without_reason.stderr
+
+    multi_wrong_path_repo = tmp_path / "cross-project"
+    init_git_repo(multi_wrong_path_repo, "agent/multi-alpha-beta/migration/storage", canonical_root)
+    multi_wrong_path = run_worktree_policy(
+        multi_wrong_path_repo,
+        {
+            "FOUNDATION_PROJECT_SCOPE": "multi",
+            "FOUNDATION_ALLOWED_PROJECT_IDS": "alpha,beta",
+            "FOUNDATION_PROJECT_SCOPE_REASON": "align records",
+        },
+    )
+    assert multi_wrong_path.returncode == 2
+    assert "must include 'multi'" in multi_wrong_path.stderr
+
 
 def test_pre_push_blocks_protected_remote_destination_refs(tmp_path: Path) -> None:
     canonical_root = tmp_path / "canonical"
@@ -544,6 +642,104 @@ def test_pre_push_blocks_protected_remote_destination_refs(tmp_path: Path) -> No
 
         assert result.returncode == 2
         assert f"direct push to {remote_ref} is blocked" in result.stderr
+
+
+def test_project_scoped_change_check_behavior(tmp_path: Path) -> None:
+    skipped_repo = tmp_path / "scope-skipped"
+    init_hygiene_repo(skipped_repo)
+    write_repo_file(skipped_repo, "Plan/beta/plans/Plan_N0001.md")
+    git_add(skipped_repo, "Plan/beta/plans/Plan_N0001.md")
+    skipped = run_project_scoped_changes(skipped_repo)
+    assert skipped.returncode == 0
+    assert "skipped" in skipped.stdout
+
+    single_repo = tmp_path / "scope-single"
+    init_hygiene_repo(single_repo)
+    write_repo_file(single_repo, "Plan/alpha/plans/Plan_N0001.md")
+    write_repo_file(single_repo, "artifact/alpha/manifest.yaml")
+    write_repo_file(single_repo, "src/alpha/module.py")
+    git_add(
+        single_repo,
+        "Plan/alpha/plans/Plan_N0001.md",
+        "artifact/alpha/manifest.yaml",
+        "src/alpha/module.py",
+    )
+    single = run_project_scoped_changes(single_repo, {"FOUNDATION_PROJECT_ID": "alpha"})
+    assert single.returncode == 0
+    assert "passed (alpha)" in single.stdout
+
+    wrong_project_repo = tmp_path / "scope-wrong-project"
+    init_hygiene_repo(wrong_project_repo)
+    write_repo_file(wrong_project_repo, "Plan/beta/plans/Plan_N0001.md")
+    write_repo_file(wrong_project_repo, "artifact/beta/manifest.yaml")
+    write_repo_file(wrong_project_repo, "src/beta/module.py")
+    git_add(
+        wrong_project_repo,
+        "Plan/beta/plans/Plan_N0001.md",
+        "artifact/beta/manifest.yaml",
+        "src/beta/module.py",
+    )
+    wrong_project = run_project_scoped_changes(
+        wrong_project_repo,
+        {"FOUNDATION_PROJECT_ID": "alpha"},
+    )
+    assert wrong_project.returncode == 2
+    assert "Plan/beta/plans/Plan_N0001.md" in wrong_project.stderr
+    assert "artifact/beta/manifest.yaml" in wrong_project.stderr
+    assert "src/beta/module.py" in wrong_project.stderr
+
+    loose_repo = tmp_path / "scope-loose"
+    init_hygiene_repo(loose_repo)
+    write_repo_file(loose_repo, "artifact/output.json")
+    git_add(loose_repo, "artifact/output.json")
+    loose = run_project_scoped_changes(loose_repo, {"FOUNDATION_PROJECT_ID": "alpha"})
+    assert loose.returncode == 2
+    assert "artifact/output.json" in loose.stderr
+
+    multi_repo = tmp_path / "scope-multi"
+    init_hygiene_repo(multi_repo)
+    write_repo_file(multi_repo, "Plan/alpha/plans/Plan_N0001.md")
+    write_repo_file(multi_repo, "artifact/beta/manifest.yaml")
+    git_add(multi_repo, "Plan/alpha/plans/Plan_N0001.md", "artifact/beta/manifest.yaml")
+    multi = run_project_scoped_changes(
+        multi_repo,
+        {
+            "FOUNDATION_PROJECT_SCOPE": "multi",
+            "FOUNDATION_ALLOWED_PROJECT_IDS": "alpha,beta",
+            "FOUNDATION_PROJECT_SCOPE_REASON": "align project records",
+        },
+    )
+    assert multi.returncode == 0
+    assert "passed (alpha,beta)" in multi.stdout
+
+    multi_gamma_repo = tmp_path / "scope-multi-gamma"
+    init_hygiene_repo(multi_gamma_repo)
+    write_repo_file(multi_gamma_repo, "src/gamma/module.py")
+    git_add(multi_gamma_repo, "src/gamma/module.py")
+    multi_gamma = run_project_scoped_changes(
+        multi_gamma_repo,
+        {
+            "FOUNDATION_PROJECT_SCOPE": "multi",
+            "FOUNDATION_ALLOWED_PROJECT_IDS": "alpha,beta",
+            "FOUNDATION_PROJECT_SCOPE_REASON": "align project records",
+        },
+    )
+    assert multi_gamma.returncode == 2
+    assert "src/gamma/module.py" in multi_gamma.stderr
+
+    multi_no_reason_repo = tmp_path / "scope-multi-no-reason"
+    init_hygiene_repo(multi_no_reason_repo)
+    write_repo_file(multi_no_reason_repo, "src/alpha/module.py")
+    git_add(multi_no_reason_repo, "src/alpha/module.py")
+    multi_no_reason = run_project_scoped_changes(
+        multi_no_reason_repo,
+        {
+            "FOUNDATION_PROJECT_SCOPE": "multi",
+            "FOUNDATION_ALLOWED_PROJECT_IDS": "alpha,beta",
+        },
+    )
+    assert multi_no_reason.returncode == 2
+    assert "FOUNDATION_PROJECT_SCOPE_REASON is required" in multi_no_reason.stderr
 
 
 def init_hygiene_repo(path: Path) -> None:

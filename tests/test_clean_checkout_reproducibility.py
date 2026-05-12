@@ -30,6 +30,7 @@ STATIC_REQUIRED_PATHS = (
     "pyproject.toml",
     "scripts/check-agent-worktree-policy.sh",
     "scripts/check-dev-environment.sh",
+    "scripts/check-project-scoped-changes.sh",
     "scripts/check-repo-hygiene.sh",
     "scripts/check-secrets.sh",
     "scripts/check-shell-static-analysis.sh",

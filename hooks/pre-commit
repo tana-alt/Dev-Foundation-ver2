@@ -3,3 +3,4 @@ set -eu
 
 ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/scripts/check-agent-worktree-policy.sh"
+"$ROOT/scripts/check-project-scoped-changes.sh"

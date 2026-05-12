@@ -13,5 +13,7 @@ src/<project_id>/
 
 - Use `src/<project_id>/` for project-specific implementation code.
 - Do not store notes, plans, logs, generated dumps, caches, or artifacts here.
+- Cross-project source edits require `FOUNDATION_PROJECT_SCOPE=multi`,
+  `FOUNDATION_ALLOWED_PROJECT_IDS`, and `FOUNDATION_PROJECT_SCOPE_REASON`.
 - If implementation is shared across projects, document ownership before adding
   it outside a `project_id` directory.

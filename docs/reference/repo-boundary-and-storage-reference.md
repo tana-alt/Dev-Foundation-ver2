@@ -43,6 +43,27 @@ Use `templates/` only for blank reusable formats. Real plan, log, evidence,
 verification, artifact, or implementation files belong under the owning
 `project_id`.
 
+## Project Scope Enforcement
+
+Before editing scoped storage, use `project-worktree-scope` to choose single or
+multi mode, then `project-storage-placement` for file placement.
+
+Single-project work sets `FOUNDATION_PROJECT_ID=<project_id>`. Changed files
+under `Plan/`, `artifact/`, and `src/` must stay under that project ID.
+
+Cross-project work uses one reusable `multi` worktree, but scope is fixed per
+branch/task:
+
+```sh
+FOUNDATION_PROJECT_SCOPE=multi
+FOUNDATION_ALLOWED_PROJECT_IDS=projectA,projectB
+FOUNDATION_PROJECT_SCOPE_REASON="<reason>"
+```
+
+Multi mode allows only the listed project IDs. Do not use the canonical root or
+`main` as the escape hatch. Run `scripts/check-project-scoped-changes.sh` before
+commit and push.
+
 ## Current Folder Map
 
 - `AGENTS.md`: thin agent entrypoint and routing document.

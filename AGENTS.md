@@ -27,6 +27,9 @@ or unrelated history by default.
 - Migration note and acceptance checklist:
   `docs/reference/migration-and-acceptance-reference.md`
 
+For project-scoped worktree or Plan/artifact/src placement work, use repo-local
+skills `project-worktree-scope` and `project-storage-placement`.
+
 ## Hard Rules
 - Start from provided scope and named refs.
 - Do not edit without allowed write targets, current file inspection, relevant

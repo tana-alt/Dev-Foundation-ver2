@@ -7,6 +7,10 @@ fail() {
   exit 2
 }
 
+trim() {
+  printf '%s' "$1" | awk '{$1=$1; print}'
+}
+
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   fail "not inside a git worktree"
 fi
@@ -86,7 +90,42 @@ case "$ROOT_REAL/" in
     ;;
 esac
 
+PROJECT_SCOPE="${FOUNDATION_PROJECT_SCOPE:-}"
 PROJECT_ID="${FOUNDATION_PROJECT_ID:-}"
+ALLOWED_PROJECT_IDS="${FOUNDATION_ALLOWED_PROJECT_IDS:-}"
+SCOPE_REASON="${FOUNDATION_PROJECT_SCOPE_REASON:-}"
+
+case "$PROJECT_SCOPE" in
+  "")
+    ;;
+  multi)
+    if [ -n "$PROJECT_ID" ]; then
+      fail "set either FOUNDATION_PROJECT_ID or FOUNDATION_PROJECT_SCOPE=multi, not both"
+    fi
+    if [ -z "$(trim "$ALLOWED_PROJECT_IDS")" ]; then
+      fail "FOUNDATION_ALLOWED_PROJECT_IDS is required in multi mode"
+    fi
+    if [ -z "$(trim "$SCOPE_REASON")" ]; then
+      fail "FOUNDATION_PROJECT_SCOPE_REASON is required in multi mode"
+    fi
+    case "$WORK_ID" in
+      multi|multi-*) ;;
+      *)
+        fail "multi mode branch work_id '$WORK_ID' must start with 'multi'"
+        ;;
+    esac
+    case "$ROOT_REAL" in
+      *multi*) ;;
+      *)
+        fail "multi mode worktree path '$ROOT_REAL' must include 'multi'"
+        ;;
+    esac
+    ;;
+  *)
+    fail "unsupported FOUNDATION_PROJECT_SCOPE '$PROJECT_SCOPE'; use 'multi' or unset"
+    ;;
+esac
+
 if [ -n "$PROJECT_ID" ]; then
   case "$WORK_ID" in
     "$PROJECT_ID"|"$PROJECT_ID"-*) ;;
