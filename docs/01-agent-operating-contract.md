@@ -31,7 +31,8 @@ For parallel work, also confirm complete `git_scope`: `base_ref`,
 derivable branch and worktree targets. If missing, return rework.
 
 Installed hooks block commits and pushes from the canonical root or
-non-`agent/*` branches. Do not bypass hooks for agent work.
+non-`agent/*` branches. They are guardrails, not full filesystem monitors. Do
+not bypass hooks; return rework if hook policy conflicts with scope.
 
 ## Side Effects
 Classify work before acting: read-only local, local write, external read,
@@ -41,9 +42,10 @@ External writes, dependency changes, CI/CD changes, deployment, release, secret
 handling, auth, billing, database migration, infrastructure, and
 security-sensitive work require explicit approval or human gate.
 
-When side effects occur, record command, target surface, gate status, input
-refs, output refs, and verification or rollback note. The canonical human-gate list
-lives in `docs/02-output-verification-contract.md`.
+When side effects occur, record tool or command, target surface, permission or
+gate status, input refs, output or artifact refs, and verification or rollback
+note. The canonical human-gate list lives in
+`docs/02-output-verification-contract.md`.
 
 ## Valid Output
 A valid output follows `docs/02-output-verification-contract.md` and states

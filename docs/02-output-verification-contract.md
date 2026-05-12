@@ -2,9 +2,9 @@
 
 ## Complete Output
 Every meaningful output states source refs used, changed paths or artifact
-refs, evidence or why none exists, verification attempted, result
-(`passed`, `failed`, `blocked`, `skipped`, or `not_applicable`), unverified
-surfaces, residual risk, and human gate status when relevant.
+refs, evidence and verification refs or why none exist, verification attempted,
+result (`passed`, `failed`, `blocked`, `skipped`, or `not_applicable`),
+unverified surfaces, residual risk, and human gate status when relevant.
 
 Do not claim verification that did not run. Evidence and verification records
 must stay schema-valid, source-ref based, and free of secrets or runtime
@@ -31,8 +31,8 @@ review focus.
 
 For write work, include branch, worktree, base ref, changed paths,
 allowed-write-target check, and conflict-check status when applicable. For side
-effects, include command, target surface, gate status, input refs, output refs,
-and verification or rollback note.
+effects, include tool or command, target surface, permission or gate status,
+input refs, output or artifact refs, and verification or rollback note.
 
 ## Human Gate
 Agents may push owned `agent/*` review branches and create or update PRs when
