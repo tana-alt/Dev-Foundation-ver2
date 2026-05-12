@@ -3,25 +3,17 @@
 This is the agent entrypoint and routing map. Keep it compact.
 
 ## Always Read
-
 1. This file.
 2. The current user request, task packet, or scope.
 3. Named `source_refs`.
+4. `docs/01-agent-operating-contract.md`
+5. `docs/02-output-verification-contract.md`
+6. `docs/03-repo-boundary-and-storage-contract.md`
 
 Do not read the whole repo, all references, all skills, broad logs, archives,
 or unrelated history by default.
 
-## Open By Need
-
-- Scope, writes, side effects, or parallel write work:
-  `docs/01-agent-operating-contract.md`
-- Output, verification, PR evidence, or handoff:
-  `docs/02-output-verification-contract.md`
-- Repo paths, storage, secrets, skills, or plugins:
-  `docs/03-repo-boundary-and-storage-contract.md`
-
-## Reference Map
-
+## Open By Need References
 - Runtime and scope detail:
   `docs/reference/agent-runtime-and-scope-reference.md`
 - Packets, evidence, verification records, and rework:
@@ -36,7 +28,6 @@ or unrelated history by default.
   `docs/reference/migration-and-acceptance-reference.md`
 
 ## Hard Rules
-
 - Start from provided scope and named refs.
 - Do not edit without allowed write targets, current file inspection, relevant
   VCS status, and conflict awareness.

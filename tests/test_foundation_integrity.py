@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -28,6 +29,13 @@ TEMPLATES = (
     "templates/project-storage-map.yaml",
     "templates/serena-project.yml",
     "templates/codex-config.toml.example",
+)
+
+ROOT_READMES = (
+    "Plan/README.md",
+    "artifact/README.md",
+    "templates/README.md",
+    "src/README.md",
 )
 
 DEV_DEFAULTS = (
@@ -104,6 +112,16 @@ FORBIDDEN_TRACKED_ROOTS = {
     "source-docs",
 }
 
+PLAN_ID_RE = re.compile(r"^Plan_N\d{4}$")
+
+PROJECT_SCOPED_ROOT_DIRECT_FILES = {
+    "Plan": {"README.md"},
+    "artifact": {"README.md", ".gitkeep"},
+    "src": {"README.md", ".gitkeep"},
+}
+
+ARTIFACT_PROJECT_DIRS = {"evidence", "verification", "output"}
+
 
 def repo_path(relative_path: str) -> Path:
     return ROOT / relative_path
@@ -130,7 +148,7 @@ def line_count(relative_path: str) -> int:
 
 def test_active_agent_context_stays_under_budget() -> None:
     total_lines = sum(line_count(path) for path in ACTIVE_DOCS)
-    assert total_lines <= 300
+    assert total_lines <= 200
 
 
 def test_agents_routes_to_active_docs_and_references() -> None:
@@ -149,10 +167,153 @@ def test_reference_set_matches_routed_reference_docs() -> None:
 
 
 def test_required_contract_files_exist() -> None:
-    required = (*ACTIVE_DOCS, *REFERENCE_DOCS, *TEMPLATES, *DEV_DEFAULTS, *HOOKS, *RESTORE_SCRIPTS)
+    required = (
+        *ACTIVE_DOCS,
+        *REFERENCE_DOCS,
+        *TEMPLATES,
+        *ROOT_READMES,
+        *DEV_DEFAULTS,
+        *HOOKS,
+        *RESTORE_SCRIPTS,
+    )
 
     for relative_path in required:
         assert repo_path(relative_path).is_file(), relative_path
+
+
+def test_docs_root_stays_contract_only() -> None:
+    direct_docs = sorted(
+        path
+        for path in tracked_files()
+        if path.startswith("docs/") and Path(path).parent == Path("docs") and path.endswith(".md")
+    )
+
+    assert direct_docs == sorted(ACTIVE_DOCS[1:])
+
+
+def test_project_storage_routes_are_documented() -> None:
+    reference = read_text("docs/reference/repo-boundary-and-storage-reference.md")
+
+    for relative_path in ROOT_READMES:
+        assert f"`{relative_path}`" in reference
+
+    for required_text in (
+        "Plan/<project_id>/index.yaml",
+        "Plan/<project_id>/plans/Plan_N0001.md",
+        "Plan/<project_id>/logs/Plan_N0001.log.md",
+        "artifact/<project_id>/manifest.yaml",
+        "src/<project_id>/",
+        "`project_id`",
+    ):
+        assert required_text in reference
+
+
+def test_project_plan_artifact_and_source_rules_are_project_scoped() -> None:
+    plan_readme = read_text("Plan/README.md")
+    artifact_readme = read_text("artifact/README.md")
+    templates_readme = read_text("templates/README.md")
+    src_readme = read_text("src/README.md")
+    git_reference = read_text("docs/reference/git-worktree-and-branch-reference.md")
+
+    for required_text in (
+        "Plan/<project_id>/",
+        "Plan_N0001.md",
+        "Plan_N0001.log.md",
+        "`plan_id`",
+        "`index.yaml`",
+    ):
+        assert required_text in plan_readme
+
+    assert "artifact/<project_id>/" in artifact_readme
+    assert "manifest.yaml" in artifact_readme
+    assert "<project_id>" in templates_readme
+    assert "src/<project_id>/" in src_readme
+    assert "project_id" in git_reference
+    assert "do not share a\nworktree across project IDs" in git_reference
+
+
+def test_project_scoped_roots_do_not_accept_loose_files() -> None:
+    tracked = tracked_files()
+
+    for root, allowed_direct_files in PROJECT_SCOPED_ROOT_DIRECT_FILES.items():
+        for path in tracked:
+            if not path.startswith(f"{root}/"):
+                continue
+
+            relative = Path(path).relative_to(root)
+            parts = relative.parts
+            assert parts, path
+
+            if len(parts) == 1:
+                assert parts[0] in allowed_direct_files, path
+                continue
+
+            project_id = parts[0]
+            assert project_id not in {"active", "completed", "logs", "plans", "output"}, path
+            assert project_id not in allowed_direct_files, path
+            assert project_id.strip(), path
+
+
+def test_plan_project_records_keep_plan_id_log_and_index_in_sync() -> None:
+    tracked = set(tracked_files())
+    plan_files = [
+        path
+        for path in tracked
+        if path.startswith("Plan/") and "/plans/" in path and path.endswith(".md")
+    ]
+    log_files = [
+        path
+        for path in tracked
+        if path.startswith("Plan/") and "/logs/" in path and path.endswith(".log.md")
+    ]
+
+    for path in plan_files:
+        parts = Path(path).parts
+        assert len(parts) == 4, path
+        _, project_id, plans_dir, filename = parts
+        assert plans_dir == "plans", path
+        plan_id = filename.removesuffix(".md")
+        assert PLAN_ID_RE.match(plan_id), path
+        assert f"Plan/{project_id}/index.yaml" in tracked, path
+        assert f"Plan/{project_id}/logs/{plan_id}.log.md" in tracked, path
+
+    for path in log_files:
+        parts = Path(path).parts
+        assert len(parts) == 4, path
+        _, project_id, logs_dir, filename = parts
+        assert logs_dir == "logs", path
+        plan_id = filename.removesuffix(".log.md")
+        assert PLAN_ID_RE.match(plan_id), path
+        assert f"Plan/{project_id}/index.yaml" in tracked, path
+        assert f"Plan/{project_id}/plans/{plan_id}.md" in tracked, path
+
+
+def test_artifact_project_records_have_manifest_and_allowed_sections() -> None:
+    tracked = set(tracked_files())
+
+    for path in tracked:
+        if not path.startswith("artifact/") or path in {"artifact/README.md", "artifact/.gitkeep"}:
+            continue
+
+        parts = Path(path).parts
+        assert len(parts) >= 3, path
+        _, project_id, section = parts[:3]
+        assert f"artifact/{project_id}/manifest.yaml" in tracked, path
+        if len(parts) == 3:
+            assert section == "manifest.yaml", path
+        else:
+            assert section in ARTIFACT_PROJECT_DIRS, path
+
+
+def test_source_project_records_are_project_scoped() -> None:
+    for path in tracked_files():
+        if not path.startswith("src/") or path in {"src/README.md", "src/.gitkeep"}:
+            continue
+
+        parts = Path(path).parts
+        assert len(parts) >= 3, path
+        assert parts[1].strip(), path
+        assert parts[1] not in {"shared", "common", "logs", "notes", "artifacts"}, path
 
 
 def test_project_storage_template_uses_external_placeholder() -> None:
@@ -252,9 +413,11 @@ def test_tracked_hooks_enforce_agent_policy_and_checks() -> None:
 
     for required_text in (
         "agent/<work_id>/<lane>/<slug>",
+        "FOUNDATION_PROJECT_ID",
         "foundation.canonicalRoot",
         "main",
         "canonical repo root",
+        "replace 'none'",
     ):
         assert required_text in worktree_policy
 
@@ -279,10 +442,18 @@ def init_git_repo(path: Path, branch: str, canonical_root: Path) -> None:
     )
 
 
-def run_worktree_policy(repo: Path) -> subprocess.CompletedProcess[str]:
+def run_worktree_policy(
+    repo: Path,
+    extra_env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    if extra_env is not None:
+        env.update(extra_env)
+
     return subprocess.run(
         ["sh", str(repo_path("scripts/check-agent-worktree-policy.sh"))],
         cwd=repo,
+        env=env,
         check=False,
         capture_output=True,
         text=True,
@@ -320,6 +491,12 @@ def test_worktree_policy_behavior(tmp_path: Path) -> None:
     assert malformed_result.returncode == 2
     assert "use agent/<work_id>/<lane>/<slug>" in malformed_result.stderr
 
+    unset_agent_repo = tmp_path / "unset-agent"
+    init_git_repo(unset_agent_repo, "agent/none/none/none", canonical_root)
+    unset_agent_result = run_worktree_policy(unset_agent_repo)
+    assert unset_agent_result.returncode == 2
+    assert "replace 'none'" in unset_agent_result.stderr
+
     canonical_agent_repo = tmp_path / "canonical-agent"
     init_git_repo(canonical_agent_repo, "agent/work/lane/slug", canonical_agent_repo)
     canonical_agent_result = run_worktree_policy(canonical_agent_repo)
@@ -327,10 +504,28 @@ def test_worktree_policy_behavior(tmp_path: Path) -> None:
     assert "canonical repo root" in canonical_agent_result.stderr
 
     external_agent_repo = tmp_path / "external-agent"
-    init_git_repo(external_agent_repo, "agent/work/lane/slug", canonical_root)
+    init_git_repo(external_agent_repo, "agent/foundation-work/lane/slug", canonical_root)
     external_result = run_worktree_policy(external_agent_repo)
     assert external_result.returncode == 0
     assert "agent worktree policy: passed" in external_result.stdout
+
+    mismatched_project_repo = tmp_path / "other-project-worktree"
+    init_git_repo(mismatched_project_repo, "agent/other-work/lane/slug", canonical_root)
+    mismatched_result = run_worktree_policy(
+        mismatched_project_repo,
+        {"FOUNDATION_PROJECT_ID": "foundation"},
+    )
+    assert mismatched_result.returncode == 2
+    assert "must include FOUNDATION_PROJECT_ID" in mismatched_result.stderr
+
+    matched_project_repo = tmp_path / "foundation-project-worktree"
+    init_git_repo(matched_project_repo, "agent/foundation-work/lane/slug", canonical_root)
+    matched_result = run_worktree_policy(
+        matched_project_repo,
+        {"FOUNDATION_PROJECT_ID": "foundation"},
+    )
+    assert matched_result.returncode == 0
+    assert "agent worktree policy: passed" in matched_result.stdout
 
 
 def test_pre_push_blocks_protected_remote_destination_refs(tmp_path: Path) -> None:

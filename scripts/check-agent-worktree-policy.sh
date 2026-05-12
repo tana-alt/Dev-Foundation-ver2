@@ -62,6 +62,14 @@ case "$BRANCH" in
     if [ "$#" -ne 4 ] || [ "$1" != "agent" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
       fail "branch '$BRANCH' is blocked for agent work; use agent/<work_id>/<lane>/<slug>"
     fi
+    WORK_ID="$2"
+    LANE="$3"
+    SLUG="$4"
+    for part in "$WORK_ID" "$LANE" "$SLUG"; do
+      if [ "$part" = "none" ]; then
+        fail "branch '$BRANCH' has unset ownership; replace 'none' in agent/<work_id>/<lane>/<slug>"
+      fi
+    done
     ;;
   *)
     fail "branch '$BRANCH' is blocked for agent work; use agent/<work_id>/<lane>/<slug>"
@@ -77,5 +85,22 @@ case "$ROOT_REAL/" in
     fail "agent worktree is inside the canonical repo root; place it outside $PRIMARY_REAL"
     ;;
 esac
+
+PROJECT_ID="${FOUNDATION_PROJECT_ID:-}"
+if [ -n "$PROJECT_ID" ]; then
+  case "$WORK_ID" in
+    "$PROJECT_ID"|"$PROJECT_ID"-*) ;;
+    *)
+      fail "branch work_id '$WORK_ID' must include FOUNDATION_PROJECT_ID '$PROJECT_ID'"
+      ;;
+  esac
+
+  case "$ROOT_REAL" in
+    *"$PROJECT_ID"*) ;;
+    *)
+      fail "worktree path '$ROOT_REAL' must include FOUNDATION_PROJECT_ID '$PROJECT_ID'"
+      ;;
+  esac
+fi
 
 echo "agent worktree policy: passed ($BRANCH at $ROOT_REAL)"

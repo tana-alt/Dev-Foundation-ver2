@@ -10,6 +10,39 @@ created_at: 2026-05-06
 Use this reference for repo layout, storage boundaries, ignored local state,
 skills, plugins, and overlays.
 
+## README Routes
+
+Read root-specific placement rules before writing durable project files:
+
+- `Plan/`: `Plan/README.md`
+- `artifact/`: `artifact/README.md`
+- `templates/`: `templates/README.md`
+- `src/`: `src/README.md`
+
+`docs/` has no local README. Its route is `AGENTS.md`, the active contracts in
+`docs/01-03`, and this reference.
+
+## Formal Project Structure
+
+Project-scoped storage uses one `project_id` per root:
+
+```text
+Plan/<project_id>/index.yaml
+Plan/<project_id>/plans/Plan_N0001.md
+Plan/<project_id>/logs/Plan_N0001.log.md
+
+artifact/<project_id>/manifest.yaml
+artifact/<project_id>/evidence/
+artifact/<project_id>/verification/
+artifact/<project_id>/output/
+
+src/<project_id>/
+```
+
+Use `templates/` only for blank reusable formats. Real plan, log, evidence,
+verification, artifact, or implementation files belong under the owning
+`project_id`.
+
 ## Current Folder Map
 
 - `AGENTS.md`: thin agent entrypoint and routing document.
@@ -30,22 +63,23 @@ skills, plugins, and overlays.
 - `.agents/skills/`: current repo-local skills.
 - `.agents/plugins/marketplace.json`: local plugin registry.
 - `plugins/`: local plugin bundles and downloaded plugin payloads.
-- `Plan/`: optional scoped planning notes for substantial or resumable work,
-  not a runtime queue or lock ledger.
+- `Plan/`: project-scoped agent plans and logs, not a runtime queue or lock
+  ledger.
 - `app/`: reserved runnable app surface; keep empty unless truly needed.
-- `src/`: reserved shared implementation surface; do not store notes or logs.
-- `artifact/`: foundation repo outputs or fixtures, not a broad project log.
+- `src/`: project-scoped or documented shared implementation surface.
+- `artifact/`: project-scoped durable outputs, evidence, verification, and
+  fixtures, not a broad project log.
 
 Do not introduce default roots such as runtime queues, active plan files, lock
 ledgers, dashboards, `projects/`, plural `apps/`, or plural `artifacts/`.
-Existing `Plan/` notes are scoped planning material only. New durable storage
-requires explicit ownership, retention, verification, and cleanup rules.
+New durable storage requires explicit ownership, retention, verification, and
+cleanup rules.
 
 ## Project-Local Truth
 
 Canonical project state, decisions, artifacts, evidence, verification, and logs
-belong to the project surface that owns them. This foundation repo should not
-become a generic project storage root.
+belong under the `project_id` surface that owns them. This foundation repo
+should not become a generic unscoped storage root.
 
 When project storage exists, it should be self-describing: state, decisions,
 artifacts, logs, evidence, verification, implementation refs, and overlays

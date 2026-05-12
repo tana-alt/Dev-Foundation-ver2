@@ -35,6 +35,14 @@ worktree ownership.
 
 Use explicit branch targets from scope when provided.
 
+Project-specific work must stay project-scoped. Include `project_id` in
+`work_id` or in explicit branch and worktree targets, and do not share a
+worktree across project IDs.
+
+When `FOUNDATION_PROJECT_ID` is set, `scripts/check-agent-worktree-policy.sh`
+requires the branch `work_id` and local worktree path to include that project
+ID. Placeholder ownership such as `agent/none/none/none` is invalid.
+
 If the scope provides `work_id`, `lane`, and a short task slug, derive:
 
 ```text
