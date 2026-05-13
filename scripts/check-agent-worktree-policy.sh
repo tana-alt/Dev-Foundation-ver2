@@ -18,8 +18,6 @@ fi
 ROOT="$(git rev-parse --show-toplevel)"
 BRANCH="$(git branch --show-current 2>/dev/null || true)"
 PRIMARY_BRANCH="${FOUNDATION_PRIMARY_BRANCH:-main}"
-CONFIG_REQUIRE_WORKTREE="$(git config --bool --get foundation.requireAgentWorktree 2>/dev/null || true)"
-REQUIRE_AGENT_WORKTREE="${FOUNDATION_REQUIRE_AGENT_WORKTREE:-$CONFIG_REQUIRE_WORKTREE}"
 
 if [ -z "$BRANCH" ]; then
   fail "detached HEAD is not allowed for agent write work"
@@ -56,7 +54,7 @@ PRIMARY_REAL="$(cd -- "$PRIMARY_ROOT" && pwd -P)"
 
 case "$BRANCH" in
   "$PRIMARY_BRANCH"|master)
-    fail "direct writes on $BRANCH are blocked; use agent/<work_id>/<lane>/<slug>"
+    fail "direct writes on $BRANCH are blocked; use agent/<work_id>/<lane>/<slug> in a linked worktree"
     ;;
   agent/*)
     OLD_IFS=$IFS
@@ -82,17 +80,15 @@ case "$BRANCH" in
     ;;
 esac
 
-if [ "$REQUIRE_AGENT_WORKTREE" = "1" ] || [ "$REQUIRE_AGENT_WORKTREE" = "true" ]; then
-  if [ "$ROOT_REAL" = "$PRIMARY_REAL" ]; then
-    fail "parallel agent work requires an external worktree; use git worktree add outside the canonical repo root"
-  fi
-
-  case "$ROOT_REAL/" in
-    "$PRIMARY_REAL"/*)
-      fail "parallel agent worktree is inside the canonical repo root; place it outside $PRIMARY_REAL"
-      ;;
-  esac
+if [ "$ROOT_REAL" = "$PRIMARY_REAL" ]; then
+  fail "agent branch '$BRANCH' is checked out in the canonical repo root; use git worktree add outside it"
 fi
+
+case "$ROOT_REAL/" in
+  "$PRIMARY_REAL"/*)
+    fail "agent worktree is inside the canonical repo root; place it outside $PRIMARY_REAL"
+    ;;
+esac
 
 PROJECT_SCOPE="${FOUNDATION_PROJECT_SCOPE:-}"
 PROJECT_ID="${FOUNDATION_PROJECT_ID:-}"
@@ -138,14 +134,12 @@ if [ -n "$PROJECT_ID" ]; then
       ;;
   esac
 
-  if [ "$REQUIRE_AGENT_WORKTREE" = "1" ] || [ "$REQUIRE_AGENT_WORKTREE" = "true" ]; then
-    case "$ROOT_REAL" in
-      *"$PROJECT_ID"*) ;;
-      *)
-        fail "worktree path '$ROOT_REAL' must include FOUNDATION_PROJECT_ID '$PROJECT_ID'"
-        ;;
-    esac
-  fi
+  case "$ROOT_REAL" in
+    *"$PROJECT_ID"*) ;;
+    *)
+      fail "worktree path '$ROOT_REAL' must include FOUNDATION_PROJECT_ID '$PROJECT_ID'"
+      ;;
+  esac
 fi
 
 echo "agent worktree policy: passed ($BRANCH at $ROOT_REAL)"

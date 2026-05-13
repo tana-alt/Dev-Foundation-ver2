@@ -177,11 +177,9 @@ Tracked hooks live in `hooks/` and are installed by
 - `pre-push`: runs `scripts/check-agent-worktree-policy.sh`, then
   `make check-foundation`.
 
-The worktree policy blocks direct writes on `main` or `master` and requires
-`agent/<work_id>/<lane>/<slug>` branch naming. Canonical-root work on an
-`agent/*` branch is allowed for single-lane work. Parallel worktree isolation is
-enforced when `FOUNDATION_REQUIRE_AGENT_WORKTREE=1` is set or
-`foundation.requireAgentWorktree=true` is configured. Hooks are commit/push
+The worktree policy blocks commits and pushes from the canonical repo root,
+blocks direct writes on `main` or `master`, and requires
+`agent/<work_id>/<lane>/<slug>` branch naming. Hooks are commit/push
 guardrails, not runtime filesystem monitors. Required CI remains the merge
 gate.
 

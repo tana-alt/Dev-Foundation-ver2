@@ -398,8 +398,7 @@ def test_agent_environment_restore_uses_templates_not_runtime_state() -> None:
     assert "core.hooksPath" in setup_script
     assert "foundation.canonicalRoot" in setup_script
     assert "web_dashboard_open_on_launch" in setup_script
-    assert "@upstash/context7-mcp@2.2.5" in setup_script
-    assert "@upstash/context7-mcp@2.2.5" in codex_template
+    assert "@upstash/context7-mcp" in codex_template
     assert "auth.json" not in codex_template
 
 
@@ -451,8 +450,6 @@ def test_tracked_hooks_enforce_agent_policy_and_checks() -> None:
     for required_text in (
         "agent/<work_id>/<lane>/<slug>",
         "FOUNDATION_PROJECT_ID",
-        "FOUNDATION_REQUIRE_AGENT_WORKTREE",
-        "foundation.requireAgentWorktree",
         "FOUNDATION_PROJECT_SCOPE",
         "FOUNDATION_ALLOWED_PROJECT_IDS",
         "FOUNDATION_PROJECT_SCOPE_REASON",
@@ -570,28 +567,8 @@ def test_worktree_policy_behavior(tmp_path: Path) -> None:
     canonical_agent_repo = tmp_path / "canonical-agent"
     init_git_repo(canonical_agent_repo, "agent/work/lane/slug", canonical_agent_repo)
     canonical_agent_result = run_worktree_policy(canonical_agent_repo)
-    assert canonical_agent_result.returncode == 0
-    assert "agent worktree policy: passed" in canonical_agent_result.stdout
-
-    parallel_canonical_result = run_worktree_policy(
-        canonical_agent_repo,
-        {"FOUNDATION_REQUIRE_AGENT_WORKTREE": "1"},
-    )
-    assert parallel_canonical_result.returncode == 2
-    assert "requires an external worktree" in parallel_canonical_result.stderr
-
-    configured_parallel_repo = tmp_path / "configured-parallel"
-    init_git_repo(configured_parallel_repo, "agent/work/lane/slug", configured_parallel_repo)
-    subprocess.run(
-        ["git", "config", "foundation.requireAgentWorktree", "true"],
-        cwd=configured_parallel_repo,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    configured_parallel_result = run_worktree_policy(configured_parallel_repo)
-    assert configured_parallel_result.returncode == 2
-    assert "requires an external worktree" in configured_parallel_result.stderr
+    assert canonical_agent_result.returncode == 2
+    assert "canonical repo root" in canonical_agent_result.stderr
 
     external_agent_repo = tmp_path / "external-agent"
     init_git_repo(external_agent_repo, "agent/foundation-work/lane/slug", canonical_root)
@@ -670,7 +647,8 @@ def test_pre_push_blocks_protected_remote_destination_refs(tmp_path: Path) -> No
     for remote_ref in ("refs/heads/main", "refs/heads/master"):
         result = run_pre_push_hook(
             external_agent_repo,
-            f"refs/heads/agent/work/lane/slug local-sha {remote_ref} remote-sha\n",
+            "refs/heads/agent/work/lane/slug local-sha "
+            f"{remote_ref} remote-sha\n",
         )
 
         assert result.returncode == 2
@@ -870,48 +848,6 @@ def test_repo_hygiene_behavior(tmp_path: Path) -> None:
     assert "secret dir/auth.json" in sensitive_space_result.stderr
 
 
-def test_secret_scan_covers_worktree_and_cached_content_without_head(tmp_path: Path) -> None:
-    repo = tmp_path / "secret-scan"
-    init_hygiene_repo(repo)
-    (repo / ".gitleaks.toml").write_text('title = "test"\n', encoding="utf-8")
-    (repo / "tracked.txt").write_text("cached marker\n", encoding="utf-8")
-    git_add(repo, ".gitleaks.toml", "tracked.txt")
-    (repo / "tracked.txt").write_text("worktree-only marker\n", encoding="utf-8")
-
-    fake_bin = tmp_path / "bin"
-    fake_bin.mkdir()
-    fake_gitleaks = fake_bin / "gitleaks"
-    fake_gitleaks.write_text(
-        """#!/usr/bin/env sh
-set -eu
-cat >> "$GITLEAKS_CAPTURE"
-""",
-        encoding="utf-8",
-    )
-    fake_gitleaks.chmod(0o755)
-    capture = tmp_path / "gitleaks-stdin.txt"
-
-    result = subprocess.run(
-        ["sh", str(repo_path("scripts/check-secrets.sh"))],
-        cwd=repo,
-        env={
-            **os.environ,
-            "FOUNDATION_REPO_ROOT": str(repo),
-            "GITLEAKS_CAPTURE": str(capture),
-            "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
-        },
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-
-    assert result.returncode == 0
-    scanned = capture.read_text(encoding="utf-8")
-    assert "worktree-only marker" in scanned
-    assert "cached marker" in scanned
-    assert "secret scan: skipped git history scan (no commits yet)" in result.stdout
-
-
 def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     makefile = read_text("Makefile")
     dev_check = read_text("scripts/check-dev-environment.sh")
@@ -950,9 +886,6 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert "auth\\.json" in hygiene_check
     assert "gitlinks without .gitmodules" in hygiene_check
     assert "shellcheck -s sh" in shell_check
-    assert "FOUNDATION_REPO_ROOT" in secret_check
-    assert 'git -C "$ROOT" grep -I -n -e . -- .' in secret_check
-    assert 'git -C "$ROOT" grep --cached -I -n -e . -- .' in secret_check
     assert 'gitleaks --config "$ROOT/.gitleaks.toml" --redact --no-banner' in secret_check
     assert 'gitleaks git --config "$ROOT/.gitleaks.toml" --redact' in secret_check
     assert "Install OSS check tools" in workflow

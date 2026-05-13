@@ -35,18 +35,13 @@ worktree ownership.
 
 Use explicit branch targets from scope when provided.
 
-Single-lane work may use an `agent/<work_id>/<lane>/<slug>` branch in the
-canonical repo root. Parallel work must use one branch and one external
-worktree per agent.
-
 Project-specific work must stay project-scoped. Include `project_id` in
 `work_id` or in explicit branch and worktree targets, and do not share a
 worktree across project IDs.
 
 When `FOUNDATION_PROJECT_ID` is set, `scripts/check-agent-worktree-policy.sh`
-requires the branch `work_id` to include that project ID. In enforced parallel
-worktree mode, the local worktree path must include it too. Placeholder
-ownership such as `agent/none/none/none` is invalid.
+requires the branch `work_id` and local worktree path to include that project
+ID. Placeholder ownership such as `agent/none/none/none` is invalid.
 
 Cross-project work uses `FOUNDATION_PROJECT_SCOPE=multi` with
 `FOUNDATION_ALLOWED_PROJECT_IDS` and `FOUNDATION_PROJECT_SCOPE_REASON`. A single
@@ -71,35 +66,6 @@ agent/docs-rebuild-20260506/verification/contract-checks
 ```
 
 Do not reuse another agent's branch or worktree path.
-
-## Starting Parallel Work
-
-The practical entrypoint is the user request or task packet. Treat any explicit
-instruction like "run these in parallel", "split into lanes", or "use separate
-worktrees" as `git_scope.mode: parallel`.
-
-For each lane, define:
-
-- `work_id`: shared parallel work identifier
-- `lane`: unique lane name
-- `base_ref`: source branch or commit
-- `merge_target`: review target
-- `allowed_write_targets`: lane-owned path prefixes
-- `branch_target` and `worktree_target`, or enough fields to derive them
-- `conflict_policy` and optional `sibling_branch_refs`
-
-To locally enforce worktree separation, set one of:
-
-```sh
-export FOUNDATION_REQUIRE_AGENT_WORKTREE=1
-git config foundation.requireAgentWorktree true
-```
-
-Clear the config after the parallel run if it was only temporary:
-
-```sh
-git config --unset foundation.requireAgentWorktree
-```
 
 ## Preflight
 

@@ -37,7 +37,7 @@
 # rubric
 
 ## skill 名
--
+- 
 
 ## 前提
 - description の要点:
@@ -104,7 +104,7 @@
 # iteration N
 
 ## scenario
--
+- 
 
 ## rubric score
 - item 1:
@@ -159,7 +159,7 @@
 # hold-out check
 
 ## hold-out scenario
--
+- 
 
 ## score
 - hold-out score:
@@ -177,9 +177,9 @@
 # Stage 2 regression confirm
 
 ## past success cases
-1.
-2.
-3.
+1. 
+2. 
+3. 
 
 ## results
 - case 1: before / after

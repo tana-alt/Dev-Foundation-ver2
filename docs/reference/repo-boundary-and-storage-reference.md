@@ -83,7 +83,7 @@ commit and push.
 - `.github/workflows/ci.yml`: CI entrypoint for required checks.
 - `.agents/skills/`: current repo-local skills.
 - `.agents/plugins/marketplace.json`: local plugin registry.
-- `plugins/`: optional local plugin bundles and downloaded plugin payloads.
+- `plugins/`: local plugin bundles and downloaded plugin payloads.
 - `Plan/`: project-scoped agent plans and logs, not a runtime queue or lock
   ledger.
 - `app/`: reserved runnable app surface; keep empty unless truly needed.
@@ -133,17 +133,17 @@ Skills provide domain method, examples, and local conventions. They do not
 override active docs, allowed write targets, denied context, secret boundaries,
 human gates, verification requirements, or storage rules.
 
-Plugin registry changes are repo changes. Treat plugin payload changes as repo
-changes only when payloads are present and tracked. Run relevant structure,
-contract, lint, typecheck, or smoke checks when applicable.
+Plugin registry and payload changes are repo changes. Treat them as local writes
+and run relevant structure, contract, lint, typecheck, or smoke checks when
+applicable.
 
 Extension-surface integrity checks are structural only:
 
 - each local skill directory has a parseable `SKILL.md` with minimal metadata
 - the human skill index covers repo-local skill roots
-- plugin registry paths are relative and stay under `plugins/`
+- plugin registry paths are relative and resolve under `plugins/`
 - plugin manifests and MCP config samples parse and point to existing local
-  paths when optional plugin payloads are present
+  paths
 
 Do not install plugin dependencies, launch MCP servers, perform network calls,
 or turn skills/plugins into a package-manager or marketplace-governance system

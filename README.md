@@ -64,7 +64,7 @@ and restore steps in this repo.
 - `hooks/`: tracked Git hooks installed by the restore script.
 - `tests/`: foundation contract and integrity checks.
 - `.agents/skills/`: current repo-local Codex skills.
-- `.agents/plugins/marketplace.json`: local plugin registry; `plugins/` may hold
-  local or downloaded payloads when present, but payloads are not required.
+- `.agents/plugins/marketplace.json` and `plugins/`: local plugin registry and
+  payloads.
 - `Plan/`: scoped planning notes for substantial or resumable work, not runtime
   state.

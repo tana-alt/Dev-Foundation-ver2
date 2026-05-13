@@ -111,7 +111,7 @@ else:
 PY
 
 if command -v npx >/dev/null 2>&1; then
-  npx -y @upstash/context7-mcp@2.2.5 --version
+  npx -y @upstash/context7-mcp --version
 else
   echo "npx is missing; install Node.js/npm before using Context7 MCP"
 fi

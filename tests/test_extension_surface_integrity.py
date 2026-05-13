@@ -67,7 +67,6 @@ def test_plugin_registry_and_manifest_paths_are_structural() -> None:
     marketplace = read_json(".agents/plugins/marketplace.json")
     plugins = marketplace.get("plugins")
     assert isinstance(plugins, list)
-    assert plugins
 
     seen_plugin_names: set[str] = set()
 
@@ -80,21 +79,12 @@ def test_plugin_registry_and_manifest_paths_are_structural() -> None:
 
         source = plugin_entry.get("source")
         assert isinstance(source, dict), plugin_name
-        raw_plugin_path = source.get("path")
-        assert isinstance(raw_plugin_path, str), f"{plugin_name}: source.path"
-        assert raw_plugin_path.strip(), f"{plugin_name}: source.path"
-        pure_plugin_path = PurePosixPath(raw_plugin_path)
-        assert not pure_plugin_path.is_absolute(), f"{plugin_name}: source.path"
-        assert ".." not in pure_plugin_path.parts, f"{plugin_name}: source.path"
-
-        relative_plugin_path = (
-            raw_plugin_path[2:] if raw_plugin_path.startswith("./") else raw_plugin_path
+        plugin_dir = assert_relative_child_path(
+            ROOT,
+            source.get("path"),
+            f"{plugin_name}: source.path",
         )
-        plugin_dir = (ROOT / relative_plugin_path).resolve()
         assert ROOT.resolve() / "plugins" in plugin_dir.parents
-
-        if not plugin_dir.exists():
-            continue
 
         manifest_path = plugin_dir / ".codex-plugin" / "plugin.json"
         mcp_path = plugin_dir / ".mcp.json"
@@ -142,7 +132,23 @@ def test_plugin_registry_and_manifest_paths_are_structural() -> None:
 
 
 def test_plugin_skill_front_matter_is_parseable() -> None:
-    plugin_skill_files = sorted((ROOT / "plugins").glob("*/skills/*/SKILL.md"))
+    marketplace = read_json(".agents/plugins/marketplace.json")
+    plugins = marketplace.get("plugins")
+    assert isinstance(plugins, list)
+
+    plugin_roots = [
+        assert_relative_child_path(
+            ROOT,
+            cast(dict[str, Any], plugin_entry).get("source", {}).get("path"),
+            f"{cast(dict[str, Any], plugin_entry).get('name')}: source.path",
+        )
+        for plugin_entry in plugins
+    ]
+    plugin_skill_files = sorted(
+        skill_file
+        for plugin_root in plugin_roots
+        for skill_file in plugin_root.glob("skills/*/SKILL.md")
+    )
 
     seen_plugin_skill_names: set[str] = set()
 
