@@ -196,6 +196,17 @@ def test_agents_routes_to_active_docs_and_references() -> None:
     assert "Root Boundary" not in agents
 
 
+def test_agents_routes_project_scoped_work_to_reference_docs() -> None:
+    agents = read_text("AGENTS.md")
+
+    assert "project-scoped Plan/artifact/src placement" in agents
+    assert "`docs/reference/repo-boundary-and-storage-reference.md`" in agents
+    assert "project-scoped worktree setup" in agents
+    assert "`docs/reference/git-worktree-and-branch-reference.md`" in agents
+    assert "`project-worktree-scope`" not in agents
+    assert "`project-storage-placement`" not in agents
+
+
 def test_reference_set_matches_routed_reference_docs() -> None:
     actual = sorted(path.name for path in repo_path("docs/reference").glob("*.md"))
     expected = sorted(Path(path).name for path in REFERENCE_DOCS)

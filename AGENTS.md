@@ -18,11 +18,11 @@ or unrelated history by default.
   `docs/reference/agent-runtime-and-scope-reference.md`
 - Packets, evidence, verification records, and rework:
   `docs/reference/packet-evidence-and-rework-reference.md`
-- Repo folder map and storage detail:
+- Repo folder map, project-scoped Plan/artifact/src placement, and storage detail:
   `docs/reference/repo-boundary-and-storage-reference.md`
 - Current verification, CI, CD, and PR detail:
   `docs/reference/verification-ci-and-pr-reference.md`
-- Git branch and worktree isolation:
+- Git branch, worktree isolation, and project-scoped worktree setup:
   `docs/reference/git-worktree-and-branch-reference.md`
 - Migration note and acceptance checklist:
   `docs/reference/migration-and-acceptance-reference.md`
