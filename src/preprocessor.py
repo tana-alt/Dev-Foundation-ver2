@@ -17,7 +17,7 @@ import structlog
 import yfinance as yf
 from bs4 import BeautifulSoup
 
-from .models import EarningsContext, FilingSection
+from .workflow_models import DocumentSection, FinancialMetrics, SourceRef, SourceType
 
 log = structlog.get_logger()
 
@@ -48,34 +48,52 @@ def calculate_surprise_pct(actual: float | None, consensus: float | None) -> flo
     return ((actual - consensus) / abs(consensus)) * 100
 
 
-def build_earnings_context(
+def build_financial_metrics(
     *,
     ticker: str,
-    quarter: str,
-    eps_actual: float | None = None,
+    fiscal_period: str,
+    eps: float | None = None,
     eps_consensus: float | None = None,
     eps_surprise_pct: float | None = None,
-    revenue_actual: float | None = None,
+    revenue: float | None = None,
     revenue_consensus: float | None = None,
     revenue_surprise_pct: float | None = None,
-    guidance_summary: str | None = None,
-) -> EarningsContext:
-    """Build the typed context passed to agents."""
+    operating_margin_pct: float | None = None,
+    operating_cash_flow: float | None = None,
+    free_cash_flow: float | None = None,
+    capex: float | None = None,
+    guidance: str | None = None,
+) -> FinancialMetrics:
+    """Build normalized financial metrics passed to workflow agents."""
     if eps_surprise_pct is None:
-        eps_surprise_pct = calculate_surprise_pct(eps_actual, eps_consensus)
+        eps_surprise_pct = calculate_surprise_pct(eps, eps_consensus)
     if revenue_surprise_pct is None:
-        revenue_surprise_pct = calculate_surprise_pct(revenue_actual, revenue_consensus)
+        revenue_surprise_pct = calculate_surprise_pct(revenue, revenue_consensus)
+    if free_cash_flow is None and operating_cash_flow is not None and capex is not None:
+        free_cash_flow = operating_cash_flow - abs(capex)
 
-    return EarningsContext(
+    return FinancialMetrics(
         ticker=ticker,
-        quarter=quarter,
-        eps_actual=eps_actual,
+        fiscal_period=fiscal_period,
+        eps=eps,
         eps_consensus=eps_consensus,
         eps_surprise_pct=eps_surprise_pct,
-        revenue_actual=revenue_actual,
+        revenue=revenue,
         revenue_consensus=revenue_consensus,
         revenue_surprise_pct=revenue_surprise_pct,
-        guidance_summary=guidance_summary,
+        operating_margin_pct=operating_margin_pct,
+        operating_cash_flow=operating_cash_flow,
+        free_cash_flow=free_cash_flow,
+        capex=capex,
+        guidance=guidance,
+        source_refs=[
+            SourceRef(
+                source_id=f"financial_api:{ticker.upper()}:{fiscal_period}",
+                source_type=SourceType.FINANCIAL_API,
+                metric_name="consensus_snapshot",
+                title="Financial API consensus snapshot",
+            )
+        ],
     )
 
 
@@ -103,7 +121,7 @@ def fetch_filing_html(url: str) -> str:
     return r.text
 
 
-def segment_filing(html: str) -> list[FilingSection]:
+def segment_filing(html: str) -> list[DocumentSection]:
     """Split filing into typed sections by scanning headers."""
     soup = BeautifulSoup(html, "lxml")
     # Collect text from common structural elements
@@ -125,19 +143,33 @@ def segment_filing(html: str) -> list[FilingSection]:
         if not matched:
             sections["other"].append(b)
 
-    result: list[FilingSection] = []
+    result: list[DocumentSection] = []
     for name, chunks in sections.items():
         if not chunks:
             continue
         # Cap each section — context budget discipline
         joined = "\n\n".join(chunks)[:8000]
-        result.append(FilingSection(name=name, text=joined))  # type: ignore[arg-type]
+        section_id = f"filing:{name}"
+        result.append(
+            DocumentSection(
+                section_id=section_id,
+                source_ref=SourceRef(
+                    source_id=section_id,
+                    source_type=SourceType.FILING,
+                    document_id="filing-html",
+                    section_id=section_id,
+                    title=f"Filing section: {name}",
+                ),
+                heading=name,
+                text=joined,
+            )
+        )
 
-    log.info("filing.segmented", sections={s.name: len(s.text) for s in result})
+    log.info("filing.segmented", sections={s.heading: len(s.text) for s in result})
     return result
 
 
-def fetch_consensus(ticker: str, quarter: str) -> EarningsContext:
+def fetch_consensus(ticker: str, fiscal_period: str) -> FinancialMetrics:
     """Pull actual & consensus EPS and revenue from yfinance.
 
     NOTE: yfinance scrapes Yahoo Finance and the schema occasionally
@@ -168,11 +200,11 @@ def fetch_consensus(ticker: str, quarter: str) -> EarningsContext:
     except Exception as e:
         log.warning("yfinance.revenue_fetch_failed", error=str(e))
 
-    return build_earnings_context(
+    return build_financial_metrics(
         ticker=ticker,
-        quarter=quarter,
-        eps_actual=eps_actual,
+        fiscal_period=fiscal_period,
+        eps=eps_actual,
         eps_consensus=eps_consensus,
         eps_surprise_pct=eps_surprise_pct,
-        revenue_actual=revenue_actual,
+        revenue=revenue_actual,
     )
