@@ -89,50 +89,60 @@ workflow 自体は skill にしない。
 
 workflow は API runtime の固定オーケストレーションとして `src/workflow.py` に残す。
 skill として配置する対象は、各専門エージェントの prompt / role instruction / evidence policy である。
+また、skill は専門エージェントごとに分ける。
+単一の `earnings-review-agents` skill の下に prompt catalog を置く構造は、hook が個別promptへ直接到達できない前提では採用しない。
 
 理由:
 
 - API だけで動く成果物にするため、実行順序、validation gate、aggregation、Markdown rendering は Python workflow が所有する
 - skill は LLM agent の専門性を差し替え・参照しやすくするための prompt asset として使う
-- hook は workflow を発火するのではなく、該当 agent prompt skill を読み込ませる入口として使う
+- hook は workflow を発火するのではなく、該当専門エージェントの skill を直接発火させる入口として使う
+- 各専門エージェントが自分の業務を把握するには、role / responsibility / inputs / output schema /禁止事項が1つの `SKILL.md` に自己完結している方が自然
 - Pydantic schema は runtime contract なので skill 側へ複製せず、skill は schema 名と出力制約を参照する
 
 想定構造:
 
 ```text
-.agents/skills/earnings-review-agents/
-  SKILL.md
-  prompts/
-    financial/
-      earnings_quality_analyst.md
-      cash_flow_risk_analyst.md
-    presentation/
-      management_intent_analyst.md
-      guidance_analyst.md
-    debate/
-      bull_agent.md
-      bear_agent.md
-      judge_agent.md
-    shared/
-      global_policy.md
-      evidence_policy.md
-      output_policy.md
+.agents/skills/
+  earnings-quality-analyst/
+    SKILL.md
+  cash-flow-risk-analyst/
+    SKILL.md
+  management-intent-analyst/
+    SKILL.md
+  guidance-analyst/
+    SKILL.md
+  bull-agent/
+    SKILL.md
+  bear-agent/
+    SKILL.md
+  judge-agent/
+    SKILL.md
+
+  shared/
+    evidence-policy.md
+    output-policy.md
+    global-policy.md
+
   references/
     workflow-agent-handoff.md
     specialist-agent-workflow-design.md
 ```
 
-`SKILL.md` は routing と共通制約だけを書く。
+各 agent skill の `SKILL.md` は、その専門エージェントが自分の業務を把握できる単位にする。
 
 含める内容:
 
-- 対象 agent 名と prompt file の対応
-- 各 agent が読む routed_context key
+- agent role
+- responsibility
+- inputs / routed_context keys
+- analysis focus
+- must-not-do
+- output model
 - LLM は計算しないこと
 - `source_ref` を捏造しないこと
 - 出力は Pydantic model に合う JSON のみであること
 - 投資助言、株価予測、目標株価、売買推奨を書かないこと
-- 詳細設計は `references/` の文書を読むこと
 
 runtime code から見ると、skill は以下のように使う。
 
@@ -141,30 +151,33 @@ ReviewWorkflow
   ↓
 workflow_agents.py が agent role を決める
   ↓
-hook / loader が role に対応する prompt skill を解決する
+hook / loader が role に対応する個別 agent skill を直接解決する
   ↓
-LLMProvider.complete(system=resolved_prompt, user=routed_context)
+LLMProvider.complete(system=resolved_skill_instructions, user=routed_context)
   ↓
 Pydantic validation
 ```
 
 このため、skill は workflow の代替ではない。
-skill は `workflow_agents.py` の各 agent wrapper が使う prompt source であり、workflow の順序制御やvalidationは引き続き Python 側が担う。
+skill は `workflow_agents.py` の各 agent wrapper が使う専門agent instruction source であり、workflow の順序制御やvalidationは引き続き Python 側が担う。
+
+単一skill配下に複数promptを置く案は、prompt catalog としては成立する。
+ただし hook が `SKILL.md` 単位で発火するなら、専門agentごとにskillを分ける方が直接的で、routing実装も単純になる。
 
 ## Hook Trigger Assumption
 
-hook は以下のタイミングで、該当 agent prompt skill を参照する。
+hook は以下のタイミングで、該当 agent skill を直接参照する。
 
 runtime hook:
 
 ```text
-agent_role = EarningsQualityAnalyst -> prompts/financial/earnings_quality_analyst.md
-agent_role = CashFlowRiskAnalyst -> prompts/financial/cash_flow_risk_analyst.md
-agent_role = ManagementIntentAnalyst -> prompts/presentation/management_intent_analyst.md
-agent_role = GuidanceAnalyst -> prompts/presentation/guidance_analyst.md
-agent_role = BullAgent -> prompts/debate/bull_agent.md
-agent_role = BearAgent -> prompts/debate/bear_agent.md
-agent_role = JudgeAgent -> prompts/debate/judge_agent.md
+agent_role = EarningsQualityAnalyst -> .agents/skills/earnings-quality-analyst/SKILL.md
+agent_role = CashFlowRiskAnalyst -> .agents/skills/cash-flow-risk-analyst/SKILL.md
+agent_role = ManagementIntentAnalyst -> .agents/skills/management-intent-analyst/SKILL.md
+agent_role = GuidanceAnalyst -> .agents/skills/guidance-analyst/SKILL.md
+agent_role = BullAgent -> .agents/skills/bull-agent/SKILL.md
+agent_role = BearAgent -> .agents/skills/bear-agent/SKILL.md
+agent_role = JudgeAgent -> .agents/skills/judge-agent/SKILL.md
 ```
 
 development hook:
