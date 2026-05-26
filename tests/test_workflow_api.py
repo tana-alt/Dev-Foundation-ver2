@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from threading import Lock
 
+import pytest
 from fastapi.testclient import TestClient
 
 from src import api
 from src.llm import LLMResponse
-from src.workflow import ReviewWorkflow
+from src.workflow import ReviewWorkflow, WorkflowValidationError
 from src.workflow_models import ReviewRequest
 
 
@@ -42,10 +43,8 @@ class FakeLLM:
 
     def _role_from_system(self, system: str) -> str:
         for role in (
-            "EPSQualityAnalyst",
-            "ProfitabilityAnalyst",
-            "CashFlowFcfAnalyst",
-            "BalanceSheetRiskAnalyst",
+            "EarningsQualityAnalyst",
+            "CashFlowRiskAnalyst",
             "ManagementIntentAnalyst",
             "GuidanceAnalyst",
             "BullAgent",
@@ -82,7 +81,7 @@ class FakeLLM:
           "stance_strength": "moderate",
           "strongest_positive_evidence": [
             {
-              "evidence_id": "EPSQualityAnalyst:positive",
+              "evidence_id": "EarningsQualityAnalyst:positive",
               "polarity": "positive",
               "summary": "EPS quality improved.",
               "detail": "EPS quality improved.",
@@ -100,6 +99,12 @@ class FakeLLM:
           "fcf_bull_argument": "FCF can improve as CapEx normalizes.",
           "conditions_needed": ["Revenue growth continues."],
           "weak_points": ["CapEx remains elevated."],
+          "finding_coverage": {
+            "earnings_quality": "supporting",
+            "cash_flow_risk": "opposing",
+            "management_intent": "supporting",
+            "guidance": "supporting"
+          },
           "disputed_points_to_watch": ["FCF conversion"],
           "confidence": 0.68,
           "missing_data": []
@@ -114,7 +119,7 @@ class FakeLLM:
           "stance_strength": "moderate",
           "strongest_negative_evidence": [
             {
-              "evidence_id": "CashFlowFcfAnalyst:negative",
+              "evidence_id": "CashFlowRiskAnalyst:negative",
               "polarity": "negative",
               "summary": "CapEx may pressure FCF.",
               "detail": "CapEx may pressure FCF.",
@@ -132,6 +137,12 @@ class FakeLLM:
           "fcf_bear_argument": "Near-term investment can pressure FCF.",
           "failure_modes": ["Demand slows."],
           "counter_to_bull_case": ["FCF conversion is not yet proven."],
+          "finding_coverage": {
+            "earnings_quality": "opposing",
+            "cash_flow_risk": "opposing",
+            "management_intent": "not_material",
+            "guidance": "opposing"
+          },
           "unresolved_risks": ["CapEx timing"],
           "confidence": 0.66,
           "missing_data": []
@@ -147,7 +158,7 @@ class FakeLLM:
           "rationale": "Positive EPS and margin evidence outweighed near-term FCF risks.",
           "positive_evidence": [
             {
-              "evidence_id": "EPSQualityAnalyst:positive",
+              "evidence_id": "EarningsQualityAnalyst:positive",
               "polarity": "positive",
               "summary": "EPS surprise was positive.",
               "detail": "EPS exceeded consensus with margin support.",
@@ -163,7 +174,7 @@ class FakeLLM:
           ],
           "negative_evidence": [
             {
-              "evidence_id": "CashFlowFcfAnalyst:negative",
+              "evidence_id": "CashFlowRiskAnalyst:negative",
               "polarity": "negative",
               "summary": "CapEx may pressure near-term FCF.",
               "detail": "Elevated investment can delay FCF improvement.",
@@ -200,6 +211,31 @@ class FakeLLM:
           "confidence": 0.70
         }}
         """
+
+
+class HallucinatedBullEvidenceLLM(FakeLLM):
+    def _bull_json(self) -> str:
+        return super()._bull_json().replace(
+            "EarningsQualityAnalyst:positive",
+            "invented:positive",
+        )
+
+
+class InvestmentAdviceJudgeLLM(FakeLLM):
+    def _judge_json(self) -> str:
+        return super()._judge_json().replace(
+            "EPS quality and FCF path look constructive with caveats.",
+            "You should buy the stock.",
+        )
+
+
+class ChangedJudgeSourceLLM(FakeLLM):
+    def _judge_json(self) -> str:
+        return super()._judge_json().replace(
+            '"section_id": "eps"',
+            '"section_id": "invented"',
+            1,
+        )
 
 
 def _source_ref(section_id: str) -> dict:
@@ -276,12 +312,59 @@ def test_review_workflow_runs_ordered_api_first_steps(monkeypatch):
         "markdown_renderer",
     ]
     assert [result.agent_role.value for result in response.analysis_brief.financial_agent_results] == [
-        "eps_analyst",
-        "pnl_analyst",
-        "cfs_analyst",
-        "bs_analyst",
+        "earnings_quality",
+        "cash_flow_risk",
     ]
+    assert set(fake_llm.calls) == {
+        "EarningsQualityAnalyst",
+        "CashFlowRiskAnalyst",
+        "ManagementIntentAnalyst",
+        "GuidanceAnalyst",
+        "bull",
+        "bear",
+        "judge",
+    }
     assert fake_llm.calls.count("judge") == 1
+    assert len(fake_llm.calls) == 7
+
+
+def test_workflow_rejects_bull_case_evidence_not_in_analysis_brief(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    workflow = ReviewWorkflow(llm=HallucinatedBullEvidenceLLM())
+
+    with pytest.raises(WorkflowValidationError, match="not present in validated AnalysisBrief"):
+        workflow.run(ReviewRequest.model_validate(_request_payload()))
+
+
+def test_workflow_rejects_investment_advice_text(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    workflow = ReviewWorkflow(llm=InvestmentAdviceJudgeLLM())
+
+    with pytest.raises(WorkflowValidationError, match="investment-advice language"):
+        workflow.run(ReviewRequest.model_validate(_request_payload()))
+
+
+def test_workflow_rejects_judge_evidence_source_ref_changes(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    workflow = ReviewWorkflow(llm=ChangedJudgeSourceLLM())
+
+    with pytest.raises(WorkflowValidationError, match="changed the validated source_ref"):
+        workflow.run(ReviewRequest.model_validate(_request_payload()))
 
 
 def test_reviews_endpoint_delegates_to_workflow():

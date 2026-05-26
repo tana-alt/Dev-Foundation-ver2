@@ -1,8 +1,18 @@
 import pytest
 
 from src.llm import LLMResponse
-from src.workflow_agents import AgentOutputValidationError, EPSQualityAnalyst
-from src.workflow_agents import JudgeAgent, JudgeDecision
+from src.workflow_agents import (
+    ALL_WORKFLOW_AGENT_CLASSES,
+    SPECIALIST_AGENT_CLASSES,
+    AgentOutputValidationError,
+    BearAgent,
+    BullAgent,
+    CashFlowRiskAnalyst,
+    EarningsQualityAnalyst,
+    JudgeAgent,
+    JudgeDecision,
+    build_default_agents,
+)
 
 
 class FakeLLM:
@@ -42,7 +52,7 @@ def evidence_json(evidence_id, polarity, source_id="filing:eps"):
     """
 
 
-def finding_json(agent_name="EPSQualityAnalyst"):
+def earnings_quality_json(agent_name="EarningsQualityAnalyst"):
     return f"""
     {{
       "agent_name": "{agent_name}",
@@ -57,6 +67,80 @@ def finding_json(agent_name="EPSQualityAnalyst"):
       "confidence": 0.72,
       "missing_data": [],
       "handoff_summary": "Positive EPS quality with one tax caveat."
+    }}
+    """
+
+
+def cash_flow_risk_json(agent_name="CashFlowRiskAnalyst"):
+    return f"""
+    {{
+      "agent_name": "{agent_name}",
+      "stance": "mixed",
+      "summary": "FCF is pressured by CapEx but liquidity is adequate.",
+      "key_evidence": [
+        {evidence_json("ev:fcf:positive", "positive", "filing:fcf")}
+      ],
+      "counter_evidence": [
+        {evidence_json("ev:fcf:negative", "negative", "filing:capex")}
+      ],
+      "confidence": 0.66,
+      "missing_data": [],
+      "handoff_summary": "FCF outlook is mixed because CapEx remains elevated."
+    }}
+    """
+
+
+def finding_coverage_json():
+    return """
+    {
+      "earnings_quality": "supporting",
+      "cash_flow_risk": "opposing",
+      "management_intent": "not_material",
+      "guidance": "missing"
+    }
+    """
+
+
+def bull_json(include_coverage=True):
+    coverage = f'"finding_coverage": {finding_coverage_json()},' if include_coverage else ""
+    return f"""
+    {{
+      "agent_name": "bull_agent",
+      "thesis": "The result can be viewed positively because EPS quality improved.",
+      "stance_strength": "moderate",
+      "strongest_positive_evidence": [
+        {evidence_json("ev:bull:positive", "positive")}
+      ],
+      {coverage}
+      "eps_bull_argument": "Operating margin support improves the EPS case.",
+      "fcf_bull_argument": "FCF could improve if growth CapEx normalizes.",
+      "conditions_needed": ["CapEx normalization remains visible."],
+      "weak_points": ["Current FCF conversion is still mixed."],
+      "disputed_points_to_watch": ["CapEx timing"],
+      "confidence": 0.64,
+      "missing_data": []
+    }}
+    """
+
+
+def bear_json(include_coverage=True):
+    coverage = f'"finding_coverage": {finding_coverage_json()},' if include_coverage else ""
+    return f"""
+    {{
+      "agent_name": "bear_agent",
+      "thesis": "The result could remain neutral because FCF pressure is unresolved.",
+      "stance_strength": "moderate",
+      "strongest_negative_evidence": [
+        {evidence_json("ev:bear:negative", "negative", "filing:capex")}
+      ],
+      {coverage}
+      "eps_bear_argument": "EPS improvement may not fully convert to cash.",
+      "fcf_bear_argument": "CapEx and working capital keep FCF risk elevated.",
+      "failure_modes": ["CapEx remains elevated longer than expected."],
+      "counter_to_bull_case": ["EPS strength does not remove cash conversion risk."],
+      "unresolved_risks": ["Demand durability"],
+      "confidence": 0.61,
+      "missing_data": []
     }}
     """
 
@@ -104,55 +188,128 @@ def judge_json():
     """
 
 
-def test_agent_routes_only_allowed_context_keys():
-    llm = FakeLLM([finding_json()])
-    agent = EPSQualityAnalyst(llm)
+def test_active_runtime_agent_registry_is_plan_seven_agent_design():
+    llm = FakeLLM([])
+    agents = build_default_agents(llm)
+
+    assert [cls.spec.public_role for cls in SPECIALIST_AGENT_CLASSES] == [
+        "EarningsQualityAnalyst",
+        "CashFlowRiskAnalyst",
+        "ManagementIntentAnalyst",
+        "GuidanceAnalyst",
+    ]
+    assert [cls.spec.public_role for cls in ALL_WORKFLOW_AGENT_CLASSES] == [
+        "EarningsQualityAnalyst",
+        "CashFlowRiskAnalyst",
+        "ManagementIntentAnalyst",
+        "GuidanceAnalyst",
+        "BullAgent",
+        "BearAgent",
+        "JudgeAgent",
+    ]
+    assert set(agents) == {
+        "EarningsQualityAnalyst",
+        "CashFlowRiskAnalyst",
+        "ManagementIntentAnalyst",
+        "GuidanceAnalyst",
+        "BullAgent",
+        "BearAgent",
+        "JudgeAgent",
+    }
+
+
+def test_agent_routes_only_plan_context_keys():
+    llm = FakeLLM([earnings_quality_json()])
+    agent = EarningsQualityAnalyst(llm)
 
     result = agent.run(
         {
             "run_spec": {"ticker": "NVDA", "fiscal_period": "2025Q3"},
-            "eps_metrics": {"eps_surprise_pct": 8.2},
-            "eps_sections": [{"source_ref": "10-Q:eps:1", "text": "EPS text"}],
-            "cash_flow_metrics": {"fcf": 123},
+            "earnings_quality_metrics": {"eps_surprise_pct": 8.2},
+            "earnings_quality_sections": [{"source_ref": "10-Q:eps:1", "text": "EPS text"}],
+            "eps_metrics": {"legacy": "must not be routed"},
+            "cash_flow_risk_metrics": {"fcf": 123},
             "raw_filing": "must not be routed",
         }
     )
 
-    assert result.agent_name == "EPSQualityAnalyst"
+    assert result.agent_name == "EarningsQualityAnalyst"
     prompt = llm.calls[0]["user"]
-    assert "eps_metrics" in prompt
-    assert "eps_sections" in prompt
-    assert "cash_flow_metrics" not in prompt
+    assert "earnings_quality_metrics" in prompt
+    assert "earnings_quality_sections" in prompt
+    assert "eps_metrics" not in prompt
+    assert "cash_flow_risk_metrics" not in prompt
     assert "raw_filing" not in prompt
 
 
+def test_cash_flow_risk_agent_uses_cash_flow_risk_contract():
+    llm = FakeLLM([cash_flow_risk_json()])
+    agent = CashFlowRiskAnalyst(llm)
+
+    result = agent.run(
+        {
+            "run_spec": {"ticker": "NVDA", "fiscal_period": "2025Q3"},
+            "cash_flow_risk_metrics": {"free_cash_flow": 123},
+            "cash_flow_risk_sections": [{"source_ref": "10-Q:fcf:1", "text": "FCF text"}],
+        }
+    )
+
+    assert result.agent_name == "CashFlowRiskAnalyst"
+    assert "cash_flow_risk_metrics" in llm.calls[0]["user"]
+
+
 def test_agent_rejects_role_mismatch_without_retry_when_disabled():
-    llm = FakeLLM([finding_json(agent_name="GuidanceAnalyst")])
-    agent = EPSQualityAnalyst(llm, max_retries=0)
+    llm = FakeLLM([earnings_quality_json(agent_name="GuidanceAnalyst")])
+    agent = EarningsQualityAnalyst(llm, max_retries=0)
 
     with pytest.raises(AgentOutputValidationError):
         agent.run({"run_spec": {"ticker": "NVDA"}})
 
 
 def test_agent_retries_once_for_invalid_json():
-    llm = FakeLLM(["not json", finding_json()])
-    agent = EPSQualityAnalyst(llm, max_retries=1)
+    llm = FakeLLM(["not json", earnings_quality_json()])
+    agent = EarningsQualityAnalyst(llm, max_retries=1)
 
     result = agent.run({"run_spec": {"ticker": "NVDA"}})
 
-    assert result.agent_name == "EPSQualityAnalyst"
+    assert result.agent_name == "EarningsQualityAnalyst"
     assert len(llm.calls) == 2
     assert "previous_output_error" in llm.calls[1]["user"]
 
 
 def test_agent_stops_after_single_retry():
     llm = FakeLLM(["not json", "still not json"])
-    agent = EPSQualityAnalyst(llm, max_retries=1)
+    agent = EarningsQualityAnalyst(llm, max_retries=1)
 
     with pytest.raises(AgentOutputValidationError):
         agent.run({"run_spec": {"ticker": "NVDA"}})
 
     assert len(llm.calls) == 2
+
+
+def test_bull_and_bear_schema_requires_finding_coverage():
+    assert "finding_coverage" in BullAgent.spec.output_model.model_json_schema()["properties"]
+    assert "finding_coverage" in BearAgent.spec.output_model.model_json_schema()["properties"]
+
+    bull = BullAgent(FakeLLM([bull_json()])).run({"analysis_brief": {"summary": "brief"}})
+    bear = BearAgent(FakeLLM([bear_json()])).run({"analysis_brief": {"summary": "brief"}})
+
+    assert bull.finding_coverage["earnings_quality"] == "supporting"
+    assert bear.finding_coverage["cash_flow_risk"] == "opposing"
+
+
+def test_bull_agent_rejects_missing_finding_coverage():
+    agent = BullAgent(FakeLLM([bull_json(include_coverage=False)]), max_retries=0)
+
+    with pytest.raises(AgentOutputValidationError):
+        agent.run({"analysis_brief": {"summary": "brief"}})
+
+
+def test_bear_agent_rejects_missing_finding_coverage():
+    agent = BearAgent(FakeLLM([bear_json(include_coverage=False)]), max_retries=0)
+
+    with pytest.raises(AgentOutputValidationError):
+        agent.run({"analysis_brief": {"summary": "brief"}})
 
 
 def test_judge_agent_returns_judge_decision_contract():

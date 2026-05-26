@@ -6,12 +6,20 @@ from src.workflow_models import (
     AgentTeam,
     AgentResult,
     AnalysisBrief,
+    BearCase,
+    BullCase,
+    CashFlowRiskFinding,
     DebateResult,
+    EarningsQualityFinding,
     EvidenceItem,
     EvidencePolarity,
+    FinalVerdict,
+    FindingCoverage,
     FinancialMetrics,
+    GuidanceFinding,
     ImpactArea,
     JudgeDecision,
+    ManagementIntentFinding,
     ReviewRequest,
     ReviewResponse,
     SourceRef,
@@ -60,6 +68,56 @@ def evidence(
         unit="USD/share",
         confidence=0.8,
     )
+
+
+def specialist_finding(agent_name: str):
+    positive = evidence(f"ev:positive:{agent_name.lower()}")
+    negative = evidence(f"ev:negative:{agent_name.lower()}", EvidencePolarity.NEGATIVE)
+    finding_args = {
+        "stance": "mixed",
+        "summary": f"{agent_name} found mixed evidence.",
+        "key_evidence": [positive],
+        "counter_evidence": [negative],
+        "confidence": 0.7,
+        "handoff_summary": f"{agent_name} handoff.",
+    }
+    finding_classes = {
+        "EarningsQualityAnalyst": EarningsQualityFinding,
+        "CashFlowRiskAnalyst": CashFlowRiskFinding,
+        "ManagementIntentAnalyst": ManagementIntentFinding,
+        "GuidanceAnalyst": GuidanceFinding,
+    }
+    return finding_classes[agent_name](**finding_args)
+
+
+def analysis_brief(
+    positive: EvidenceItem | None = None,
+    negative: EvidenceItem | None = None,
+    financial_agent_results: list[AgentResult] | None = None,
+) -> AnalysisBrief:
+    positive = positive or evidence()
+    negative = negative or evidence("ev:negative:capex", EvidencePolarity.NEGATIVE)
+    return AnalysisBrief(
+        ticker="NVDA",
+        fiscal_period="2025Q3",
+        earnings_quality_finding=specialist_finding("EarningsQualityAnalyst"),
+        cash_flow_risk_finding=specialist_finding("CashFlowRiskAnalyst"),
+        management_intent_finding=specialist_finding("ManagementIntentAnalyst"),
+        guidance_finding=specialist_finding("GuidanceAnalyst"),
+        financial_agent_results=financial_agent_results or [],
+        positive_evidence_pool=[positive],
+        negative_evidence_pool=[negative],
+        synthesis="Evidence is positive, but cash-flow timing remains a counterpoint.",
+    )
+
+
+def complete_finding_coverage() -> dict[str, str]:
+    return {
+        "earnings_quality": "supporting",
+        "cash_flow_risk": "opposing",
+        "management_intent": "supporting",
+        "guidance": "not_material",
+    }
 
 
 def completed_status(step: WorkflowStep) -> StepStatus:
@@ -139,6 +197,116 @@ def test_verdict_label_is_lowercase_enum():
     assert decision.verdict == VerdictLabel.GOOD
 
 
+def test_agent_role_centers_on_7_agent_contract_with_legacy_name_aliases():
+    assert [role.value for role in AgentRole] == [
+        "earnings_quality",
+        "cash_flow_risk",
+        "management_intent",
+        "guidance",
+        "bull",
+        "bear",
+        "judge",
+    ]
+    assert AgentRole.EPS_ANALYST is AgentRole.EARNINGS_QUALITY
+    assert AgentRole.PNL_ANALYST is AgentRole.EARNINGS_QUALITY
+    assert AgentRole.CFS_ANALYST is AgentRole.CASH_FLOW_RISK
+    assert AgentRole.BS_ANALYST is AgentRole.CASH_FLOW_RISK
+    assert AgentRole.MANAGEMENT_EVAL is AgentRole.MANAGEMENT_INTENT
+
+    result = AgentResult(
+        agent_role="eps_analyst",
+        team=AgentTeam.FINANCIAL,
+        status=completed_status(WorkflowStep.FINANCIAL_AGENTS),
+        headline="Legacy role strings are normalized.",
+        conclusion="The canonical role is earnings_quality.",
+        confidence=0.7,
+    )
+    assert result.agent_role is AgentRole.EARNINGS_QUALITY
+
+
+def test_analysis_brief_requires_four_specialist_findings():
+    brief = analysis_brief()
+
+    assert brief.earnings_quality_finding.agent_name == "EarningsQualityAnalyst"
+    assert brief.cash_flow_risk_finding.agent_name == "CashFlowRiskAnalyst"
+    assert brief.management_intent_finding.agent_name == "ManagementIntentAnalyst"
+    assert brief.guidance_finding.agent_name == "GuidanceAnalyst"
+
+    with pytest.raises(ValidationError):
+        AnalysisBrief(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            earnings_quality_finding=specialist_finding("EarningsQualityAnalyst"),
+            cash_flow_risk_finding=specialist_finding("CashFlowRiskAnalyst"),
+            management_intent_finding=specialist_finding("ManagementIntentAnalyst"),
+            positive_evidence_pool=[evidence()],
+            negative_evidence_pool=[evidence("ev:negative:fcf", EvidencePolarity.NEGATIVE)],
+            synthesis="Missing guidance finding should fail.",
+        )
+
+
+def test_bull_and_bear_cases_require_complete_finding_coverage():
+    positive = evidence()
+    negative = evidence("ev:negative:capex", EvidencePolarity.NEGATIVE)
+    bull = BullCase(
+        thesis="EPS quality and guidance support a constructive view.",
+        stance_strength="moderate",
+        strongest_positive_evidence=[positive],
+        eps_bull_argument="EPS can improve if margin strength persists.",
+        fcf_bull_argument="FCF can improve if CapEx intensity moderates.",
+        conditions_needed=["Demand remains durable."],
+        weak_points=["Near-term FCF remains pressured."],
+        finding_coverage=complete_finding_coverage(),
+        confidence=0.7,
+    )
+    bear = BearCase(
+        thesis="Cash-flow pressure and execution risk limit the verdict.",
+        stance_strength="moderate",
+        strongest_negative_evidence=[negative],
+        eps_bear_argument="EPS may rely on margin assumptions that could fade.",
+        fcf_bear_argument="FCF may stay pressured if CapEx remains high.",
+        failure_modes=["CapEx remains elevated."],
+        counter_to_bull_case=["Bull case depends on sustained demand."],
+        finding_coverage=complete_finding_coverage(),
+        confidence=0.65,
+    )
+
+    assert bull.finding_coverage["earnings_quality"] == FindingCoverage.SUPPORTING
+    assert bear.finding_coverage["cash_flow_risk"] == FindingCoverage.OPPOSING
+
+    incomplete_coverage = complete_finding_coverage()
+    incomplete_coverage.pop("guidance")
+    with pytest.raises(ValidationError):
+        BullCase(
+            thesis="Coverage is incomplete.",
+            stance_strength="weak",
+            strongest_positive_evidence=[positive],
+            eps_bull_argument="EPS argument.",
+            fcf_bull_argument="FCF argument.",
+            conditions_needed=["Condition."],
+            weak_points=["Weak point."],
+            finding_coverage=incomplete_coverage,
+            confidence=0.4,
+        )
+
+
+def test_final_verdict_alias_preserves_judge_decision_api():
+    assert FinalVerdict is JudgeDecision
+
+    verdict = FinalVerdict(
+        verdict="neutral",
+        confidence=0.6,
+        summary="Mixed quarter.",
+        rationale="Positive evidence and cash-flow risk are balanced.",
+        positive_evidence=[evidence()],
+        negative_evidence=[evidence("ev:negative:fcf", EvidencePolarity.NEGATIVE)],
+        eps_outlook="EPS path is balanced.",
+        fcf_outlook="FCF path is uncertain.",
+    )
+
+    assert isinstance(verdict, JudgeDecision)
+
+
 def test_judge_decision_requires_positive_and_negative_evidence():
     with pytest.raises(ValidationError):
         JudgeDecision(
@@ -158,7 +326,7 @@ def test_full_review_response_contains_structured_result_and_markdown():
     negative = evidence("ev:negative:capex", EvidencePolarity.NEGATIVE)
     status = completed_status(WorkflowStep.JUDGE)
     agent_result = AgentResult(
-        agent_role=AgentRole.EPS_ANALYST,
+        agent_role=AgentRole.EARNINGS_QUALITY,
         team=AgentTeam.FINANCIAL,
         status=status,
         headline="EPS beat was operating-supported.",
@@ -167,13 +335,10 @@ def test_full_review_response_contains_structured_result_and_markdown():
         counter_evidence=[negative],
         confidence=0.75,
     )
-    brief = AnalysisBrief(
-        ticker="NVDA",
-        fiscal_period="2025Q3",
+    brief = analysis_brief(
+        positive=positive,
+        negative=negative,
         financial_agent_results=[agent_result],
-        positive_evidence_pool=[positive],
-        negative_evidence_pool=[negative],
-        synthesis="Evidence is positive, but cash-flow timing remains a counterpoint.",
     )
     debate = DebateResult(
         bull_case="EPS quality and guidance support a good interpretation.",

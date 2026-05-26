@@ -4,20 +4,22 @@ This module owns the LLM call boundary for the earnings-review workflow:
 agents receive a small routed context, call ``LLMProvider.complete()``, and
 return Pydantic-validated JSON objects.
 
-``src.workflow_models`` is expected to become the canonical contract module.
-Until then, fallback models below keep this wrapper testable and make the
-future import surface explicit.
+``src.workflow_models`` is the canonical contract module.  This wrapper keeps a
+small compatibility bridge for Plan/active models that may not have landed in
+``workflow_models`` yet, but runtime agent specs always point at strict
+workflow contracts rather than permissive ad-hoc fallback models.
 """
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Literal, Mapping
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .llm import LLMProvider
 from .structured import parse_model
+from . import workflow_models as _workflow_models
 
 
 class WorkflowAgentError(RuntimeError):
@@ -32,131 +34,113 @@ class AgentOutputValidationError(WorkflowAgentError):
     """Raised when the LLM output cannot be parsed into the output contract."""
 
 
-class _FallbackContract(BaseModel):
-    """Temporary permissive base until src.workflow_models lands.
+FindingKey = Literal["earnings_quality", "cash_flow_risk", "management_intent", "guidance"]
+FindingCoverage = Literal["supporting", "opposing", "not_material", "missing"]
+REQUIRED_FINDING_COVERAGE_KEYS = {
+    "earnings_quality",
+    "cash_flow_risk",
+    "management_intent",
+    "guidance",
+}
 
-    The future workflow models should be stricter and can be wired by exporting
-    the class names used in the import fallback block below.
+
+class _PlanFinding(_workflow_models.AgentFinding):
+    """Strict bridge for Plan/active specialist contracts.
+
+    The nested Plan objects are intentionally typed as JSON dictionaries here
+    because ``workflow_models`` owns the final canonical shape.  This still
+    forbids extra top-level fields and keeps the role-specific required fields
+    visible in the output schema.
     """
 
-    model_config = ConfigDict(extra="allow", str_strip_whitespace=True)
+
+class _BridgeEarningsQualityFinding(_PlanFinding):
+    agent_name: Literal["EarningsQualityAnalyst"] = "EarningsQualityAnalyst"
+    eps_surprise_assessment: dict[str, Any]
+    quality_of_earnings: dict[str, Any]
+    revenue_quality: dict[str, Any]
+    margin_trend: dict[str, Any]
+    operating_leverage: dict[str, Any]
+    segment_mix_effect: dict[str, Any]
+    eps_outlook_signal: dict[str, Any]
+    fcf_implication: dict[str, Any]
 
 
-class EvidenceItem(_FallbackContract):
-    source_ref: str = Field(min_length=1)
-    summary: str = Field(min_length=1)
-    source_type: str | None = None
-    metric: str | None = None
-    period: str | None = None
+class _BridgeCashFlowRiskFinding(_PlanFinding):
+    agent_name: Literal["CashFlowRiskAnalyst"] = "CashFlowRiskAnalyst"
+    fcf_trend_assessment: dict[str, Any]
+    cash_conversion_assessment: dict[str, Any]
+    capex_assessment: dict[str, Any]
+    working_capital_effect: dict[str, Any]
+    liquidity_assessment: dict[str, Any]
+    leverage_or_financing_risk: dict[str, Any]
+    fcf_outlook_signal: dict[str, Any]
+    eps_constraint: dict[str, Any]
 
 
-class _FallbackFinding(_FallbackContract):
-    agent_name: str = Field(min_length=1)
-    stance: str = Field(min_length=1)
-    summary: str = Field(min_length=1)
-    key_evidence: list[EvidenceItem] = Field(default_factory=list)
-    counter_evidence: list[EvidenceItem] = Field(default_factory=list)
-    confidence: float = Field(ge=0.0, le=1.0)
-    missing_data: list[str] = Field(default_factory=list)
-    handoff_summary: str = Field(default="", max_length=2000)
+class _BridgeBullCase(_workflow_models.BullCase):
+    finding_coverage: dict[FindingKey, FindingCoverage]
+
+    @field_validator("finding_coverage")
+    @classmethod
+    def require_all_specialist_findings(
+        cls, value: dict[FindingKey, FindingCoverage]
+    ) -> dict[FindingKey, FindingCoverage]:
+        missing = REQUIRED_FINDING_COVERAGE_KEYS.difference(value)
+        if missing:
+            raise ValueError(
+                "finding_coverage missing keys: " + ", ".join(sorted(missing))
+            )
+        return value
 
 
-class _FallbackEPSQualityFinding(_FallbackFinding):
-    pass
+class _BridgeBearCase(_workflow_models.BearCase):
+    finding_coverage: dict[FindingKey, FindingCoverage]
+
+    @field_validator("finding_coverage")
+    @classmethod
+    def require_all_specialist_findings(
+        cls, value: dict[FindingKey, FindingCoverage]
+    ) -> dict[FindingKey, FindingCoverage]:
+        missing = REQUIRED_FINDING_COVERAGE_KEYS.difference(value)
+        if missing:
+            raise ValueError(
+                "finding_coverage missing keys: " + ", ".join(sorted(missing))
+            )
+        return value
 
 
-class _FallbackProfitabilityFinding(_FallbackFinding):
-    pass
-
-
-class _FallbackCashFlowFcfFinding(_FallbackFinding):
-    pass
-
-
-class _FallbackBalanceSheetRiskFinding(_FallbackFinding):
-    pass
-
-
-class _FallbackManagementIntentFinding(_FallbackFinding):
-    pass
-
-
-class _FallbackGuidanceFinding(_FallbackFinding):
-    pass
-
-
-class _FallbackBullCase(_FallbackContract):
-    agent_name: str = Field(min_length=1)
-    thesis: str = Field(min_length=1)
-    stance_strength: str = Field(min_length=1)
-    strongest_positive_evidence: list[EvidenceItem] = Field(default_factory=list)
-    eps_bull_argument: str = Field(default="")
-    fcf_bull_argument: str = Field(default="")
-    conditions_needed: list[str] = Field(default_factory=list)
-    weak_points: list[str] = Field(default_factory=list)
-    disputed_points_to_watch: list[str] = Field(default_factory=list)
-    confidence: float = Field(ge=0.0, le=1.0)
-    missing_data: list[str] = Field(default_factory=list)
-
-
-class _FallbackBearCase(_FallbackContract):
-    agent_name: str = Field(min_length=1)
-    thesis: str = Field(min_length=1)
-    stance_strength: str = Field(min_length=1)
-    strongest_negative_evidence: list[EvidenceItem] = Field(default_factory=list)
-    eps_bear_argument: str = Field(default="")
-    fcf_bear_argument: str = Field(default="")
-    failure_modes: list[str] = Field(default_factory=list)
-    counter_to_bull_case: list[str] = Field(default_factory=list)
-    unresolved_risks: list[str] = Field(default_factory=list)
-    confidence: float = Field(ge=0.0, le=1.0)
-    missing_data: list[str] = Field(default_factory=list)
-
-
-class _FallbackJudgeDecision(_FallbackContract):
-    agent_name: str = Field(min_length=1)
-    label: str = Field(pattern=r"^(good|neutral|bad)$")
-    confidence: float = Field(ge=0.0, le=1.0)
-    summary: str = Field(min_length=1)
-    positive_evidence: list[EvidenceItem] = Field(default_factory=list)
-    negative_evidence: list[EvidenceItem] = Field(default_factory=list)
-    eps_outlook: str = Field(min_length=1)
-    eps_outlook_reason: str = Field(min_length=1)
-    fcf_outlook: str = Field(min_length=1)
-    fcf_outlook_reason: str = Field(min_length=1)
-    key_disputed_points: list[str] = Field(default_factory=list)
-    missing_data: list[str] = Field(default_factory=list)
-    non_advice_disclaimer: str = Field(min_length=1)
-
-
-try:  # pragma: no cover - exercised once src.workflow_models exists.
-    from . import workflow_models as _workflow_models
-except ImportError:  # pragma: no cover - current repository state.
-    _workflow_models = None
-
-
-EPSQualityFinding = getattr(
-    _workflow_models, "EPSQualityFinding", _FallbackEPSQualityFinding
+EarningsQualityFinding = getattr(
+    _workflow_models, "EarningsQualityFinding", _BridgeEarningsQualityFinding
 )
-ProfitabilityFinding = getattr(
-    _workflow_models, "ProfitabilityFinding", _FallbackProfitabilityFinding
+CashFlowRiskFinding = getattr(
+    _workflow_models, "CashFlowRiskFinding", _BridgeCashFlowRiskFinding
 )
-CashFlowFcfFinding = getattr(
-    _workflow_models, "CashFlowFcfFinding", _FallbackCashFlowFcfFinding
+ManagementIntentFinding = getattr(_workflow_models, "ManagementIntentFinding")
+GuidanceFinding = getattr(_workflow_models, "GuidanceFinding")
+
+_WorkflowBullCase = getattr(_workflow_models, "BullCase")
+_WorkflowBearCase = getattr(_workflow_models, "BearCase")
+BullCase = (
+    _WorkflowBullCase
+    if "finding_coverage" in _WorkflowBullCase.model_fields
+    else _BridgeBullCase
 )
+BearCase = (
+    _WorkflowBearCase
+    if "finding_coverage" in _WorkflowBearCase.model_fields
+    else _BridgeBearCase
+)
+FinalVerdict = getattr(_workflow_models, "FinalVerdict", _workflow_models.JudgeDecision)
+JudgeDecision = getattr(_workflow_models, "JudgeDecision", FinalVerdict)
+
+# Import compatibility for older callers.  These models are not used by active
+# runtime agent specs below.
+EPSQualityFinding = getattr(_workflow_models, "EPSQualityFinding", EarningsQualityFinding)
+ProfitabilityFinding = getattr(_workflow_models, "ProfitabilityFinding", EarningsQualityFinding)
+CashFlowFcfFinding = getattr(_workflow_models, "CashFlowFcfFinding", CashFlowRiskFinding)
 BalanceSheetRiskFinding = getattr(
-    _workflow_models, "BalanceSheetRiskFinding", _FallbackBalanceSheetRiskFinding
-)
-ManagementIntentFinding = getattr(
-    _workflow_models, "ManagementIntentFinding", _FallbackManagementIntentFinding
-)
-GuidanceFinding = getattr(_workflow_models, "GuidanceFinding", _FallbackGuidanceFinding)
-BullCase = getattr(_workflow_models, "BullCase", _FallbackBullCase)
-BearCase = getattr(_workflow_models, "BearCase", _FallbackBearCase)
-JudgeDecision = getattr(
-    _workflow_models,
-    "JudgeDecision",
-    getattr(_workflow_models, "FinalVerdict", _FallbackJudgeDecision),
+    _workflow_models, "BalanceSheetRiskFinding", CashFlowRiskFinding
 )
 
 
@@ -318,98 +302,61 @@ def _system(role: str, scope: str) -> str:
     )
 
 
-class EPSQualityAnalyst(WorkflowAgent):
+class EarningsQualityAnalyst(WorkflowAgent):
     spec = AgentSpec(
-        public_role="EPSQualityAnalyst",
-        output_agent_name="EPSQualityAnalyst",
-        output_model=EPSQualityFinding,
+        public_role="EarningsQualityAnalyst",
+        output_agent_name="EarningsQualityAnalyst",
+        output_model=EarningsQualityFinding,
         context_keys=(
             "run_spec",
-            "eps_metrics",
-            "profitability_metrics",
-            "eps_sections",
+            "earnings_quality_metrics",
+            "earnings_quality_sections",
             "source_index",
             "analysis_config",
         ),
         system_prompt=_system(
-            "EPSQualityAnalyst",
-            "EPS surpriseの質、一時要因と継続要因、将来EPSへの示唆を分析する。",
+            "EarningsQualityAnalyst",
+            (
+                "EPS surpriseとP&Lの質を統合し、売上品質、margin trend、"
+                "operating leverage、一時要因/継続要因、将来EPSへの示唆を分析する。"
+            ),
         ),
-        task_prompt="EPSQualityFinding JSONを作成してください。",
-        role_aliases=("eps_analyst",),
+        task_prompt="EarningsQualityFinding JSONを作成してください。",
+        role_aliases=("eps_analyst", "pnl_analyst"),
     )
 
 
-class ProfitabilityAnalyst(WorkflowAgent):
+class CashFlowRiskAnalyst(WorkflowAgent):
     spec = AgentSpec(
-        public_role="ProfitabilityAnalyst",
-        output_agent_name="ProfitabilityAnalyst",
-        output_model=ProfitabilityFinding,
+        public_role="CashFlowRiskAnalyst",
+        output_agent_name="CashFlowRiskAnalyst",
+        output_model=CashFlowRiskFinding,
         context_keys=(
             "run_spec",
-            "profitability_metrics",
-            "revenue_metrics",
-            "margin_metrics",
-            "profitability_sections",
-            "segment_sections",
+            "cash_flow_risk_metrics",
+            "cash_flow_risk_sections",
+            "cash_conversion_inputs",
             "source_index",
             "analysis_config",
         ),
         system_prompt=_system(
-            "ProfitabilityAnalyst",
-            "売上品質、粗利率、営業利益率、営業レバレッジ、segment mixを分析する。",
+            "CashFlowRiskAnalyst",
+            (
+                "CFO、FCF、CapEx、working capital、liquidity、debt、"
+                "financing constraintを統合し、将来FCF改善方向とリスクを分析する。"
+            ),
         ),
-        task_prompt="ProfitabilityFinding JSONを作成してください。",
-        role_aliases=("pnl_analyst",),
+        task_prompt="CashFlowRiskFinding JSONを作成してください。",
+        role_aliases=("cfs_analyst", "bs_analyst"),
     )
 
 
-class CashFlowFcfAnalyst(WorkflowAgent):
-    spec = AgentSpec(
-        public_role="CashFlowFcfAnalyst",
-        output_agent_name="CashFlowFcfAnalyst",
-        output_model=CashFlowFcfFinding,
-        context_keys=(
-            "run_spec",
-            "cash_flow_metrics",
-            "fcf_metrics",
-            "capex_metrics",
-            "working_capital_metrics",
-            "cash_flow_sections",
-            "capex_sections",
-            "source_index",
-            "analysis_config",
-        ),
-        system_prompt=_system(
-            "CashFlowFcfAnalyst",
-            "営業CF、FCF、CapEx、運転資本が将来FCFへ与える影響を分析する。",
-        ),
-        task_prompt="CashFlowFcfFinding JSONを作成してください。",
-        role_aliases=("cfs_analyst",),
-    )
-
-
-class BalanceSheetRiskAnalyst(WorkflowAgent):
-    spec = AgentSpec(
-        public_role="BalanceSheetRiskAnalyst",
-        output_agent_name="BalanceSheetRiskAnalyst",
-        output_model=BalanceSheetRiskFinding,
-        context_keys=(
-            "run_spec",
-            "balance_sheet_metrics",
-            "debt_liquidity_metrics",
-            "balance_sheet_sections",
-            "risk_sections",
-            "source_index",
-            "analysis_config",
-        ),
-        system_prompt=_system(
-            "BalanceSheetRiskAnalyst",
-            "BSの健全性、流動性、負債水準、財務制約リスクを分析する。",
-        ),
-        task_prompt="BalanceSheetRiskFinding JSONを作成してください。",
-        role_aliases=("bs_analyst",),
-    )
+# Legacy import aliases only.  They are intentionally excluded from
+# SPECIALIST_AGENT_CLASSES and ALL_WORKFLOW_AGENT_CLASSES.
+EPSQualityAnalyst = EarningsQualityAnalyst
+ProfitabilityAnalyst = EarningsQualityAnalyst
+CashFlowFcfAnalyst = CashFlowRiskAnalyst
+BalanceSheetRiskAnalyst = CashFlowRiskAnalyst
 
 
 class ManagementIntentAnalyst(WorkflowAgent):
@@ -421,9 +368,12 @@ class ManagementIntentAnalyst(WorkflowAgent):
             "run_spec",
             "financial_snapshot_minimal",
             "management_sections",
+            "management_intent_sections",
+            "strategy_sections",
             "mdna_sections",
             "risk_sections",
             "source_index",
+            "analysis_config",
         ),
         system_prompt=_system(
             "ManagementIntentAnalyst",
@@ -441,8 +391,10 @@ class GuidanceAnalyst(WorkflowAgent):
         output_model=GuidanceFinding,
         context_keys=(
             "run_spec",
-            "guidance_sections",
+            "guidance_metrics",
+            "guidance_consensus_deltas",
             "consensus_deltas",
+            "guidance_sections",
             "guidance_assumptions_sections",
             "prior_guidance_track_record",
             "management_intent_handoff",
@@ -467,6 +419,10 @@ class BullAgent(WorkflowAgent):
             "run_spec",
             "financial_snapshot_summary",
             "analysis_brief",
+            "earnings_quality_finding",
+            "cash_flow_risk_finding",
+            "management_intent_finding",
+            "guidance_finding",
             "positive_evidence_pool",
             "negative_evidence_pool",
             "disputed_points",
@@ -476,7 +432,10 @@ class BullAgent(WorkflowAgent):
             "BullAgent",
             "validated AnalysisBriefだけからgoodと評価できる最も強いcaseを作る。",
         ),
-        task_prompt="BullCase JSONを作成してください。",
+        task_prompt=(
+            "BullCase JSONを作成してください。finding_coverageには earnings_quality, "
+            "cash_flow_risk, management_intent, guidance を必ず含めてください。"
+        ),
         role_aliases=("BullAgent", "bull"),
         max_tokens=1400,
     )
@@ -489,7 +448,12 @@ class BearAgent(WorkflowAgent):
         output_model=BearCase,
         context_keys=(
             "run_spec",
+            "financial_snapshot_summary",
             "analysis_brief",
+            "earnings_quality_finding",
+            "cash_flow_risk_finding",
+            "management_intent_finding",
+            "guidance_finding",
             "bull_case_summary",
             "positive_evidence_pool",
             "negative_evidence_pool",
@@ -500,7 +464,10 @@ class BearAgent(WorkflowAgent):
             "BearAgent",
             "validated AnalysisBriefと必要ならBullCaseSummaryからdownside/neutral caseを作る。",
         ),
-        task_prompt="BearCase JSONを作成してください。",
+        task_prompt=(
+            "BearCase JSONを作成してください。finding_coverageには earnings_quality, "
+            "cash_flow_risk, management_intent, guidance を必ず含めてください。"
+        ),
         role_aliases=("BearAgent", "bear"),
         max_tokens=1400,
     )
@@ -510,7 +477,7 @@ class JudgeAgent(WorkflowAgent):
     spec = AgentSpec(
         public_role="JudgeAgent",
         output_agent_name="judge_agent",
-        output_model=JudgeDecision,
+        output_model=FinalVerdict,
         context_keys=(
             "run_spec",
             "financial_snapshot_summary",
@@ -530,10 +497,8 @@ class JudgeAgent(WorkflowAgent):
 
 
 SPECIALIST_AGENT_CLASSES: tuple[type[WorkflowAgent], ...] = (
-    EPSQualityAnalyst,
-    ProfitabilityAnalyst,
-    CashFlowFcfAnalyst,
-    BalanceSheetRiskAnalyst,
+    EarningsQualityAnalyst,
+    CashFlowRiskAnalyst,
     ManagementIntentAnalyst,
     GuidanceAnalyst,
 )

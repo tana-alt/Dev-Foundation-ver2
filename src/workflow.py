@@ -17,28 +17,31 @@ from pydantic import BaseModel
 
 from .llm import LLMProvider
 from .workflow_agents import (
-    BalanceSheetRiskAnalyst,
     BearAgent,
     BullAgent,
-    CashFlowFcfAnalyst,
-    EPSQualityAnalyst,
+    CashFlowRiskAnalyst,
+    EarningsQualityAnalyst,
     GuidanceAnalyst,
     JudgeAgent,
     ManagementIntentAnalyst,
-    ProfitabilityAnalyst,
 )
 from .workflow_models import (
     AgentResult,
     AgentRole,
     AgentTeam,
     AnalysisBrief,
+    CashFlowRiskFinding,
     DebateResult,
     DocumentSection,
+    EarningsQualityFinding,
     EvidenceItem,
     EvidencePolarity,
     FinancialMetrics,
+    GuidanceFinding,
     ImpactArea,
     JudgeDecision,
+    ManagementIntentFinding,
+    REQUIRED_FINDING_COVERAGE_KEYS,
     ReviewRequest,
     ReviewResponse,
     SourceRef,
@@ -52,6 +55,22 @@ from .workflow_models import (
 
 class WorkflowValidationError(ValueError):
     """Raised when a deterministic workflow gate fails."""
+
+
+INVESTMENT_ADVICE_PATTERNS = (
+    re.compile(r"\b(buy|sell|hold)\s+(the\s+)?(stock|shares)\b", re.IGNORECASE),
+    re.compile(r"\b(buy|sell|hold)\s+[A-Z]{1,6}\b", re.IGNORECASE),
+    re.compile(r"\b(stock|shares)\s+(is|are)\s+a\s+(buy|sell|hold)\b", re.IGNORECASE),
+    re.compile(
+        r"\brecommend(s|ed|ing)?\s+(buying|selling|holding|to\s+(buy|sell|hold))\b",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\byou\s+should\s+(buy|sell|hold)\b", re.IGNORECASE),
+    re.compile(r"\b(price target|target price)\b", re.IGNORECASE),
+    re.compile(r"目標株価"),
+    re.compile(r"売買推奨|投資推奨|買い推奨|売り推奨|購入を推奨"),
+    re.compile(r"買うべき|売るべき|保有すべき"),
+)
 
 
 def _fetch_consensus(ticker: str, quarter: str):
@@ -135,10 +154,8 @@ class ReviewWorkflow:
     """Synchronous API workflow runner."""
 
     financial_agent_classes = (
-        EPSQualityAnalyst,
-        ProfitabilityAnalyst,
-        CashFlowFcfAnalyst,
-        BalanceSheetRiskAnalyst,
+        EarningsQualityAnalyst,
+        CashFlowRiskAnalyst,
     )
     presentation_agent_classes = (ManagementIntentAnalyst, GuidanceAnalyst)
 
@@ -190,7 +207,7 @@ class ReviewWorkflow:
             WorkflowStep.JUDGE,
             lambda: self._run_judge(request, metrics, brief, bull_case, bear_case),
         )
-        self._validate_judge_decision(decision, brief, debate)
+        decision = self._validate_judge_decision(decision, brief, debate)
 
         markdown = self._record_step(
             steps,
@@ -325,28 +342,25 @@ class ReviewWorkflow:
             },
             "financial_snapshot_summary": minimal_snapshot,
             "financial_snapshot_minimal": minimal_snapshot,
-            "eps_metrics": metrics_json,
-            "profitability_metrics": metrics_json,
-            "revenue_metrics": metrics_json,
-            "margin_metrics": metrics_json,
-            "cash_flow_metrics": metrics_json,
-            "fcf_metrics": metrics_json,
-            "capex_metrics": metrics_json,
-            "working_capital_metrics": metrics_json,
-            "balance_sheet_metrics": metrics_json,
-            "debt_liquidity_metrics": metrics_json,
+            "earnings_quality_metrics": metrics_json,
+            "cash_flow_risk_metrics": metrics_json,
+            "cash_conversion_inputs": metrics_json,
+            "guidance_metrics": metrics_json,
+            "guidance_consensus_deltas": metrics_json,
             "consensus_deltas": metrics_json,
-            "eps_sections": by_topic["eps"],
-            "profitability_sections": by_topic["revenue"] + by_topic["segments"],
-            "segment_sections": by_topic["segments"],
-            "cash_flow_sections": by_topic["other"] + by_topic["risk"],
-            "capex_sections": by_topic["guidance"] + by_topic["risk"],
-            "balance_sheet_sections": by_topic["risk"] + by_topic["other"],
+            "earnings_quality_sections": (
+                by_topic["eps"] + by_topic["revenue"] + by_topic["segments"] + by_topic["other"]
+            ),
+            "cash_flow_risk_sections": by_topic["other"] + by_topic["risk"] + by_topic["guidance"],
             "risk_sections": by_topic["risk"],
             "management_sections": by_topic["guidance"] + by_topic["segments"],
+            "management_intent_sections": by_topic["guidance"] + by_topic["segments"] + by_topic["other"],
+            "strategy_sections": by_topic["segments"] + by_topic["other"],
             "mdna_sections": by_topic["other"],
             "guidance_sections": by_topic["guidance"],
             "guidance_assumptions_sections": by_topic["guidance"] + by_topic["risk"],
+            "prior_guidance_track_record": [],
+            "management_intent_handoff": None,
         }
 
     def _sections_by_topic(
@@ -387,6 +401,12 @@ class ReviewWorkflow:
         presentation_findings: list[BaseModel],
     ) -> AnalysisBrief:
         allowed_source_ids = self._allowed_source_ids(metrics, sections)
+        (
+            earnings_quality_finding,
+            cash_flow_risk_finding,
+            management_intent_finding,
+            guidance_finding,
+        ) = self._specialist_findings(financial_findings, presentation_findings)
         financial_results = [
             self._finding_to_agent_result(finding, AgentTeam.FINANCIAL)
             for finding in financial_findings
@@ -428,6 +448,10 @@ class ReviewWorkflow:
         return AnalysisBrief(
             ticker=request.ticker,
             fiscal_period=request.fiscal_period,
+            earnings_quality_finding=earnings_quality_finding,
+            cash_flow_risk_finding=cash_flow_risk_finding,
+            management_intent_finding=management_intent_finding,
+            guidance_finding=guidance_finding,
             financial_agent_results=financial_results,
             presentation_agent_results=presentation_results,
             positive_evidence_pool=positive[:30],
@@ -446,45 +470,49 @@ class ReviewWorkflow:
             "run_spec": {"ticker": request.ticker, "fiscal_period": request.fiscal_period},
             "financial_snapshot_summary": metrics.model_dump(mode="json", exclude_none=True),
             "analysis_brief": brief,
+            "earnings_quality_finding": brief.earnings_quality_finding,
+            "cash_flow_risk_finding": brief.cash_flow_risk_finding,
+            "management_intent_finding": brief.management_intent_finding,
+            "guidance_finding": brief.guidance_finding,
             "positive_evidence_pool": brief.positive_evidence_pool,
             "negative_evidence_pool": brief.negative_evidence_pool,
             "disputed_points": brief.risk_evidence_pool,
             "missing_data": [],
         }
         bull_case = BullAgent(self.llm).run(context)
+        self._validate_finding_coverage(bull_case, "bull_case")
+        self._validate_no_investment_advice_text(bull_case, "bull_case")
         bear_context = {
             **context,
-            "bull_case_summary": self._text_attr(bull_case, "thesis")
-            or self._text_attr(bull_case, "summary"),
+            "bull_case_summary": {
+                "thesis": self._text_attr(bull_case, "thesis")
+                or self._text_attr(bull_case, "summary"),
+                "weak_points": self._list_attr(bull_case, "weak_points"),
+                "finding_coverage": getattr(bull_case, "finding_coverage", {}),
+            },
         }
         bear_case = BearAgent(self.llm).run(bear_context)
+        self._validate_finding_coverage(bear_case, "bear_case")
+        self._validate_no_investment_advice_text(bear_case, "bear_case")
 
-        allowed_positive_ids = {item.evidence_id for item in brief.positive_evidence_pool}
-        allowed_negative_ids = {item.evidence_id for item in brief.negative_evidence_pool}
-        positive = self._dedupe_evidence(
-            [
-                item
-                for item in self._collect_evidence(
-                    [bull_case],
-                    "strongest_positive_evidence",
-                    EvidencePolarity.POSITIVE,
-                )
-                if item.evidence_id in allowed_positive_ids
-            ]
-            or brief.positive_evidence_pool
+        positive_by_id = {item.evidence_id: item for item in brief.positive_evidence_pool}
+        negative_by_id = {item.evidence_id: item for item in brief.negative_evidence_pool}
+        positive = self._validated_case_evidence(
+            bull_case,
+            "strongest_positive_evidence",
+            positive_by_id,
+            "bull_case",
+            EvidencePolarity.POSITIVE,
         )
-        negative = self._dedupe_evidence(
-            [
-                item
-                for item in self._collect_evidence(
-                    [bear_case],
-                    "strongest_negative_evidence",
-                    EvidencePolarity.NEGATIVE,
-                )
-                if item.evidence_id in allowed_negative_ids
-            ]
-            or brief.negative_evidence_pool
+        negative = self._validated_case_evidence(
+            bear_case,
+            "strongest_negative_evidence",
+            negative_by_id,
+            "bear_case",
+            EvidencePolarity.NEGATIVE,
         )
+        bull_case = bull_case.model_copy(update={"strongest_positive_evidence": positive})
+        bear_case = bear_case.model_copy(update={"strongest_negative_evidence": negative})
 
         debate = DebateResult(
             bull_case=(self._text_attr(bull_case, "thesis") or "Bull case was generated.")[:2000],
@@ -515,7 +543,8 @@ class ReviewWorkflow:
             }
         )
         if not isinstance(decision, JudgeDecision):
-            return JudgeDecision.model_validate(decision.model_dump())
+            decision = JudgeDecision.model_validate(decision.model_dump())
+        self._validate_no_investment_advice_text(decision, "judge_decision")
         return decision
 
     def _validate_judge_decision(
@@ -523,7 +552,7 @@ class ReviewWorkflow:
         decision: JudgeDecision,
         brief: AnalysisBrief,
         debate: DebateResult,
-    ) -> None:
+    ) -> JudgeDecision:
         if not decision.positive_evidence:
             raise WorkflowValidationError("judge_decision.positive_evidence must not be empty")
         if not decision.negative_evidence:
@@ -535,15 +564,24 @@ class ReviewWorkflow:
             if item.polarity not in {EvidencePolarity.NEGATIVE, EvidencePolarity.RISK}:
                 raise WorkflowValidationError("judge negative_evidence must have negative or risk polarity")
 
-        allowed_evidence_ids = {
-            item.evidence_id
-            for item in [*brief.positive_evidence_pool, *brief.negative_evidence_pool]
-        }
-        for item in [*decision.positive_evidence, *decision.negative_evidence]:
-            if item.evidence_id not in allowed_evidence_ids:
-                raise WorkflowValidationError(
-                    f"judge evidence {item.evidence_id!r} was not present in validated evidence"
-                )
+        positive_by_id = {item.evidence_id: item for item in brief.positive_evidence_pool}
+        negative_by_id = {item.evidence_id: item for item in brief.negative_evidence_pool}
+        positive = self._validated_evidence_items(
+            decision.positive_evidence,
+            positive_by_id,
+            "judge_decision.positive_evidence",
+        )
+        negative = self._validated_evidence_items(
+            decision.negative_evidence,
+            negative_by_id,
+            "judge_decision.negative_evidence",
+        )
+        return decision.model_copy(
+            update={
+                "positive_evidence": positive,
+                "negative_evidence": negative,
+            }
+        )
 
     def _finding_to_agent_result(self, finding: BaseModel, team: AgentTeam) -> AgentResult:
         role_name = self._extract_role_name(finding)
@@ -558,6 +596,144 @@ class ReviewWorkflow:
             open_questions=self._list_attr(finding, "missing_data")[:8],
             confidence=float(getattr(finding, "confidence", 0.5)),
         )
+
+    def _specialist_findings(
+        self,
+        financial_findings: list[BaseModel],
+        presentation_findings: list[BaseModel],
+    ) -> tuple[
+        EarningsQualityFinding,
+        CashFlowRiskFinding,
+        ManagementIntentFinding,
+        GuidanceFinding,
+    ]:
+        findings = [*financial_findings, *presentation_findings]
+        by_role = {self._extract_role_name(finding): finding for finding in findings}
+
+        return (
+            self._require_finding(
+                by_role,
+                "EarningsQualityAnalyst",
+                EarningsQualityFinding,
+            ),
+            self._require_finding(
+                by_role,
+                "CashFlowRiskAnalyst",
+                CashFlowRiskFinding,
+            ),
+            self._require_finding(
+                by_role,
+                "ManagementIntentAnalyst",
+                ManagementIntentFinding,
+            ),
+            self._require_finding(
+                by_role,
+                "GuidanceAnalyst",
+                GuidanceFinding,
+            ),
+        )
+
+    def _require_finding(
+        self,
+        by_role: dict[str, BaseModel],
+        role_name: str,
+        model_type: type[BaseModel],
+    ) -> BaseModel:
+        finding = by_role.get(role_name)
+        if finding is None:
+            raise WorkflowValidationError(f"{role_name} finding is required")
+        if isinstance(finding, model_type):
+            return finding
+        return model_type.model_validate(finding.model_dump(mode="json"))
+
+    def _validate_finding_coverage(self, case: BaseModel, field_name: str) -> None:
+        coverage = getattr(case, "finding_coverage", None)
+        if coverage is None:
+            raise WorkflowValidationError(f"{field_name}.finding_coverage is required")
+        keys = set(coverage)
+        if keys != REQUIRED_FINDING_COVERAGE_KEYS:
+            raise WorkflowValidationError(
+                f"{field_name}.finding_coverage must cover "
+                f"{', '.join(sorted(REQUIRED_FINDING_COVERAGE_KEYS))}"
+            )
+
+    def _validated_case_evidence(
+        self,
+        case: BaseModel,
+        evidence_field: str,
+        allowed_by_id: dict[str, EvidenceItem],
+        case_name: str,
+        default_polarity: EvidencePolarity,
+    ) -> list[EvidenceItem]:
+        items = self._collect_evidence([case], evidence_field, default_polarity)
+        if not items:
+            raise WorkflowValidationError(f"{case_name}.{evidence_field} must not be empty")
+
+        validated: list[EvidenceItem] = []
+        for item in items:
+            canonical = allowed_by_id.get(item.evidence_id)
+            self._validate_evidence_item_against_canonical(
+                item,
+                canonical,
+                f"{case_name}.{evidence_field}",
+            )
+            validated.append(canonical)
+
+        return self._dedupe_evidence(validated)
+
+    def _validated_evidence_items(
+        self,
+        items: list[EvidenceItem],
+        allowed_by_id: dict[str, EvidenceItem],
+        field_name: str,
+    ) -> list[EvidenceItem]:
+        validated: list[EvidenceItem] = []
+        for item in items:
+            canonical = allowed_by_id.get(item.evidence_id)
+            self._validate_evidence_item_against_canonical(item, canonical, field_name)
+            validated.append(canonical)
+        return self._dedupe_evidence(validated)
+
+    def _validate_evidence_item_against_canonical(
+        self,
+        item: EvidenceItem,
+        canonical: EvidenceItem | None,
+        field_name: str,
+    ) -> None:
+        if canonical is None:
+            raise WorkflowValidationError(
+                f"{field_name} evidence {item.evidence_id!r} "
+                "was not present in validated AnalysisBrief evidence"
+            )
+        if self._source_signature(item.source_ref) != self._source_signature(canonical.source_ref):
+            raise WorkflowValidationError(
+                f"{field_name} evidence {item.evidence_id!r} changed the validated source_ref"
+            )
+
+    def _validate_no_investment_advice_text(self, value: Any, field_name: str) -> None:
+        for path, text in self._iter_text_values(value, field_name):
+            for pattern in INVESTMENT_ADVICE_PATTERNS:
+                if pattern.search(text):
+                    raise WorkflowValidationError(
+                        f"{path} contains investment-advice language: {pattern.pattern}"
+                    )
+
+    def _iter_text_values(self, value: Any, path: str):
+        if isinstance(value, BaseModel):
+            yield from self._iter_text_values(value.model_dump(mode="json"), path)
+            return
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                if key in {"agent_name", "purpose", "is_investment_advice"}:
+                    continue
+                yield from self._iter_text_values(nested, f"{path}.{key}")
+            return
+        if isinstance(value, list):
+            for index, nested in enumerate(value):
+                yield from self._iter_text_values(nested, f"{path}[{index}]")
+            return
+        if isinstance(value, str):
+            yield path, value
 
     def _collect_evidence(
         self,
@@ -684,20 +860,22 @@ class ReviewWorkflow:
     def _role_for_name(self, role_name: str) -> AgentRole:
         normalized = role_name.lower()
         mapping = {
-            "epsqualityanalyst": AgentRole.EPS_ANALYST,
-            "eps_analyst": AgentRole.EPS_ANALYST,
-            "profitabilityanalyst": AgentRole.PNL_ANALYST,
-            "pnl_analyst": AgentRole.PNL_ANALYST,
-            "cashflowfcfanalyst": AgentRole.CFS_ANALYST,
-            "cfs_analyst": AgentRole.CFS_ANALYST,
-            "balancesheetriskanalyst": AgentRole.BS_ANALYST,
-            "bs_analyst": AgentRole.BS_ANALYST,
-            "managementintentanalyst": AgentRole.MANAGEMENT_EVAL,
-            "management_eval": AgentRole.MANAGEMENT_EVAL,
+            "earningsqualityanalyst": AgentRole.EARNINGS_QUALITY,
+            "epsqualityanalyst": AgentRole.EARNINGS_QUALITY,
+            "eps_analyst": AgentRole.EARNINGS_QUALITY,
+            "profitabilityanalyst": AgentRole.EARNINGS_QUALITY,
+            "pnl_analyst": AgentRole.EARNINGS_QUALITY,
+            "cashflowriskanalyst": AgentRole.CASH_FLOW_RISK,
+            "cashflowfcfanalyst": AgentRole.CASH_FLOW_RISK,
+            "cfs_analyst": AgentRole.CASH_FLOW_RISK,
+            "balancesheetriskanalyst": AgentRole.CASH_FLOW_RISK,
+            "bs_analyst": AgentRole.CASH_FLOW_RISK,
+            "managementintentanalyst": AgentRole.MANAGEMENT_INTENT,
+            "management_eval": AgentRole.MANAGEMENT_INTENT,
             "guidanceanalyst": AgentRole.GUIDANCE,
             "guidance": AgentRole.GUIDANCE,
         }
-        return mapping.get(normalized, AgentRole.EVAL)
+        return mapping.get(normalized, AgentRole.JUDGE)
 
     def _text_attr(self, model: BaseModel, field_name: str) -> str:
         value = getattr(model, field_name, "")
