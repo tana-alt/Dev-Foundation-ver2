@@ -24,4 +24,5 @@ cd "$ROOT"
 # that create and inspect independent temporary Git repositories.
 # shellcheck disable=SC2046
 unset $(git rev-parse --local-env-vars)
-make check-foundation
+CHECK_TARGET="${FOUNDATION_PRE_PUSH_TARGET:-check-push}"
+make "$CHECK_TARGET"

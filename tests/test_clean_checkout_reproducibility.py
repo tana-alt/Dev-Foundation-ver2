@@ -83,8 +83,7 @@ def dynamic_required_paths() -> list[str]:
         for path in sorted((ROOT / "plugins").glob("*/.codex-plugin/plugin.json"))
     )
     paths.extend(
-        path.relative_to(ROOT).as_posix()
-        for path in sorted((ROOT / "plugins").glob("*/.mcp.json"))
+        path.relative_to(ROOT).as_posix() for path in sorted((ROOT / "plugins").glob("*/.mcp.json"))
     )
     paths.extend(
         path.relative_to(ROOT).as_posix()

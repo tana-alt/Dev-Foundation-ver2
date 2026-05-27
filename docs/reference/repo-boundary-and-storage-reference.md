@@ -61,7 +61,8 @@ verification, artifact, or implementation files belong under the owning
   development defaults.
 - `.github/workflows/ci.yml`: CI entrypoint for required checks.
 - `.agents/skills/`: current repo-local skills.
-- `.agents/plugins/marketplace.json`: local plugin registry.
+- `.agents/plugins/marketplace.json`: local plugin registry. It may be empty by
+  default to avoid implying that optional payloads are installed.
 - `plugins/`: optional local plugin bundles and downloaded plugin payloads.
 - `Plan/`: project-scoped agent plans and logs, not a runtime queue or lock
   ledger.

@@ -18,7 +18,7 @@ Start with the smallest relevant check and widen only when required:
 3. broader suite only when scope, shared behavior, or PR readiness requires it
 
 Use commands backed by current repo files such as `Makefile`, `pyproject.toml`,
-`tests/`, scripts, or CI. Current commands live in
+`tests/`, scripts, or CI. Current commands and fast/full gate mapping live in
 `docs/reference/verification-ci-and-pr-reference.md`.
 
 If a check cannot run, record check name, reason, result state, residual risk,

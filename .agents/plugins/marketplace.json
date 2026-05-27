@@ -3,18 +3,5 @@
   "interface": {
     "displayName": "Codex Plugins (Foundation-development)"
   },
-  "plugins": [
-    {
-      "name": "build-ios-apps",
-      "source": {
-        "source": "local",
-        "path": "./plugins/build-ios-apps"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Coding"
-    }
-  ]
+  "plugins": []
 }

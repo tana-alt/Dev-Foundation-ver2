@@ -457,7 +457,8 @@ def test_tracked_hooks_enforce_agent_policy_and_checks() -> None:
 
     assert "scripts/check-agent-worktree-policy.sh" in pre_commit
     assert "scripts/check-agent-worktree-policy.sh" in pre_push
-    assert "make check-foundation" in pre_push
+    assert "check-push" in pre_push
+    assert 'make "$CHECK_TARGET"' in pre_push
 
     for required_text in (
         "agent/<work_id>/<lane>/<slug>",
@@ -770,10 +771,25 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
         assert repo_path(relative_path).stat().st_mode & 0o111, relative_path
 
     assert "doctor:" in makefile
+    assert "format-check:" in makefile
     assert "check-toolchain:" in makefile
+    assert "test-fast:" in makefile
+    assert "check-fast:" in makefile
+    assert "check-push:" in makefile
+    assert "check-ci:" in makefile
     assert "check-hygiene:" in makefile
     assert "check-shell:" in makefile
     assert "check-secrets:" in makefile
+    assert make_target_dependencies(makefile, "check-required") == [
+        "format-check",
+        "lint",
+        "typecheck",
+        "check-hooks",
+        "check-shell",
+        "check-hygiene",
+        "check-secrets",
+        "test",
+    ]
     assert "check-shell check-hygiene check-secrets test" in makefile
     assert "core.hooksPath" in dev_check
     assert "foundation.canonicalRoot" in dev_check
@@ -815,8 +831,14 @@ def test_pytest_collection_is_aggregate_foundation_gate() -> None:
 
     assert testpaths == ["tests"]
     assert make_target_recipe(makefile, "test") == ["$(UV) run pytest"]
+    expected_test_fast = (
+        "$(UV) run pytest -q tests/test_contract_models.py "
+        "tests/test_extension_surface_integrity.py"
+    )
+    assert make_target_recipe(makefile, "test-fast") == [expected_test_fast]
     assert "test" in make_target_dependencies(makefile, "check-required")
-    assert "check-required" in make_target_dependencies(makefile, "check-foundation")
+    assert "check-required" in make_target_dependencies(makefile, "check-ci")
+    assert "check-ci" in make_target_dependencies(makefile, "check-foundation")
     assert re.search(r"^\s*run:\s*make check-foundation\s*$", workflow, re.MULTILINE)
 
 
@@ -830,6 +852,15 @@ def test_verification_reference_documents_pytest_aggregate_gate() -> None:
         "targeted shortcuts",
         "`make check-foundation`",
         "`make check-required`",
+        "`make test-fast`",
+        "`make check-fast`",
+        "`make check-push`",
+        "`make check-ci`",
+        "Fast And Full Gate Mapping",
+        "not automatic test classification",
+        "local edit loop",
+        "PR handoff or high-risk change",
+        "curated fast pytest smoke set",
     ):
         assert required_text in verification_reference
 

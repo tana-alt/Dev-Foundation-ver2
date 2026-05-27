@@ -66,12 +66,15 @@ Use only commands backed by current repo files. Current verification surfaces
 include:
 
 - `uv sync --frozen --group dev`: install locked dev/test dependencies.
+- `make format-check`: verify Ruff formatting without mutating files.
 - `make lint`: run `ruff`; plugin payload roots are excluded from foundation
   lint scope.
 - `make typecheck`: run `mypy` with the Pydantic plugin enabled.
 - `make test`: aggregate gate; run `pytest` against configured pytest
   collection. `pyproject.toml` sets `testpaths = ["tests"]`, so new
   `tests/test_*.py` files enter the main gate directly.
+- `make test-fast`: run a small structural pytest smoke set for local and push
+  ergonomics. It does not replace the aggregate `make test` gate.
 - `make check-toolchain`: report local toolchain versions used by the foundation
   gate.
 - `make doctor`: inspect local Git, hook, Python, and tool setup, including
@@ -89,9 +92,35 @@ include:
   `.gitleaks.toml` config against the tracked tree and Git history when commits
   exist.
 - `make check-cd`: run the deployment-readiness guard directly.
-- `make check-required`: run the local required chain.
-- `make check-foundation`: run the Foundation Robustness Gate by combining
+- `make check-fast`: run the default local/push check set without history secret
+  scanning, full typecheck, full pytest, or CD readiness checks.
+- `make check-push`: run the pre-push gate. It defaults to `make check-fast`;
+  set `FOUNDATION_FULL_PUSH=1` or `FOUNDATION_PRE_PUSH_TARGET=check-foundation`
+  when the local push should run the full foundation gate.
+- `make check-required`: run the full local required chain used by CI.
+- `make check-ci`: run the CI-equivalent chain by combining
   `make check-toolchain`, `make check-required`, and `make check-cd`.
+- `make check-foundation`: run the Foundation Robustness Gate through
+  `make check-ci`.
+
+## Fast And Full Gate Mapping
+
+Fast checks are explicit Makefile targets, not automatic test classification.
+Agents should not infer speed from file names, test duration, or pytest
+collection order.
+
+| Situation | Use | Includes | Excludes |
+|---|---|---|---|
+| local edit loop | `make check-fast` | format check, lint, hook syntax, `make test-fast` | full typecheck, full pytest, Gitleaks history scan, CD guard |
+| normal push | `make check-push` | default `make check-fast` plus branch/worktree hook policy | full gate unless requested |
+| PR handoff or high-risk change | `make check-foundation` | toolchain, full required chain, CD guard | none of the current foundation gate |
+| CI / merge readiness | `make check-foundation` | same full foundation gate used locally | local-only shortcuts |
+
+`make test-fast` is the curated fast pytest smoke set. `make test` is the
+aggregate pytest gate and is part of the slower/full validation path. Add new
+tests to `test-fast` only when they are deterministic, structural, and cheap
+enough for routine push feedback; otherwise rely on `make test` through
+`make check-foundation`.
 
 `make check-contracts`, `make check-doc-consistency`, and `make check-cd` are
 targeted shortcuts for local focus. They do not define the complete test surface
@@ -179,7 +208,9 @@ Tracked hooks live in `hooks/` and are installed by
 
 - `pre-commit`: runs `scripts/check-agent-worktree-policy.sh`.
 - `pre-push`: runs `scripts/check-agent-worktree-policy.sh`, then
-  `make check-foundation`.
+  `make check-push`. The default push gate is fast; set
+  `FOUNDATION_FULL_PUSH=1` or `FOUNDATION_PRE_PUSH_TARGET=check-foundation` for
+  full local validation before push.
 
 The worktree policy blocks direct writes on `main` or `master` and requires
 `agent/<work_id>/<lane>/<slug>` branch naming. Canonical-root work on an

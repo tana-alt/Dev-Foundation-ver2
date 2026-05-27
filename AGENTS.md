@@ -27,6 +27,17 @@ or unrelated history by default.
 - Migration note and acceptance checklist:
   `docs/reference/migration-and-acceptance-reference.md`
 
+## Plan And Log
+
+- For tasks that span multiple files, require substantial labor, or need resumable
+handoff, keep a project-scoped plan and log under `Plan/<project_id>/` so
+progress, decisions, commands, and verification remain traceable.
+
+- For small read-only checks or quick edits, a Plan record is optional.
+
+- Detailed structure and storage rules live in `README.md`, `Plan/README.md`, and
+`artifact/README.md`.
+
 ## Hard Rules
 - Start from provided scope and named refs.
 - Do not edit without allowed write targets, current file inspection, relevant

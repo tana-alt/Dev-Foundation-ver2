@@ -67,7 +67,9 @@ def test_plugin_registry_and_manifest_paths_are_structural() -> None:
     marketplace = read_json(".agents/plugins/marketplace.json")
     plugins = marketplace.get("plugins")
     assert isinstance(plugins, list)
-    assert plugins
+
+    if not plugins:
+        return
 
     seen_plugin_names: set[str] = set()
 
@@ -139,6 +141,12 @@ def test_plugin_registry_and_manifest_paths_are_structural() -> None:
             args = server_config.get("args")
             assert isinstance(args, list), f"{server_name}: args"
             assert all(isinstance(arg, str) and arg for arg in args), f"{server_name}: args"
+
+
+def test_default_plugin_registry_does_not_advertise_missing_payloads() -> None:
+    marketplace = read_json(".agents/plugins/marketplace.json")
+
+    assert marketplace.get("plugins") == []
 
 
 def test_plugin_skill_front_matter_is_parseable() -> None:

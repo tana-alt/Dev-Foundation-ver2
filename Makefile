@@ -1,6 +1,6 @@
 UV ?= uv
 
-.PHONY: help sync doctor lint format typecheck test check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-hygiene check-secrets check-cd check-required check-foundation
+.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-hygiene check-secrets check-cd check-fast check-push check-required check-ci check-foundation
 
 help:
 	@printf '%s\n' \
@@ -9,8 +9,10 @@ help:
 		'  make doctor                Inspect local dev environment without changing it' \
 		'  make lint                  Run ruff' \
 		'  make format                Format supported files with ruff' \
+		'  make format-check          Verify ruff formatting without changing files' \
 		'  make typecheck             Run mypy' \
 		'  make test                  Run pytest' \
+		'  make test-fast             Run fast structural pytest smoke checks' \
 		'  make check-toolchain       Report local toolchain versions' \
 		'  make check-contracts       Run contract model tests' \
 		'  make check-doc-consistency Run doc consistency tests' \
@@ -18,7 +20,10 @@ help:
 		'  make check-shell           Run ShellCheck on tracked shell hooks/scripts' \
 		'  make check-hygiene         Run repo hygiene guardrails' \
 		'  make check-secrets         Run Gitleaks with redacted output' \
+		'  make check-fast            Run fast local/push checks' \
+		'  make check-push            Run pre-push gate; set FOUNDATION_FULL_PUSH=1 for full' \
 		'  make check-required        Run required local checks' \
+		'  make check-ci              Run full CI-equivalent checks' \
 		'  make check-cd              Run deployment-readiness guard' \
 		'  make check-foundation      Run the Foundation Robustness Gate'
 
@@ -34,11 +39,17 @@ lint:
 format:
 	$(UV) run ruff format .
 
+format-check:
+	$(UV) run ruff format --check .
+
 typecheck:
 	$(UV) run mypy
 
 test:
 	$(UV) run pytest
+
+test-fast:
+	$(UV) run pytest -q tests/test_contract_models.py tests/test_extension_surface_integrity.py
 
 check-toolchain:
 	@git --version | sed 's/^/ok: /'
@@ -75,6 +86,17 @@ check-secrets:
 check-cd:
 	$(UV) run pytest tests/test_foundation_integrity.py -k cd_readiness
 
-check-required: lint typecheck check-hooks check-shell check-hygiene check-secrets test
+check-fast: format-check lint check-hooks test-fast
 
-check-foundation: check-toolchain check-required check-cd
+check-push:
+	@if [ "$${FOUNDATION_FULL_PUSH:-0}" = "1" ]; then \
+		$(MAKE) check-foundation; \
+	else \
+		$(MAKE) check-fast; \
+	fi
+
+check-required: format-check lint typecheck check-hooks check-shell check-hygiene check-secrets test
+
+check-ci: check-toolchain check-required check-cd
+
+check-foundation: check-ci
