@@ -9,40 +9,23 @@ evidence aggregation -> debate agents -> judge -> Markdown renderer.
 
 from __future__ import annotations
 
-import re
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import Any, TypeVar
-
-from pydantic import BaseModel
+from typing import Any
 
 from .llm import LLMProvider
 from .workflow_agents import (
-    BearAgent,
-    BullAgent,
     CashFlowRiskAnalyst,
     EarningsQualityAnalyst,
     GuidanceAnalyst,
-    JudgeAgent,
     ManagementIntentAnalyst,
 )
 from .workflow_models import (
-    REQUIRED_FINDING_COVERAGE_KEYS,
-    AgentResult,
-    AgentRole,
-    AgentTeam,
     AnalysisBrief,
-    CashFlowRiskFinding,
     DebateResult,
     DocumentSection,
-    EarningsQualityFinding,
     EvidenceItem,
-    EvidencePolarity,
     FinancialMetrics,
-    GuidanceFinding,
-    ImpactArea,
     JudgeDecision,
-    ManagementIntentFinding,
     ReviewRequest,
     ReviewResponse,
     SourceRef,
@@ -51,29 +34,8 @@ from .workflow_models import (
     VerdictLabel,
     WorkflowStep,
 )
-
-
-class WorkflowValidationError(ValueError):
-    """Raised when a deterministic workflow gate fails."""
-
-
-ModelT = TypeVar("ModelT", bound=BaseModel)
-
-
-INVESTMENT_ADVICE_PATTERNS = (
-    re.compile(r"\b(buy|sell|hold)\s+(the\s+)?(stock|shares)\b", re.IGNORECASE),
-    re.compile(r"\b(buy|sell|hold)\s+[A-Z]{1,6}\b", re.IGNORECASE),
-    re.compile(r"\b(stock|shares)\s+(is|are)\s+a\s+(buy|sell|hold)\b", re.IGNORECASE),
-    re.compile(
-        r"\brecommend(s|ed|ing)?\s+(buying|selling|holding|to\s+(buy|sell|hold))\b",
-        re.IGNORECASE,
-    ),
-    re.compile(r"\byou\s+should\s+(buy|sell|hold)\b", re.IGNORECASE),
-    re.compile(r"\b(price target|target price)\b", re.IGNORECASE),
-    re.compile(r"目標株価"),
-    re.compile(r"売買推奨|投資推奨|買い推奨|売り推奨|購入を推奨"),
-    re.compile(r"買うべき|売るべき|保有すべき"),
-)
+from .workflow_runtime import AgentRuntime, DebateRunner, JudgeRunner
+from .workflow_validation import WorkflowValidationError, WorkflowValidationGate
 
 
 def _fetch_consensus(ticker: str, quarter: str):
@@ -265,9 +227,21 @@ class ReviewWorkflow:
     )
     presentation_agent_classes = (ManagementIntentAnalyst, GuidanceAnalyst)
 
-    def __init__(self, llm: LLMProvider, renderer: MarkdownRenderer | None = None):
+    def __init__(
+        self,
+        llm: LLMProvider,
+        renderer: MarkdownRenderer | None = None,
+        validator: WorkflowValidationGate | None = None,
+        agent_runtime: AgentRuntime | None = None,
+        debate_runner: DebateRunner | None = None,
+        judge_runner: JudgeRunner | None = None,
+    ):
         self.llm = llm
         self.renderer = renderer or MarkdownRenderer()
+        self.validator = validator or WorkflowValidationGate()
+        self.agent_runtime = agent_runtime or AgentRuntime(llm)
+        self.debate_runner = debate_runner or DebateRunner(llm, self.validator)
+        self.judge_runner = judge_runner or JudgeRunner(llm, self.validator)
 
     def run(self, request: ReviewRequest) -> ReviewResponse:
         steps: list[StepStatus] = []
@@ -282,20 +256,22 @@ class ReviewWorkflow:
         financial_findings = self._record_step(
             steps,
             WorkflowStep.FINANCIAL_AGENTS,
-            lambda: self._run_parallel(self.financial_agent_classes, context),
+            lambda: self.agent_runtime.run_parallel(self.financial_agent_classes, context),
         )
-        self._validate_no_investment_advice_text(financial_findings, "financial_findings")
+        self.validator.validate_no_investment_advice_text(financial_findings, "financial_findings")
         presentation_findings = self._record_step(
             steps,
             WorkflowStep.PRESENTATION_AGENTS,
-            lambda: self._run_parallel(self.presentation_agent_classes, context),
+            lambda: self.agent_runtime.run_parallel(self.presentation_agent_classes, context),
         )
-        self._validate_no_investment_advice_text(presentation_findings, "presentation_findings")
+        self.validator.validate_no_investment_advice_text(
+            presentation_findings, "presentation_findings"
+        )
 
         brief = self._record_step(
             steps,
             WorkflowStep.EVIDENCE_AGGREGATION,
-            lambda: self._aggregate_evidence(
+            lambda: self.validator.aggregate_evidence(
                 request,
                 metrics,
                 sections,
@@ -307,15 +283,15 @@ class ReviewWorkflow:
         bull_case, bear_case, debate = self._record_step(
             steps,
             WorkflowStep.DEBATE,
-            lambda: self._run_debate(request, metrics, brief),
+            lambda: self.debate_runner.run(request, metrics, brief),
         )
 
         decision = self._record_step(
             steps,
             WorkflowStep.JUDGE,
-            lambda: self._run_judge(request, metrics, brief, bull_case, bear_case),
+            lambda: self.judge_runner.run(request, metrics, brief, bull_case, bear_case),
         )
-        decision = self._validate_judge_decision(decision, brief, debate)
+        decision = self.validator.validate_judge_decision(decision, brief)
 
         markdown = self._record_step(
             steps,
@@ -331,7 +307,7 @@ class ReviewWorkflow:
                 else "Markdown rendering was disabled for this request."
             ),
         )
-        self._validate_no_investment_advice_text(markdown, "markdown_report")
+        self.validator.validate_no_investment_advice_text(markdown, "markdown_report")
 
         return ReviewResponse(
             request_id=request.request_id,
@@ -514,617 +490,3 @@ class ReviewWorkflow:
         if "revenue" in label or "sales" in label:
             return "revenue"
         return "other"
-
-    def _run_parallel(
-        self, agent_classes: tuple[type, ...], context: dict[str, Any]
-    ) -> list[BaseModel]:
-        with ThreadPoolExecutor(max_workers=len(agent_classes)) as executor:
-            futures = [
-                executor.submit(agent_class(self.llm).run, context) for agent_class in agent_classes
-            ]
-            return [future.result() for future in futures]
-
-    def _aggregate_evidence(
-        self,
-        request: ReviewRequest,
-        metrics: FinancialMetrics,
-        sections: list[DocumentSection],
-        financial_findings: list[BaseModel],
-        presentation_findings: list[BaseModel],
-    ) -> AnalysisBrief:
-        canonical_sources = self._canonical_source_refs(metrics, sections)
-        allowed_source_ids = set(canonical_sources)
-        (
-            earnings_quality_finding,
-            cash_flow_risk_finding,
-            management_intent_finding,
-            guidance_finding,
-        ) = self._specialist_findings(financial_findings, presentation_findings)
-        financial_results = [
-            self._finding_to_agent_result(finding, AgentTeam.FINANCIAL)
-            for finding in financial_findings
-        ]
-        presentation_results = [
-            self._finding_to_agent_result(finding, AgentTeam.PRESENTATION)
-            for finding in presentation_findings
-        ]
-
-        positive = self._dedupe_evidence(
-            [
-                *self._collect_evidence(
-                    financial_findings, "key_evidence", EvidencePolarity.POSITIVE
-                ),
-                *self._collect_evidence(
-                    presentation_findings, "key_evidence", EvidencePolarity.POSITIVE
-                ),
-            ]
-        )
-        negative = self._dedupe_evidence(
-            [
-                *self._collect_evidence(
-                    financial_findings, "counter_evidence", EvidencePolarity.NEGATIVE
-                ),
-                *self._collect_evidence(
-                    presentation_findings, "counter_evidence", EvidencePolarity.NEGATIVE
-                ),
-            ]
-        )
-        if not positive:
-            raise WorkflowValidationError("positive evidence pool is empty after aggregation")
-        if not negative:
-            raise WorkflowValidationError("negative evidence pool is empty after aggregation")
-        self._validate_evidence_sources([*positive, *negative], allowed_source_ids)
-        positive = self._canonicalize_evidence_sources(positive, canonical_sources)
-        negative = self._canonicalize_evidence_sources(negative, canonical_sources)
-        risks = [item for item in negative if EvidencePolarity.NEGATIVE == item.polarity]
-
-        synthesis = " ".join(
-            self._text_attr(finding, "handoff_summary")
-            or self._text_attr(finding, "summary")
-            or self._text_attr(finding, "conclusion")
-            for finding in [*financial_findings, *presentation_findings]
-        ).strip()
-        if not synthesis:
-            synthesis = "Validated specialist findings were aggregated for debate."
-
-        return AnalysisBrief(
-            ticker=request.ticker,
-            fiscal_period=request.fiscal_period,
-            earnings_quality_finding=earnings_quality_finding,
-            cash_flow_risk_finding=cash_flow_risk_finding,
-            management_intent_finding=management_intent_finding,
-            guidance_finding=guidance_finding,
-            financial_agent_results=financial_results,
-            presentation_agent_results=presentation_results,
-            positive_evidence_pool=positive[:30],
-            negative_evidence_pool=negative[:30],
-            risk_evidence_pool=risks[:30],
-            synthesis=synthesis[:2000],
-        )
-
-    def _run_debate(
-        self,
-        request: ReviewRequest,
-        metrics: FinancialMetrics,
-        brief: AnalysisBrief,
-    ) -> tuple[BaseModel, BaseModel, DebateResult]:
-        context = {
-            "run_spec": {"ticker": request.ticker, "fiscal_period": request.fiscal_period},
-            "financial_snapshot_summary": metrics.model_dump(mode="json", exclude_none=True),
-            "analysis_brief": brief,
-            "earnings_quality_finding": brief.earnings_quality_finding,
-            "cash_flow_risk_finding": brief.cash_flow_risk_finding,
-            "management_intent_finding": brief.management_intent_finding,
-            "guidance_finding": brief.guidance_finding,
-            "positive_evidence_pool": brief.positive_evidence_pool,
-            "negative_evidence_pool": brief.negative_evidence_pool,
-            "valid_positive_evidence_ids": [
-                item.evidence_id for item in brief.positive_evidence_pool
-            ],
-            "valid_negative_evidence_ids": [
-                item.evidence_id for item in brief.negative_evidence_pool
-            ],
-            "disputed_points": brief.risk_evidence_pool,
-            "missing_data": [],
-        }
-        positive_by_id = {item.evidence_id: item for item in brief.positive_evidence_pool}
-        negative_by_id = {item.evidence_id: item for item in brief.negative_evidence_pool}
-
-        bull_case, positive = self._run_debate_case(
-            BullAgent,
-            context,
-            "strongest_positive_evidence",
-            positive_by_id,
-            "bull_case",
-            EvidencePolarity.POSITIVE,
-        )
-        bear_context = {
-            **context,
-            "bull_case_summary": {
-                "thesis": self._text_attr(bull_case, "thesis")
-                or self._text_attr(bull_case, "summary"),
-                "weak_points": self._list_attr(bull_case, "weak_points"),
-                "finding_coverage": getattr(bull_case, "finding_coverage", {}),
-            },
-        }
-        bear_case, negative = self._run_debate_case(
-            BearAgent,
-            bear_context,
-            "strongest_negative_evidence",
-            negative_by_id,
-            "bear_case",
-            EvidencePolarity.NEGATIVE,
-        )
-
-        debate = DebateResult(
-            bull_case=(self._text_attr(bull_case, "thesis") or "Bull case was generated.")[:2000],
-            bear_case=(self._text_attr(bear_case, "thesis") or "Bear case was generated.")[:2000],
-            risk_case="; ".join(item.summary for item in negative[:3])
-            or "No unresolved risks were identified.",
-            evaluation="Bull and Bear cases were generated from validated AnalysisBrief only.",
-            strongest_positive_evidence=positive[:10],
-            strongest_negative_evidence=negative[:10],
-            unresolved_questions=self._list_attr(bear_case, "unresolved_risks")[:8],
-        )
-        return bull_case, bear_case, debate
-
-    def _run_debate_case(
-        self,
-        agent_class: Any,
-        context: dict[str, Any],
-        evidence_field: str,
-        evidence_by_id: dict[str, EvidenceItem],
-        case_name: str,
-        expected_polarity: EvidencePolarity,
-    ) -> tuple[BaseModel, list[EvidenceItem]]:
-        last_error: WorkflowValidationError | None = None
-        for _ in range(2):
-            run_context = context
-            if last_error is not None:
-                run_context = {
-                    **context,
-                    "evidence_validation_error": str(last_error),
-                    "valid_evidence_ids": sorted(evidence_by_id),
-                }
-            case = agent_class(self.llm).run(run_context)
-            self._validate_finding_coverage(case, case_name)
-            self._validate_no_investment_advice_text(case, case_name)
-            try:
-                evidence = self._validated_case_evidence(
-                    case,
-                    evidence_field,
-                    evidence_by_id,
-                    case_name,
-                    expected_polarity,
-                )
-            except WorkflowValidationError as exc:
-                last_error = exc
-                continue
-            return case.model_copy(update={evidence_field: evidence}), evidence
-        assert last_error is not None
-        raise last_error
-
-    def _run_judge(
-        self,
-        request: ReviewRequest,
-        metrics: FinancialMetrics,
-        brief: AnalysisBrief,
-        bull_case: BaseModel,
-        bear_case: BaseModel,
-    ) -> JudgeDecision:
-        decision = JudgeAgent(self.llm).run(
-            {
-                "run_spec": {"ticker": request.ticker, "fiscal_period": request.fiscal_period},
-                "financial_snapshot_summary": metrics.model_dump(mode="json", exclude_none=True),
-                "analysis_brief": brief,
-                "bull_case": bull_case,
-                "bear_case": bear_case,
-            }
-        )
-        if not isinstance(decision, JudgeDecision):
-            decision = JudgeDecision.model_validate(decision.model_dump())
-        self._validate_no_investment_advice_text(decision, "judge_decision")
-        return decision
-
-    def _validate_judge_decision(
-        self,
-        decision: JudgeDecision,
-        brief: AnalysisBrief,
-        debate: DebateResult,
-    ) -> JudgeDecision:
-        if not decision.positive_evidence:
-            raise WorkflowValidationError("judge_decision.positive_evidence must not be empty")
-        if not decision.negative_evidence:
-            raise WorkflowValidationError("judge_decision.negative_evidence must not be empty")
-        for item in decision.positive_evidence:
-            if item.polarity != EvidencePolarity.POSITIVE:
-                raise WorkflowValidationError("judge positive_evidence must have positive polarity")
-        for item in decision.negative_evidence:
-            if item.polarity not in {EvidencePolarity.NEGATIVE, EvidencePolarity.RISK}:
-                raise WorkflowValidationError(
-                    "judge negative_evidence must have negative or risk polarity"
-                )
-
-        positive_by_id = {item.evidence_id: item for item in brief.positive_evidence_pool}
-        negative_by_id = {item.evidence_id: item for item in brief.negative_evidence_pool}
-        positive = self._validated_evidence_items(
-            decision.positive_evidence,
-            positive_by_id,
-            "judge_decision.positive_evidence",
-        )
-        negative = self._validated_evidence_items(
-            decision.negative_evidence,
-            negative_by_id,
-            "judge_decision.negative_evidence",
-        )
-        return decision.model_copy(
-            update={
-                "positive_evidence": positive,
-                "negative_evidence": negative,
-            }
-        )
-
-    def _finding_to_agent_result(self, finding: BaseModel, team: AgentTeam) -> AgentResult:
-        role_name = self._extract_role_name(finding)
-        return AgentResult(
-            agent_role=self._role_for_name(role_name),
-            team=team,
-            status=StepStatus(
-                step=WorkflowStep.FINANCIAL_AGENTS
-                if team == AgentTeam.FINANCIAL
-                else WorkflowStep.PRESENTATION_AGENTS,
-                state=StepState.COMPLETED,
-            ),
-            headline=(
-                self._text_attr(finding, "summary")
-                or self._text_attr(finding, "headline")
-                or role_name
-            )[:300],
-            conclusion=(
-                self._text_attr(finding, "handoff_summary")
-                or self._text_attr(finding, "summary")
-                or role_name
-            )[:1200],
-            key_evidence=self._collect_evidence(
-                [finding], "key_evidence", EvidencePolarity.POSITIVE
-            )[:10],
-            counter_evidence=self._collect_evidence(
-                [finding], "counter_evidence", EvidencePolarity.NEGATIVE
-            )[:10],
-            open_questions=self._list_attr(finding, "missing_data")[:8],
-            confidence=float(getattr(finding, "confidence", 0.5)),
-        )
-
-    def _specialist_findings(
-        self,
-        financial_findings: list[BaseModel],
-        presentation_findings: list[BaseModel],
-    ) -> tuple[
-        EarningsQualityFinding,
-        CashFlowRiskFinding,
-        ManagementIntentFinding,
-        GuidanceFinding,
-    ]:
-        findings = [*financial_findings, *presentation_findings]
-        by_role = {self._extract_role_name(finding): finding for finding in findings}
-
-        return (
-            self._require_finding(
-                by_role,
-                "EarningsQualityAnalyst",
-                EarningsQualityFinding,
-            ),
-            self._require_finding(
-                by_role,
-                "CashFlowRiskAnalyst",
-                CashFlowRiskFinding,
-            ),
-            self._require_finding(
-                by_role,
-                "ManagementIntentAnalyst",
-                ManagementIntentFinding,
-            ),
-            self._require_finding(
-                by_role,
-                "GuidanceAnalyst",
-                GuidanceFinding,
-            ),
-        )
-
-    def _require_finding(
-        self,
-        by_role: dict[str, BaseModel],
-        role_name: str,
-        model_type: type[ModelT],
-    ) -> ModelT:
-        finding = by_role.get(role_name)
-        if finding is None:
-            raise WorkflowValidationError(f"{role_name} finding is required")
-        if isinstance(finding, model_type):
-            return finding
-        return model_type.model_validate(finding.model_dump(mode="json"))
-
-    def _validate_finding_coverage(self, case: BaseModel, field_name: str) -> None:
-        coverage = getattr(case, "finding_coverage", None)
-        if coverage is None:
-            raise WorkflowValidationError(f"{field_name}.finding_coverage is required")
-        keys = set(coverage)
-        if keys != REQUIRED_FINDING_COVERAGE_KEYS:
-            raise WorkflowValidationError(
-                f"{field_name}.finding_coverage must cover "
-                f"{', '.join(sorted(REQUIRED_FINDING_COVERAGE_KEYS))}"
-            )
-
-    def _validated_case_evidence(
-        self,
-        case: BaseModel,
-        evidence_field: str,
-        allowed_by_id: dict[str, EvidenceItem],
-        case_name: str,
-        default_polarity: EvidencePolarity,
-    ) -> list[EvidenceItem]:
-        items = self._collect_evidence([case], evidence_field, default_polarity)
-        if not items:
-            raise WorkflowValidationError(f"{case_name}.{evidence_field} must not be empty")
-
-        validated: list[EvidenceItem] = []
-        for item in items:
-            canonical = allowed_by_id.get(item.evidence_id)
-            self._validate_evidence_item_against_canonical(
-                item,
-                canonical,
-                f"{case_name}.{evidence_field}",
-            )
-            assert canonical is not None
-            validated.append(canonical)
-
-        return self._dedupe_evidence(validated)
-
-    def _validated_evidence_items(
-        self,
-        items: list[EvidenceItem],
-        allowed_by_id: dict[str, EvidenceItem],
-        field_name: str,
-    ) -> list[EvidenceItem]:
-        validated: list[EvidenceItem] = []
-        for item in items:
-            canonical = allowed_by_id.get(item.evidence_id)
-            self._validate_evidence_item_against_canonical(item, canonical, field_name)
-            assert canonical is not None
-            validated.append(canonical)
-        return self._dedupe_evidence(validated)
-
-    def _validate_evidence_item_against_canonical(
-        self,
-        item: EvidenceItem,
-        canonical: EvidenceItem | None,
-        field_name: str,
-    ) -> None:
-        if canonical is None:
-            raise WorkflowValidationError(
-                f"{field_name} evidence {item.evidence_id!r} "
-                "was not present in validated AnalysisBrief evidence"
-            )
-        if self._source_signature(item.source_ref) != self._source_signature(canonical.source_ref):
-            raise WorkflowValidationError(
-                f"{field_name} evidence {item.evidence_id!r} changed the validated source_ref"
-            )
-
-    def _validate_no_investment_advice_text(self, value: Any, field_name: str) -> None:
-        for path, text in self._iter_text_values(value, field_name):
-            for pattern in INVESTMENT_ADVICE_PATTERNS:
-                if pattern.search(text):
-                    raise WorkflowValidationError(
-                        f"{path} contains investment-advice language: {pattern.pattern}"
-                    )
-
-    def _iter_text_values(self, value: Any, path: str):
-        if isinstance(value, BaseModel):
-            yield from self._iter_text_values(value.model_dump(mode="json"), path)
-            return
-        if isinstance(value, dict):
-            for key, nested in value.items():
-                if key in {"agent_name", "purpose", "is_investment_advice"}:
-                    continue
-                yield from self._iter_text_values(nested, f"{path}.{key}")
-            return
-        if isinstance(value, list):
-            for index, nested in enumerate(value):
-                yield from self._iter_text_values(nested, f"{path}[{index}]")
-            return
-        if isinstance(value, str):
-            yield path, value
-
-    def _collect_evidence(
-        self,
-        findings: list[BaseModel],
-        field_name: str,
-        default_polarity: EvidencePolarity,
-    ) -> list[EvidenceItem]:
-        collected: list[EvidenceItem] = []
-        for finding in findings:
-            raw_items = getattr(finding, field_name, []) or []
-            role_name = self._extract_role_name(finding)
-            for index, raw in enumerate(raw_items, start=1):
-                collected.append(
-                    self._coerce_evidence(
-                        raw,
-                        default_polarity=default_polarity,
-                        fallback_id=f"{self._slug(role_name)}:{field_name}:{index}",
-                    )
-                )
-        return collected
-
-    def _coerce_evidence(
-        self,
-        raw: Any,
-        *,
-        default_polarity: EvidencePolarity,
-        fallback_id: str,
-    ) -> EvidenceItem:
-        if isinstance(raw, EvidenceItem):
-            return raw
-
-        data = raw.model_dump(mode="json") if isinstance(raw, BaseModel) else dict(raw)
-        source_raw = data.get("source_ref") or data.get("source") or fallback_id
-        if isinstance(source_raw, dict):
-            source_ref = SourceRef.model_validate(source_raw)
-        else:
-            raise WorkflowValidationError(
-                f"evidence {fallback_id!r} must include structured source_ref"
-            )
-
-        polarity = data.get("polarity") or default_polarity
-        if hasattr(polarity, "value"):
-            polarity = polarity.value
-
-        return EvidenceItem(
-            evidence_id=self._slug(str(data.get("evidence_id") or fallback_id))[:80],
-            polarity=polarity,
-            summary=str(data.get("summary") or data.get("claim") or "Evidence item")[:300],
-            detail=str(
-                data.get("detail") or data.get("summary") or data.get("claim") or "Evidence item"
-            )[:1200],
-            impact_areas=self._impact_areas(data),
-            source_ref=source_ref,
-            metric_name=data.get("metric_name") or data.get("metric"),
-            value=data.get("value"),
-            unit=data.get("unit"),
-            confidence=float(data.get("confidence", 0.5)),
-        )
-
-    def _impact_areas(self, data: dict[str, Any]) -> list[ImpactArea]:
-        raw = data.get("impact_areas") or data.get("impact_area")
-        values = raw if isinstance(raw, list) else [raw] if raw else [ImpactArea.OVERALL]
-        result: list[ImpactArea] = []
-        for value in values:
-            try:
-                result.append(value if isinstance(value, ImpactArea) else ImpactArea(str(value)))
-            except ValueError:
-                result.append(ImpactArea.OVERALL)
-        return result
-
-    def _dedupe_evidence(self, items: list[EvidenceItem]) -> list[EvidenceItem]:
-        seen: set[str] = set()
-        result: list[EvidenceItem] = []
-        for item in items:
-            key = item.evidence_id
-            if key in seen:
-                continue
-            seen.add(key)
-            result.append(item)
-        return result
-
-    def _canonical_source_refs(
-        self,
-        metrics: FinancialMetrics,
-        sections: list[DocumentSection],
-    ) -> dict[
-        tuple[
-            str,
-            str,
-            str | None,
-            str | None,
-            str | None,
-            int | None,
-            str | None,
-        ],
-        SourceRef,
-    ]:
-        return {
-            self._source_signature(source): source
-            for source in [
-                *metrics.source_refs,
-                *(section.source_ref for section in sections),
-            ]
-        }
-
-    def _canonicalize_evidence_sources(
-        self,
-        items: list[EvidenceItem],
-        canonical_sources: dict[
-            tuple[str, str, str | None, str | None, str | None, int | None, str | None],
-            SourceRef,
-        ],
-    ) -> list[EvidenceItem]:
-        return [
-            item.model_copy(
-                update={"source_ref": canonical_sources[self._source_signature(item.source_ref)]}
-            )
-            for item in items
-        ]
-
-    def _validate_evidence_sources(
-        self,
-        items: list[EvidenceItem],
-        allowed_source_ids: set[
-            tuple[
-                str,
-                str,
-                str | None,
-                str | None,
-                str | None,
-                int | None,
-                str | None,
-            ]
-        ],
-    ) -> None:
-        for item in items:
-            if self._source_signature(item.source_ref) not in allowed_source_ids:
-                raise WorkflowValidationError(
-                    f"evidence {item.evidence_id!r} references unknown source "
-                    f"{item.source_ref.source_id!r}"
-                )
-
-    def _source_signature(
-        self,
-        source: SourceRef,
-    ) -> tuple[str, str, str | None, str | None, str | None, int | None, str | None]:
-        return (
-            source.source_id,
-            source.source_type.value,
-            source.document_id,
-            source.section_id,
-            source.metric_name,
-            source.page,
-            source.title,
-        )
-
-    def _extract_role_name(self, model: BaseModel) -> str:
-        for field_name in ("agent_name", "agent_role", "role"):
-            if hasattr(model, field_name):
-                value = getattr(model, field_name)
-                return str(getattr(value, "value", value))
-        return type(model).__name__
-
-    def _role_for_name(self, role_name: str) -> AgentRole:
-        normalized = role_name.lower()
-        mapping = {
-            "earningsqualityanalyst": AgentRole.EARNINGS_QUALITY,
-            "epsqualityanalyst": AgentRole.EARNINGS_QUALITY,
-            "eps_analyst": AgentRole.EARNINGS_QUALITY,
-            "profitabilityanalyst": AgentRole.EARNINGS_QUALITY,
-            "pnl_analyst": AgentRole.EARNINGS_QUALITY,
-            "cashflowriskanalyst": AgentRole.CASH_FLOW_RISK,
-            "cashflowfcfanalyst": AgentRole.CASH_FLOW_RISK,
-            "cfs_analyst": AgentRole.CASH_FLOW_RISK,
-            "balancesheetriskanalyst": AgentRole.CASH_FLOW_RISK,
-            "bs_analyst": AgentRole.CASH_FLOW_RISK,
-            "managementintentanalyst": AgentRole.MANAGEMENT_INTENT,
-            "management_eval": AgentRole.MANAGEMENT_INTENT,
-            "guidanceanalyst": AgentRole.GUIDANCE,
-            "guidance": AgentRole.GUIDANCE,
-        }
-        return mapping.get(normalized, AgentRole.JUDGE)
-
-    def _text_attr(self, model: BaseModel, field_name: str) -> str:
-        value = getattr(model, field_name, "")
-        return str(value).strip() if value is not None else ""
-
-    def _list_attr(self, model: BaseModel, field_name: str) -> list[str]:
-        value = getattr(model, field_name, []) or []
-        return [str(item) for item in value]
-
-    def _slug(self, value: str) -> str:
-        slug = re.sub(r"[^A-Za-z0-9_.:-]+", ":", value.strip())
-        return slug.strip(":") or "evidence"

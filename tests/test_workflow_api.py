@@ -16,6 +16,7 @@ from src.workflow_models import (
     SourceRef,
     SourceType,
 )
+from src.workflow_validation import WorkflowValidationGate
 
 
 class FakeLLM:
@@ -421,7 +422,7 @@ def test_workflow_rejects_source_ref_page_and_title_changes():
     )
 
     with pytest.raises(WorkflowValidationError, match="changed the validated source_ref"):
-        ReviewWorkflow(FakeLLM())._validate_evidence_item_against_canonical(
+        WorkflowValidationGate().validate_evidence_item_against_canonical(
             changed_page,
             canonical,
             "repro",
@@ -429,7 +430,7 @@ def test_workflow_rejects_source_ref_page_and_title_changes():
 
 
 def test_workflow_canonicalizes_valid_evidence_source_url():
-    workflow = ReviewWorkflow(FakeLLM())
+    validator = WorkflowValidationGate()
     canonical = SourceRef(
         source_id="filing:segments",
         source_type=SourceType.FILING,
@@ -454,9 +455,9 @@ def test_workflow_canonicalizes_valid_evidence_source_url():
         confidence=0.7,
     )
 
-    canonical_sources = {workflow._source_signature(canonical): canonical}
-    workflow._validate_evidence_sources([emitted], set(canonical_sources))
-    [updated] = workflow._canonicalize_evidence_sources([emitted], canonical_sources)
+    canonical_sources = {validator.source_signature(canonical): canonical}
+    validator.validate_evidence_sources([emitted], set(canonical_sources))
+    [updated] = validator.canonicalize_evidence_sources([emitted], canonical_sources)
 
     assert str(updated.source_ref.url) == "https://www.sec.gov/Archives/example/nvda.htm"
 
