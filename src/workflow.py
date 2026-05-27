@@ -181,11 +181,13 @@ class ReviewWorkflow:
             WorkflowStep.FINANCIAL_AGENTS,
             lambda: self._run_parallel(self.financial_agent_classes, context),
         )
+        self._validate_no_investment_advice_text(financial_findings, "financial_findings")
         presentation_findings = self._record_step(
             steps,
             WorkflowStep.PRESENTATION_AGENTS,
             lambda: self._run_parallel(self.presentation_agent_classes, context),
         )
+        self._validate_no_investment_advice_text(presentation_findings, "presentation_findings")
 
         brief = self._record_step(
             steps,
@@ -226,6 +228,7 @@ class ReviewWorkflow:
                 else "Markdown rendering was disabled for this request."
             ),
         )
+        self._validate_no_investment_advice_text(markdown, "markdown_report")
 
         return ReviewResponse(
             request_id=request.request_id,
