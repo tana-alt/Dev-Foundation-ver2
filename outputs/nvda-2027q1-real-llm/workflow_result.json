@@ -1,0 +1,2225 @@
+{
+  "request_id": null,
+  "ticker": "NVDA",
+  "fiscal_period": "2027Q1",
+  "steps": [
+    {
+      "step": "data_ingestion",
+      "state": "completed",
+      "started_at": "2026-05-27T15:47:12.101783Z",
+      "finished_at": "2026-05-27T15:47:14.701209Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "financial_agents",
+      "state": "completed",
+      "started_at": "2026-05-27T15:47:14.701393Z",
+      "finished_at": "2026-05-27T15:47:25.940572Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "presentation_agents",
+      "state": "completed",
+      "started_at": "2026-05-27T15:47:25.944640Z",
+      "finished_at": "2026-05-27T15:47:54.520576Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "evidence_aggregation",
+      "state": "completed",
+      "started_at": "2026-05-27T15:47:54.523637Z",
+      "finished_at": "2026-05-27T15:47:54.524887Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "debate",
+      "state": "completed",
+      "started_at": "2026-05-27T15:47:54.524906Z",
+      "finished_at": "2026-05-27T15:48:19.216047Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "judge",
+      "state": "completed",
+      "started_at": "2026-05-27T15:48:19.216095Z",
+      "finished_at": "2026-05-27T15:48:40.240648Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "markdown_renderer",
+      "state": "completed",
+      "started_at": "2026-05-27T15:48:40.240763Z",
+      "finished_at": "2026-05-27T15:48:40.240957Z",
+      "message": null,
+      "error": null
+    }
+  ],
+  "analysis_brief": {
+    "ticker": "NVDA",
+    "fiscal_period": "2027Q1",
+    "earnings_quality_finding": {
+      "agent_name": "EarningsQualityAnalyst",
+      "stance": "mixed",
+      "summary": "The quarter shows strong headline EPS and revenue growth, with revenue at $81.615B versus consensus EPS of 2.09 and reported diluted EPS of 2.39 in the filing, but earnings quality is mixed because a meaningful part of the income surge was driven by non-operating items and a prior-year comparison distorted by a large one-time charge. Core operating performance improved materially: revenue grew 85% year over year, gross profit and operating income expanded sharply, and Compute & Networking was the main driver. However, other income/net was unusually large, and management also notes ongoing export-control-related risks that could pressure future results. Overall, the quarter looks good on operating momentum but less clean on EPS quality than the headline suggests.",
+      "key_evidence": [
+        {
+          "evidence_id": "ke1",
+          "polarity": "positive",
+          "summary": "Revenue and diluted EPS were both strong versus consensus context and prior year.",
+          "detail": "The filing shows total revenue of $81,615 million and diluted EPS of $2.39; the routed metrics section provides EPS consensus of 2.09 for fiscal 2027Q1, indicating an EPS beat and very strong top-line performance.",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:NVDA:2027Q1",
+            "source_type": "financial_api",
+            "title": "Financial API consensus snapshot",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "consensus_snapshot",
+            "as_of_date": null
+          },
+          "metric_name": "consensus_snapshot",
+          "value": 2.09,
+          "unit": "USD",
+          "confidence": 0.9
+        },
+        {
+          "evidence_id": "ke2",
+          "polarity": "positive",
+          "summary": "Operating performance improved broadly, with strong margin and operating income expansion.",
+          "detail": "The filing reports gross profit of $61,157 million and operating income of $53,536 million on $81,615 million of revenue, versus $26,668 million gross profit and $21,638 million operating income a year earlier, showing materially better operating leverage and margin expansion.",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:other",
+            "source_type": "filing",
+            "title": "Filing section: other",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:other",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": 81615000000.0,
+          "unit": "USD",
+          "confidence": 0.88
+        },
+        {
+          "evidence_id": "ke3",
+          "polarity": "positive",
+          "summary": "Compute & Networking drove most of the operating profit improvement, supporting the durability of the core business mix.",
+          "detail": "Segment disclosure shows Compute & Networking revenue of $74,550 million and operating income of $53,335 million, and the filing states the year-over-year increase in segment operating income was driven by revenue growth and non-recurrence of a $4.5 billion H20 charge in the prior year.",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:segments",
+            "source_type": "filing",
+            "title": "Filing section: segments",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:segments",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": 53335000000.0,
+          "unit": "USD",
+          "confidence": 0.8
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "ce1",
+          "polarity": "negative",
+          "summary": "Part of the EPS improvement was inflated by unusually large other income, net.",
+          "detail": "The filing shows other income (expense), net of $15,929 million and total other income, net of $16,367 million, which materially boosted income before tax relative to operating income and makes the EPS beat less purely operational.",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:other",
+            "source_type": "filing",
+            "title": "Filing section: other",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:other",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": 16367000000.0,
+          "unit": "USD",
+          "confidence": 0.9
+        },
+        {
+          "evidence_id": "ce2",
+          "polarity": "risk",
+          "summary": "Management highlights export-control risk that could impair future results.",
+          "detail": "The filing states competitive position has been harmed by export controls and future results could be further harmed if restrictions remain or expand, which is a meaningful medium-term risk to revenue quality and EPS durability.",
+          "impact_areas": [
+            "guidance",
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:segments",
+            "source_type": "filing",
+            "title": "Filing section: segments",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:segments",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.78
+        },
+        {
+          "evidence_id": "ce3",
+          "polarity": "negative",
+          "summary": "The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.",
+          "detail": "Management states the increase in Compute & Networking segment operating income was driven in part by the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge in the prior year, so some of the apparent operating improvement is not purely recurring.",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:segments",
+            "source_type": "filing",
+            "title": "Filing section: segments",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:segments",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.82
+        }
+      ],
+      "confidence": 0.78,
+      "missing_data": [
+        "No precomputed GAAP vs adjusted EPS bridge was provided, so the quality of any adjustment items cannot be assessed.",
+        "No explicit revenue guidance or next-quarter EPS guidance was provided in the routed context.",
+        "No dedicated cash flow / FCF metrics were routed, so FCF implications can only be inferred qualitatively from P&L, not measured.",
+        "No valid_positive_evidence_ids or valid_negative_evidence_ids were provided, so strongest-evidence selection constraints could not be applied."
+      ],
+      "handoff_summary": "Headline results were strong: EPS beat consensus and revenue/operating income expanded sharply, with Compute & Networking as the main growth engine. The quality assessment is mixed because the quarter benefited from very large other income and from a favorable comparison against a prior-year H20 charge, while management also flags export-control risk that could affect future earnings durability. Revenue concentration and segment mix appear supportive near term, but the routed context lacks an EPS bridge, guidance, and cash-flow data, limiting confidence on how much of the improvement will persist into future EPS/FCF."
+    },
+    "cash_flow_risk_finding": {
+      "agent_name": "CashFlowRiskAnalyst",
+      "stance": "mixed",
+      "summary": "Cash generation signals are supportive, but the quarter lacks direct cash-flow statement data in the routed context, so the assessment is based mainly on balance-sheet and management disclosure. Liquidity appears strong: cash and cash equivalents, marketable securities, and other liquid investments are substantial, while debt levels remain modest relative to the balance sheet. At the same time, working capital remains elevated in absolute terms with meaningful receivables and inventory, and management says it expects continued ecosystem investment, which can keep CapEx and cash deployment elevated. Overall, the evidence suggests financing constraint risk is low near term and future FCF can improve if investment intensity normalizes and working capital turns more efficient, but the absence of explicit CFO/FCF/CapEx trend disclosure limits conviction.",
+      "key_evidence": [
+        {
+          "evidence_id": "ke1",
+          "polarity": "positive",
+          "summary": "Liquidity resources are large versus short-term obligations.",
+          "detail": "The balance sheet shows cash and cash equivalents of $13,237 million, marketable debt securities of $37,098 million, and marketable equity securities of $30,237 million alongside current liabilities of $43,884 million. This supports ample near-term liquidity and reduces financing pressure on future cash generation.",
+          "impact_areas": [
+            "balance_sheet",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:other",
+            "source_type": "filing",
+            "title": "Filing section: other",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:other",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.62
+        },
+        {
+          "evidence_id": "ke2",
+          "polarity": "positive",
+          "summary": "Debt burden appears manageable.",
+          "detail": "The balance sheet shows short-term debt of $1,000 million and long-term debt of $7,470 million, which is modest relative to total assets and liquid resources. That lowers financing constraint risk and supports flexibility for future cash allocation.",
+          "impact_areas": [
+            "balance_sheet",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:other",
+            "source_type": "filing",
+            "title": "Filing section: other",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:other",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.58
+        },
+        {
+          "evidence_id": "ke3",
+          "polarity": "neutral",
+          "summary": "Management indicates ongoing investment, which can pressure near-term FCF but support longer-term capacity.",
+          "detail": "The filing states, 'We expect to continue investing in our ecosystem.' This suggests continued capital deployment may keep cash outflows elevated, but it also implies investment in future operating capacity rather than purely defensive spending.",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:risk",
+            "source_type": "filing",
+            "title": "Filing section: risk",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:risk",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.55
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "ce1",
+          "polarity": "negative",
+          "summary": "Working capital is still sizable and could absorb cash.",
+          "detail": "Accounts receivable are $40,710 million and inventories are $25,797 million, both materially large current operating assets. That means cash conversion could remain tied up if collection or inventory efficiency does not improve.",
+          "impact_areas": [
+            "fcf",
+            "balance_sheet",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:other",
+            "source_type": "filing",
+            "title": "Filing section: other",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:other",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.6
+        },
+        {
+          "evidence_id": "ce2",
+          "polarity": "negative",
+          "summary": "Explicit cash flow statement metrics were not routed, limiting direct confirmation of CFO/FCF trend.",
+          "detail": "The provided context does not include precomputed CFO, FCF, CapEx, working-capital change, or FCF margin metrics. As a result, the cash-flow improvement thesis cannot be directly verified from routed metrics.",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:NVDA:2027Q1",
+            "source_type": "financial_api",
+            "title": "Financial API consensus snapshot",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "consensus_snapshot",
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.5
+        }
+      ],
+      "confidence": 0.58,
+      "missing_data": [
+        "No precomputed CFO, FCF, CapEx, working-capital change, liquidity ratio, debt maturity, or interest burden metrics were routed.",
+        "No direct cash flow statement section was provided, so CFO and FCF trend cannot be confirmed from routed metrics.",
+        "No maturity schedule or refinancing timeline was routed, limiting assessment of long-dated financing risk."
+      ],
+      "handoff_summary": "Liquidity and leverage look supportive for future FCF resilience, with substantial liquid assets and modest debt reducing near-term financing constraint risk. The main offset is ongoing ecosystem investment and large operating assets tied up in receivables and inventory, which could keep cash conversion uneven. Because routed context lacks direct CFO/FCF/CapEx and maturity metrics, the next analyst should treat the FCF-improvement case as plausible but not yet directly proven."
+    },
+    "management_intent_finding": {
+      "agent_name": "ManagementIntentAnalyst",
+      "stance": "mixed",
+      "summary": "Management is emphasizing scaling the core Compute & Networking business, with CODM oversight centered on segment revenue and operating income, and the quarter’s operating improvement was attributed to revenue growth plus the non-recurrence of a prior H20 inventory/purchase-obligation charge. At the same time, management explicitly flags export controls as a long-term competitive and financial risk that can harm future results, raise transition costs, and push customers toward alternatives. The near-term EPS picture is supported by higher segment profitability and lower relative overhead from the prior charge, while near-term FCF appears pressured by continued inventory, warranty, infrastructure, and engineering spending embedded in segment costs. Longer term, the intent looks like continued investment in the ecosystem and product architecture, but that path depends on navigating licensing and export restrictions that could constrain durability of earnings and cash generation.",
+      "key_evidence": [
+        {
+          "evidence_id": "ke1",
+          "polarity": "positive",
+          "summary": "CODM focuses on segment revenue and operating income, implying management prioritizes scalable segment profitability.",
+          "detail": "The CEO/CODM reviews financial information on an operating segment basis and assesses performance using segment revenue and segment operating income, indicating management is steering the business around segment-level growth and profitability rather than asset intensity.",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:segments",
+            "source_type": "filing",
+            "title": "Filing section: segments",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:segments",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.74
+        },
+        {
+          "evidence_id": "ke2",
+          "polarity": "positive",
+          "summary": "Segment operating income rose on revenue growth and the absence of the prior H20 charge.",
+          "detail": "Management says Compute & Networking operating income increased year over year because of revenue growth and the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge, which supports the interpretation that current EPS benefits from both operating scale and cleanup of prior-period burdens.",
+          "impact_areas": [
+            "eps",
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:segments",
+            "source_type": "filing",
+            "title": "Filing section: segments",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:segments",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.8
+        },
+        {
+          "evidence_id": "ke3",
+          "polarity": "positive",
+          "summary": "Other segment items include engineering development and computing infrastructure costs, showing ongoing investment behind growth.",
+          "detail": "The filing states that other segment items include product costs, inventory provisions, compensation and benefits, computing infrastructure expenses, and engineering development costs, which indicates management is continuing to invest in product development and scale infrastructure even as it seeks profit growth.",
+          "impact_areas": [
+            "fcf",
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:segments",
+            "source_type": "filing",
+            "title": "Filing section: segments",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:segments",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.72
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "ce1",
+          "polarity": "risk",
+          "summary": "Export controls are explicitly said to harm competitiveness and future results over the long term.",
+          "detail": "Management warns that export controls have harmed the competitive position and may further harm future results if restrictions remain or expand, licenses are delayed or denied, or customers move to competitors, which is a direct counterweight to the growth narrative.",
+          "impact_areas": [
+            "eps",
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:segments",
+            "source_type": "filing",
+            "title": "Filing section: segments",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:segments",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.84
+        },
+        {
+          "evidence_id": "ce2",
+          "polarity": "risk",
+          "summary": "The company expects to continue investing in its ecosystem, which can weigh on cash generation.",
+          "detail": "The risk section states the company expects to continue investing in its ecosystem, supporting the view that management is still allocating resources to growth and platform maintenance rather than maximizing near-term free cash flow.",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:risk",
+            "source_type": "filing",
+            "title": "Filing section: risk",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:risk",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.64
+        }
+      ],
+      "confidence": 0.77,
+      "missing_data": [
+        "No management transcript excerpt was provided, so intent is inferred mainly from filing and MD&A language rather than live Q&A.",
+        "No precomputed EPS or FCF metrics were provided, so the EPS/FCF impact assessment is qualitative only.",
+        "No guidance-vs-consensus data was provided, and guidance analysis is out of scope for this task."
+      ],
+      "handoff_summary": "Management priorities appear to be scaling Compute & Networking, preserving segment profitability, and continuing ecosystem investment while managing export-control constraints. Near term, EPS appears supported by revenue growth and the absence of the prior H20 charge; FCF likely faces ongoing pressure from inventory, infrastructure, engineering, and ecosystem investment. Longer term, management’s narrative is constructive on the business model but materially conditioned on licensing/export restrictions and customer migration risks."
+    },
+    "guidance_finding": {
+      "agent_name": "GuidanceAnalyst",
+      "stance": "unclear",
+      "summary": "提供された routed_context には具体的な会社 guidance 数値や guidance section がなく、利用可能な consensus は 2027Q1 の EPS 2.09 と revenue 81,615,000,000 USD のみです。そのため、guidance vs consensus、保守的/強気、達成可能性、revision risk を定量的に評価できません。前提面では、risk セクションが forward-looking statements と不確実性、リスク要因への注意喚起を示しており、ガイダンスの不確実性は高いことだけは確認できますが、これは guidance の強さや弱さの証拠にはなりません。EPS/FCF への影響も、具体的な guidance がないため判断不能です。",
+      "key_evidence": [
+        {
+          "evidence_id": "e1",
+          "polarity": "risk",
+          "summary": "リスク要因と将来見通しの不確実性が明記されている",
+          "detail": "Form 10-Q の risk セクションでは、forward-looking statements が多くのリスク、不確実性、その他要因の影響を受け、実際の結果が materially different になり得ると説明している。これは guidance の達成不確実性が高いことを示すが、具体的な guidance 水準そのものは示していない。",
+          "impact_areas": [
+            "guidance",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:risk",
+            "source_type": "filing",
+            "title": "Filing section: risk",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:risk",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.56
+        },
+        {
+          "evidence_id": "e2",
+          "polarity": "neutral",
+          "summary": "利用可能な consensus は 2027Q1 の EPS と revenue のみ",
+          "detail": "precomputed consensus snapshot には fiscal_period 2027Q1、EPS consensus 2.09、revenue 81,615,000,000 USD が含まれている。ただし、比較対象となる会社 guidance の数値が入力内に存在しないため、差分評価はできない。",
+          "impact_areas": [
+            "guidance",
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:NVDA:2027Q1",
+            "source_type": "financial_api",
+            "title": "Financial API consensus snapshot",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "consensus_snapshot",
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": 2.09,
+          "unit": "USD",
+          "confidence": 0.58
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "c1",
+          "polarity": "neutral",
+          "summary": "guidance sections が空で会社の前提や数値が確認できない",
+          "detail": "guidance_sections が空配列で、会社が提示した revenue/EPS/margin/CapEx/FCF guidance を直接確認できない。したがって、保守的か強気か、consensus を上回るか下回るか、revision risk が高いか低いかを判断する根拠が不足している。",
+          "impact_areas": [
+            "guidance",
+            "eps",
+            "fcf"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:NVDA:2027Q1",
+            "source_type": "financial_api",
+            "title": "Financial API consensus snapshot",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "consensus_snapshot",
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.54
+        },
+        {
+          "evidence_id": "c2",
+          "polarity": "risk",
+          "summary": "risk 文言はあるが、guidance の達成条件には落とせない",
+          "detail": "risk セクションは一般的な不確実性の説明であり、具体的な需要、粗利率、CapEx、FCF 前提などの guidance assumptions を示していない。そのため、達成条件や下方修正リスクの程度を具体化できない。",
+          "impact_areas": [
+            "guidance",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "filing:risk",
+            "source_type": "filing",
+            "title": "Filing section: risk",
+            "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+            "document_id": "filing-html",
+            "section_id": "filing:risk",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.5
+        }
+      ],
+      "confidence": 0.6,
+      "missing_data": [
+        "会社の具体的な guidance 数値（売上高、EPS、粗利率、CapEx、FCF、セグメント別見通し）が提供されていない",
+        "guidance assumptions の具体的内容が提供されていない",
+        "consensus と guidance の差分が precomputed されていない",
+        "prior guidance track record がないため revision risk の過去比較ができない",
+        "counter evidence は存在するが、会社 guidance そのものがないため達成可能性の判断材料が不足している"
+      ],
+      "handoff_summary": "Guidance sections が欠落しているため、次工程では guidance 数値と assumptions の有無を最優先で確認してください。現状では consensus snapshot のみが存在し、guidance vs consensus、保守性、revision risk、EPS/FCF への方向性は判定不能です。risk 開示は一般的な不確実性を示すだけで、会社の具体的な見通しではありません。"
+    },
+    "financial_agent_results": [
+      {
+        "agent_role": "earnings_quality",
+        "team": "financial",
+        "status": {
+          "step": "financial_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "The quarter shows strong headline EPS and revenue growth, with revenue at $81.615B versus consensus EPS of 2.09 and reported diluted EPS of 2.39 in the filing, but earnings quality is mixed because a meaningful part of the income surge was driven by non-operating items and a prior-year comparison di",
+        "conclusion": "Headline results were strong: EPS beat consensus and revenue/operating income expanded sharply, with Compute & Networking as the main growth engine. The quality assessment is mixed because the quarter benefited from very large other income and from a favorable comparison against a prior-year H20 charge, while management also flags export-control risk that could affect future earnings durability. Revenue concentration and segment mix appear supportive near term, but the routed context lacks an EPS bridge, guidance, and cash-flow data, limiting confidence on how much of the improvement will persist into future EPS/FCF.",
+        "key_evidence": [
+          {
+            "evidence_id": "ke1",
+            "polarity": "positive",
+            "summary": "Revenue and diluted EPS were both strong versus consensus context and prior year.",
+            "detail": "The filing shows total revenue of $81,615 million and diluted EPS of $2.39; the routed metrics section provides EPS consensus of 2.09 for fiscal 2027Q1, indicating an EPS beat and very strong top-line performance.",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:NVDA:2027Q1",
+              "source_type": "financial_api",
+              "title": "Financial API consensus snapshot",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "consensus_snapshot",
+              "as_of_date": null
+            },
+            "metric_name": "consensus_snapshot",
+            "value": 2.09,
+            "unit": "USD",
+            "confidence": 0.9
+          },
+          {
+            "evidence_id": "ke2",
+            "polarity": "positive",
+            "summary": "Operating performance improved broadly, with strong margin and operating income expansion.",
+            "detail": "The filing reports gross profit of $61,157 million and operating income of $53,536 million on $81,615 million of revenue, versus $26,668 million gross profit and $21,638 million operating income a year earlier, showing materially better operating leverage and margin expansion.",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:other",
+              "source_type": "filing",
+              "title": "Filing section: other",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:other",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": 81615000000.0,
+            "unit": "USD",
+            "confidence": 0.88
+          },
+          {
+            "evidence_id": "ke3",
+            "polarity": "positive",
+            "summary": "Compute & Networking drove most of the operating profit improvement, supporting the durability of the core business mix.",
+            "detail": "Segment disclosure shows Compute & Networking revenue of $74,550 million and operating income of $53,335 million, and the filing states the year-over-year increase in segment operating income was driven by revenue growth and non-recurrence of a $4.5 billion H20 charge in the prior year.",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:segments",
+              "source_type": "filing",
+              "title": "Filing section: segments",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:segments",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": 53335000000.0,
+            "unit": "USD",
+            "confidence": 0.8
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "ce1",
+            "polarity": "negative",
+            "summary": "Part of the EPS improvement was inflated by unusually large other income, net.",
+            "detail": "The filing shows other income (expense), net of $15,929 million and total other income, net of $16,367 million, which materially boosted income before tax relative to operating income and makes the EPS beat less purely operational.",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:other",
+              "source_type": "filing",
+              "title": "Filing section: other",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:other",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": 16367000000.0,
+            "unit": "USD",
+            "confidence": 0.9
+          },
+          {
+            "evidence_id": "ce2",
+            "polarity": "risk",
+            "summary": "Management highlights export-control risk that could impair future results.",
+            "detail": "The filing states competitive position has been harmed by export controls and future results could be further harmed if restrictions remain or expand, which is a meaningful medium-term risk to revenue quality and EPS durability.",
+            "impact_areas": [
+              "guidance",
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:segments",
+              "source_type": "filing",
+              "title": "Filing section: segments",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:segments",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.78
+          },
+          {
+            "evidence_id": "ce3",
+            "polarity": "negative",
+            "summary": "The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.",
+            "detail": "Management states the increase in Compute & Networking segment operating income was driven in part by the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge in the prior year, so some of the apparent operating improvement is not purely recurring.",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:segments",
+              "source_type": "filing",
+              "title": "Filing section: segments",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:segments",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.82
+          }
+        ],
+        "open_questions": [
+          "No precomputed GAAP vs adjusted EPS bridge was provided, so the quality of any adjustment items cannot be assessed.",
+          "No explicit revenue guidance or next-quarter EPS guidance was provided in the routed context.",
+          "No dedicated cash flow / FCF metrics were routed, so FCF implications can only be inferred qualitatively from P&L, not measured.",
+          "No valid_positive_evidence_ids or valid_negative_evidence_ids were provided, so strongest-evidence selection constraints could not be applied."
+        ],
+        "confidence": 0.78
+      },
+      {
+        "agent_role": "cash_flow_risk",
+        "team": "financial",
+        "status": {
+          "step": "financial_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "Cash generation signals are supportive, but the quarter lacks direct cash-flow statement data in the routed context, so the assessment is based mainly on balance-sheet and management disclosure. Liquidity appears strong: cash and cash equivalents, marketable securities, and other liquid investments",
+        "conclusion": "Liquidity and leverage look supportive for future FCF resilience, with substantial liquid assets and modest debt reducing near-term financing constraint risk. The main offset is ongoing ecosystem investment and large operating assets tied up in receivables and inventory, which could keep cash conversion uneven. Because routed context lacks direct CFO/FCF/CapEx and maturity metrics, the next analyst should treat the FCF-improvement case as plausible but not yet directly proven.",
+        "key_evidence": [
+          {
+            "evidence_id": "ke1",
+            "polarity": "positive",
+            "summary": "Liquidity resources are large versus short-term obligations.",
+            "detail": "The balance sheet shows cash and cash equivalents of $13,237 million, marketable debt securities of $37,098 million, and marketable equity securities of $30,237 million alongside current liabilities of $43,884 million. This supports ample near-term liquidity and reduces financing pressure on future cash generation.",
+            "impact_areas": [
+              "balance_sheet",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:other",
+              "source_type": "filing",
+              "title": "Filing section: other",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:other",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.62
+          },
+          {
+            "evidence_id": "ke2",
+            "polarity": "positive",
+            "summary": "Debt burden appears manageable.",
+            "detail": "The balance sheet shows short-term debt of $1,000 million and long-term debt of $7,470 million, which is modest relative to total assets and liquid resources. That lowers financing constraint risk and supports flexibility for future cash allocation.",
+            "impact_areas": [
+              "balance_sheet",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:other",
+              "source_type": "filing",
+              "title": "Filing section: other",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:other",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.58
+          },
+          {
+            "evidence_id": "ke3",
+            "polarity": "neutral",
+            "summary": "Management indicates ongoing investment, which can pressure near-term FCF but support longer-term capacity.",
+            "detail": "The filing states, 'We expect to continue investing in our ecosystem.' This suggests continued capital deployment may keep cash outflows elevated, but it also implies investment in future operating capacity rather than purely defensive spending.",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:risk",
+              "source_type": "filing",
+              "title": "Filing section: risk",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:risk",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.55
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "ce1",
+            "polarity": "negative",
+            "summary": "Working capital is still sizable and could absorb cash.",
+            "detail": "Accounts receivable are $40,710 million and inventories are $25,797 million, both materially large current operating assets. That means cash conversion could remain tied up if collection or inventory efficiency does not improve.",
+            "impact_areas": [
+              "fcf",
+              "balance_sheet",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:other",
+              "source_type": "filing",
+              "title": "Filing section: other",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:other",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.6
+          },
+          {
+            "evidence_id": "ce2",
+            "polarity": "negative",
+            "summary": "Explicit cash flow statement metrics were not routed, limiting direct confirmation of CFO/FCF trend.",
+            "detail": "The provided context does not include precomputed CFO, FCF, CapEx, working-capital change, or FCF margin metrics. As a result, the cash-flow improvement thesis cannot be directly verified from routed metrics.",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:NVDA:2027Q1",
+              "source_type": "financial_api",
+              "title": "Financial API consensus snapshot",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "consensus_snapshot",
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.5
+          }
+        ],
+        "open_questions": [
+          "No precomputed CFO, FCF, CapEx, working-capital change, liquidity ratio, debt maturity, or interest burden metrics were routed.",
+          "No direct cash flow statement section was provided, so CFO and FCF trend cannot be confirmed from routed metrics.",
+          "No maturity schedule or refinancing timeline was routed, limiting assessment of long-dated financing risk."
+        ],
+        "confidence": 0.58
+      }
+    ],
+    "presentation_agent_results": [
+      {
+        "agent_role": "management_intent",
+        "team": "presentation",
+        "status": {
+          "step": "presentation_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "Management is emphasizing scaling the core Compute & Networking business, with CODM oversight centered on segment revenue and operating income, and the quarter’s operating improvement was attributed to revenue growth plus the non-recurrence of a prior H20 inventory/purchase-obligation charge. At the",
+        "conclusion": "Management priorities appear to be scaling Compute & Networking, preserving segment profitability, and continuing ecosystem investment while managing export-control constraints. Near term, EPS appears supported by revenue growth and the absence of the prior H20 charge; FCF likely faces ongoing pressure from inventory, infrastructure, engineering, and ecosystem investment. Longer term, management’s narrative is constructive on the business model but materially conditioned on licensing/export restrictions and customer migration risks.",
+        "key_evidence": [
+          {
+            "evidence_id": "ke1",
+            "polarity": "positive",
+            "summary": "CODM focuses on segment revenue and operating income, implying management prioritizes scalable segment profitability.",
+            "detail": "The CEO/CODM reviews financial information on an operating segment basis and assesses performance using segment revenue and segment operating income, indicating management is steering the business around segment-level growth and profitability rather than asset intensity.",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:segments",
+              "source_type": "filing",
+              "title": "Filing section: segments",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:segments",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.74
+          },
+          {
+            "evidence_id": "ke2",
+            "polarity": "positive",
+            "summary": "Segment operating income rose on revenue growth and the absence of the prior H20 charge.",
+            "detail": "Management says Compute & Networking operating income increased year over year because of revenue growth and the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge, which supports the interpretation that current EPS benefits from both operating scale and cleanup of prior-period burdens.",
+            "impact_areas": [
+              "eps",
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:segments",
+              "source_type": "filing",
+              "title": "Filing section: segments",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:segments",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.8
+          },
+          {
+            "evidence_id": "ke3",
+            "polarity": "positive",
+            "summary": "Other segment items include engineering development and computing infrastructure costs, showing ongoing investment behind growth.",
+            "detail": "The filing states that other segment items include product costs, inventory provisions, compensation and benefits, computing infrastructure expenses, and engineering development costs, which indicates management is continuing to invest in product development and scale infrastructure even as it seeks profit growth.",
+            "impact_areas": [
+              "fcf",
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:segments",
+              "source_type": "filing",
+              "title": "Filing section: segments",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:segments",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.72
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "ce1",
+            "polarity": "risk",
+            "summary": "Export controls are explicitly said to harm competitiveness and future results over the long term.",
+            "detail": "Management warns that export controls have harmed the competitive position and may further harm future results if restrictions remain or expand, licenses are delayed or denied, or customers move to competitors, which is a direct counterweight to the growth narrative.",
+            "impact_areas": [
+              "eps",
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:segments",
+              "source_type": "filing",
+              "title": "Filing section: segments",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:segments",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.84
+          },
+          {
+            "evidence_id": "ce2",
+            "polarity": "risk",
+            "summary": "The company expects to continue investing in its ecosystem, which can weigh on cash generation.",
+            "detail": "The risk section states the company expects to continue investing in its ecosystem, supporting the view that management is still allocating resources to growth and platform maintenance rather than maximizing near-term free cash flow.",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:risk",
+              "source_type": "filing",
+              "title": "Filing section: risk",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:risk",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.64
+          }
+        ],
+        "open_questions": [
+          "No management transcript excerpt was provided, so intent is inferred mainly from filing and MD&A language rather than live Q&A.",
+          "No precomputed EPS or FCF metrics were provided, so the EPS/FCF impact assessment is qualitative only.",
+          "No guidance-vs-consensus data was provided, and guidance analysis is out of scope for this task."
+        ],
+        "confidence": 0.77
+      },
+      {
+        "agent_role": "guidance",
+        "team": "presentation",
+        "status": {
+          "step": "presentation_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "提供された routed_context には具体的な会社 guidance 数値や guidance section がなく、利用可能な consensus は 2027Q1 の EPS 2.09 と revenue 81,615,000,000 USD のみです。そのため、guidance vs consensus、保守的/強気、達成可能性、revision risk を定量的に評価できません。前提面では、risk セクションが forward-looking statements と不確実性、リスク要因への注意喚起を示しており、ガイダンスの不確実性は高いことだけは確認できますが、これは",
+        "conclusion": "Guidance sections が欠落しているため、次工程では guidance 数値と assumptions の有無を最優先で確認してください。現状では consensus snapshot のみが存在し、guidance vs consensus、保守性、revision risk、EPS/FCF への方向性は判定不能です。risk 開示は一般的な不確実性を示すだけで、会社の具体的な見通しではありません。",
+        "key_evidence": [
+          {
+            "evidence_id": "e1",
+            "polarity": "risk",
+            "summary": "リスク要因と将来見通しの不確実性が明記されている",
+            "detail": "Form 10-Q の risk セクションでは、forward-looking statements が多くのリスク、不確実性、その他要因の影響を受け、実際の結果が materially different になり得ると説明している。これは guidance の達成不確実性が高いことを示すが、具体的な guidance 水準そのものは示していない。",
+            "impact_areas": [
+              "guidance",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:risk",
+              "source_type": "filing",
+              "title": "Filing section: risk",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:risk",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.56
+          },
+          {
+            "evidence_id": "e2",
+            "polarity": "neutral",
+            "summary": "利用可能な consensus は 2027Q1 の EPS と revenue のみ",
+            "detail": "precomputed consensus snapshot には fiscal_period 2027Q1、EPS consensus 2.09、revenue 81,615,000,000 USD が含まれている。ただし、比較対象となる会社 guidance の数値が入力内に存在しないため、差分評価はできない。",
+            "impact_areas": [
+              "guidance",
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:NVDA:2027Q1",
+              "source_type": "financial_api",
+              "title": "Financial API consensus snapshot",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "consensus_snapshot",
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": 2.09,
+            "unit": "USD",
+            "confidence": 0.58
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "c1",
+            "polarity": "neutral",
+            "summary": "guidance sections が空で会社の前提や数値が確認できない",
+            "detail": "guidance_sections が空配列で、会社が提示した revenue/EPS/margin/CapEx/FCF guidance を直接確認できない。したがって、保守的か強気か、consensus を上回るか下回るか、revision risk が高いか低いかを判断する根拠が不足している。",
+            "impact_areas": [
+              "guidance",
+              "eps",
+              "fcf"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:NVDA:2027Q1",
+              "source_type": "financial_api",
+              "title": "Financial API consensus snapshot",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "consensus_snapshot",
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.54
+          },
+          {
+            "evidence_id": "c2",
+            "polarity": "risk",
+            "summary": "risk 文言はあるが、guidance の達成条件には落とせない",
+            "detail": "risk セクションは一般的な不確実性の説明であり、具体的な需要、粗利率、CapEx、FCF 前提などの guidance assumptions を示していない。そのため、達成条件や下方修正リスクの程度を具体化できない。",
+            "impact_areas": [
+              "guidance",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "filing:risk",
+              "source_type": "filing",
+              "title": "Filing section: risk",
+              "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+              "document_id": "filing-html",
+              "section_id": "filing:risk",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.5
+          }
+        ],
+        "open_questions": [
+          "会社の具体的な guidance 数値（売上高、EPS、粗利率、CapEx、FCF、セグメント別見通し）が提供されていない",
+          "guidance assumptions の具体的内容が提供されていない",
+          "consensus と guidance の差分が precomputed されていない",
+          "prior guidance track record がないため revision risk の過去比較ができない",
+          "counter evidence は存在するが、会社 guidance そのものがないため達成可能性の判断材料が不足している"
+        ],
+        "confidence": 0.6
+      }
+    ],
+    "positive_evidence_pool": [
+      {
+        "evidence_id": "ke1",
+        "polarity": "positive",
+        "summary": "Revenue and diluted EPS were both strong versus consensus context and prior year.",
+        "detail": "The filing shows total revenue of $81,615 million and diluted EPS of $2.39; the routed metrics section provides EPS consensus of 2.09 for fiscal 2027Q1, indicating an EPS beat and very strong top-line performance.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:NVDA:2027Q1",
+          "source_type": "financial_api",
+          "title": "Financial API consensus snapshot",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "consensus_snapshot",
+          "as_of_date": null
+        },
+        "metric_name": "consensus_snapshot",
+        "value": 2.09,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ke2",
+        "polarity": "positive",
+        "summary": "Operating performance improved broadly, with strong margin and operating income expansion.",
+        "detail": "The filing reports gross profit of $61,157 million and operating income of $53,536 million on $81,615 million of revenue, versus $26,668 million gross profit and $21,638 million operating income a year earlier, showing materially better operating leverage and margin expansion.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 81615000000.0,
+        "unit": "USD",
+        "confidence": 0.88
+      },
+      {
+        "evidence_id": "ke3",
+        "polarity": "positive",
+        "summary": "Compute & Networking drove most of the operating profit improvement, supporting the durability of the core business mix.",
+        "detail": "Segment disclosure shows Compute & Networking revenue of $74,550 million and operating income of $53,335 million, and the filing states the year-over-year increase in segment operating income was driven by revenue growth and non-recurrence of a $4.5 billion H20 charge in the prior year.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 53335000000.0,
+        "unit": "USD",
+        "confidence": 0.8
+      },
+      {
+        "evidence_id": "e1",
+        "polarity": "risk",
+        "summary": "リスク要因と将来見通しの不確実性が明記されている",
+        "detail": "Form 10-Q の risk セクションでは、forward-looking statements が多くのリスク、不確実性、その他要因の影響を受け、実際の結果が materially different になり得ると説明している。これは guidance の達成不確実性が高いことを示すが、具体的な guidance 水準そのものは示していない。",
+        "impact_areas": [
+          "guidance",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:risk",
+          "source_type": "filing",
+          "title": "Filing section: risk",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:risk",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.56
+      },
+      {
+        "evidence_id": "e2",
+        "polarity": "neutral",
+        "summary": "利用可能な consensus は 2027Q1 の EPS と revenue のみ",
+        "detail": "precomputed consensus snapshot には fiscal_period 2027Q1、EPS consensus 2.09、revenue 81,615,000,000 USD が含まれている。ただし、比較対象となる会社 guidance の数値が入力内に存在しないため、差分評価はできない。",
+        "impact_areas": [
+          "guidance",
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:NVDA:2027Q1",
+          "source_type": "financial_api",
+          "title": "Financial API consensus snapshot",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "consensus_snapshot",
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 2.09,
+        "unit": "USD",
+        "confidence": 0.58
+      }
+    ],
+    "negative_evidence_pool": [
+      {
+        "evidence_id": "ce1",
+        "polarity": "negative",
+        "summary": "Part of the EPS improvement was inflated by unusually large other income, net.",
+        "detail": "The filing shows other income (expense), net of $15,929 million and total other income, net of $16,367 million, which materially boosted income before tax relative to operating income and makes the EPS beat less purely operational.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 16367000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ce2",
+        "polarity": "risk",
+        "summary": "Management highlights export-control risk that could impair future results.",
+        "detail": "The filing states competitive position has been harmed by export controls and future results could be further harmed if restrictions remain or expand, which is a meaningful medium-term risk to revenue quality and EPS durability.",
+        "impact_areas": [
+          "guidance",
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.78
+      },
+      {
+        "evidence_id": "ce3",
+        "polarity": "negative",
+        "summary": "The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.",
+        "detail": "Management states the increase in Compute & Networking segment operating income was driven in part by the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge in the prior year, so some of the apparent operating improvement is not purely recurring.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.82
+      },
+      {
+        "evidence_id": "c1",
+        "polarity": "neutral",
+        "summary": "guidance sections が空で会社の前提や数値が確認できない",
+        "detail": "guidance_sections が空配列で、会社が提示した revenue/EPS/margin/CapEx/FCF guidance を直接確認できない。したがって、保守的か強気か、consensus を上回るか下回るか、revision risk が高いか低いかを判断する根拠が不足している。",
+        "impact_areas": [
+          "guidance",
+          "eps",
+          "fcf"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:NVDA:2027Q1",
+          "source_type": "financial_api",
+          "title": "Financial API consensus snapshot",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "consensus_snapshot",
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.54
+      },
+      {
+        "evidence_id": "c2",
+        "polarity": "risk",
+        "summary": "risk 文言はあるが、guidance の達成条件には落とせない",
+        "detail": "risk セクションは一般的な不確実性の説明であり、具体的な需要、粗利率、CapEx、FCF 前提などの guidance assumptions を示していない。そのため、達成条件や下方修正リスクの程度を具体化できない。",
+        "impact_areas": [
+          "guidance",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:risk",
+          "source_type": "filing",
+          "title": "Filing section: risk",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:risk",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.5
+      }
+    ],
+    "risk_evidence_pool": [
+      {
+        "evidence_id": "ce1",
+        "polarity": "negative",
+        "summary": "Part of the EPS improvement was inflated by unusually large other income, net.",
+        "detail": "The filing shows other income (expense), net of $15,929 million and total other income, net of $16,367 million, which materially boosted income before tax relative to operating income and makes the EPS beat less purely operational.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 16367000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ce3",
+        "polarity": "negative",
+        "summary": "The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.",
+        "detail": "Management states the increase in Compute & Networking segment operating income was driven in part by the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge in the prior year, so some of the apparent operating improvement is not purely recurring.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.82
+      }
+    ],
+    "synthesis": "Headline results were strong: EPS beat consensus and revenue/operating income expanded sharply, with Compute & Networking as the main growth engine. The quality assessment is mixed because the quarter benefited from very large other income and from a favorable comparison against a prior-year H20 charge, while management also flags export-control risk that could affect future earnings durability. Revenue concentration and segment mix appear supportive near term, but the routed context lacks an EPS bridge, guidance, and cash-flow data, limiting confidence on how much of the improvement will persist into future EPS/FCF. Liquidity and leverage look supportive for future FCF resilience, with substantial liquid assets and modest debt reducing near-term financing constraint risk. The main offset is ongoing ecosystem investment and large operating assets tied up in receivables and inventory, which could keep cash conversion uneven. Because routed context lacks direct CFO/FCF/CapEx and maturity metrics, the next analyst should treat the FCF-improvement case as plausible but not yet directly proven. Management priorities appear to be scaling Compute & Networking, preserving segment profitability, and continuing ecosystem investment while managing export-control constraints. Near term, EPS appears supported by revenue growth and the absence of the prior H20 charge; FCF likely faces ongoing pressure from inventory, infrastructure, engineering, and ecosystem investment. Longer term, management’s narrative is constructive on the business model but materially conditioned on licensing/export restrictions and customer migration risks. Guidance sections が欠落しているため、次工程では guidance 数値と assumptions の有無を最優先で確認してください。現状では consensus snapshot のみが存在し、guidance vs consensus、保守性、revision risk、EPS/FCF への方向性は判定不能です。risk 開示は一般的な不確実性を示すだけで、会社の具体的な見通しではありません。"
+  },
+  "bull_case": {
+    "agent_name": "bull_agent",
+    "thesis": "This quarter can be viewed as good because the business delivered a clear top-line and operating profit beat with strong margin expansion, while the core Compute & Networking segment remained the main profit engine. The evidence also supports a constructive medium-term EPS case from operating leverage and a constructive FCF case from strong liquidity and manageable debt, even though the current quarter’s quality is not pristine.",
+    "stance_strength": "moderate",
+    "strongest_positive_evidence": [
+      {
+        "evidence_id": "ke1",
+        "polarity": "positive",
+        "summary": "Revenue and diluted EPS were both strong versus consensus context and prior year.",
+        "detail": "The filing shows total revenue of $81,615 million and diluted EPS of $2.39; the routed metrics section provides EPS consensus of 2.09 for fiscal 2027Q1, indicating an EPS beat and very strong top-line performance.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:NVDA:2027Q1",
+          "source_type": "financial_api",
+          "title": "Financial API consensus snapshot",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "consensus_snapshot",
+          "as_of_date": null
+        },
+        "metric_name": "consensus_snapshot",
+        "value": 2.09,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ke2",
+        "polarity": "positive",
+        "summary": "Operating performance improved broadly, with strong margin and operating income expansion.",
+        "detail": "The filing reports gross profit of $61,157 million and operating income of $53,536 million on $81,615 million of revenue, versus $26,668 million gross profit and $21,638 million operating income a year earlier, showing materially better operating leverage and margin expansion.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 81615000000.0,
+        "unit": "USD",
+        "confidence": 0.88
+      },
+      {
+        "evidence_id": "ke3",
+        "polarity": "positive",
+        "summary": "Compute & Networking drove most of the operating profit improvement, supporting the durability of the core business mix.",
+        "detail": "Segment disclosure shows Compute & Networking revenue of $74,550 million and operating income of $53,335 million, and the filing states the year-over-year increase in segment operating income was driven by revenue growth and non-recurrence of a $4.5 billion H20 charge in the prior year.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 53335000000.0,
+        "unit": "USD",
+        "confidence": 0.8
+      }
+    ],
+    "eps_bull_argument": "EPS looks good because reported diluted EPS beat the routed consensus snapshot, and the filing shows materially stronger operating leverage and operating income expansion. Even with the noted quality offsets, the core business delivered enough operating improvement to support a positive EPS interpretation.",
+    "fcf_bull_argument": "FCF looks constructive on a medium-term basis because liquidity resources are large, debt is modest, and management has flexibility to keep investing without immediate financing pressure. While direct CFO/FCF metrics were not routed, the balance-sheet evidence suggests cash generation risk is not acute and future FCF can improve if working-capital intensity normalizes.",
+    "conditions_needed": [
+      "Operating leverage must persist without relying mainly on one-time benefits or unusually large non-operating income.",
+      "Working capital efficiency would need to improve so receivables and inventory do not keep absorbing cash.",
+      "Ecosystem investment should remain disciplined enough that future cash generation is not overly diluted.",
+      "Export-control pressure would need to remain manageable so core segment profitability stays durable."
+    ],
+    "weak_points": [
+      "A large portion of the quarter’s EPS strength was helped by unusually large other income, so the headline beat is not purely operational.",
+      "Year-over-year segment improvement was aided by the non-recurrence of a prior H20 charge, which weakens the clean recurring-growth argument.",
+      "Export-control risk remains a meaningful medium-term threat to revenue quality and EPS durability.",
+      "Direct CFO/FCF/CapEx metrics were not routed, so the FCF case is inferential rather than directly proven.",
+      "Guidance is missing, so there is no company-issued outlook to confirm the quarter’s forward tone."
+    ],
+    "finding_coverage": {
+      "earnings_quality": "supporting",
+      "cash_flow_risk": "supporting",
+      "management_intent": "supporting",
+      "guidance": "missing"
+    },
+    "disputed_points_to_watch": [
+      "Whether the EPS improvement is durable once other income and one-time comparison effects normalize.",
+      "Whether export controls materially constrain future segment growth or customer retention.",
+      "Whether receivables and inventory remain elevated enough to suppress cash conversion.",
+      "Whether continued ecosystem investment keeps free cash flow under pressure despite strong operating results."
+    ],
+    "confidence": 0.34,
+    "missing_data": [
+      "No company guidance numbers or guidance assumptions were provided.",
+      "No direct CFO, FCF, CapEx, working-capital change, or FCF margin metrics were routed.",
+      "No EPS bridge separating recurring operating performance from non-operating items was provided.",
+      "No debt maturity or refinancing schedule was routed.",
+      "No valid_positive_evidence_ids or valid_negative_evidence_ids list was provided, so strongest-evidence selection had to rely on the supplied positive pool only."
+    ]
+  },
+  "bear_case": {
+    "agent_name": "bear_agent",
+    "thesis": "This quarter is better viewed as neutral rather than cleanly good because the headline EPS beat is not fully recurring-quality, and forward durability remains uncertain. The strongest bear reading is that a meaningful share of the earnings improvement came from unusually large other income and from a favorable comparison against a prior-year H20 charge, while export-control risk and continued ecosystem investment could limit how quickly EPS and FCF improve from here. The quarter shows strong operating momentum, but the evidence does not fully support treating that momentum as durable or purely core-business driven.",
+    "stance_strength": "moderate",
+    "strongest_negative_evidence": [
+      {
+        "evidence_id": "ce1",
+        "polarity": "negative",
+        "summary": "Part of the EPS improvement was inflated by unusually large other income, net.",
+        "detail": "The filing shows other income (expense), net of $15,929 million and total other income, net of $16,367 million, which materially boosted income before tax relative to operating income and makes the EPS beat less purely operational.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 16367000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ce3",
+        "polarity": "negative",
+        "summary": "The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.",
+        "detail": "Management states the increase in Compute & Networking segment operating income was driven in part by the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge in the prior year, so some of the apparent operating improvement is not purely recurring.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.82
+      },
+      {
+        "evidence_id": "ce2",
+        "polarity": "risk",
+        "summary": "Management highlights export-control risk that could impair future results.",
+        "detail": "The filing states competitive position has been harmed by export controls and future results could be further harmed if restrictions remain or expand, which is a meaningful medium-term risk to revenue quality and EPS durability.",
+        "impact_areas": [
+          "guidance",
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.78
+      }
+    ],
+    "eps_bear_argument": "The EPS beat is not as clean as the headline suggests. A very large portion of the quarter’s profit support came from unusually large other income, and management also says the year-over-year operating comparison benefited from the non-recurrence of a prior H20 charge. That means the quarter’s EPS strength is partly non-operational and partly aided by an easier base, which weakens the case that EPS momentum is fully recurring.",
+    "fcf_bear_argument": "The FCF case remains unproven because the routed context lacks direct CFO, FCF, CapEx, and working-capital trend metrics. On top of that, management expects to continue investing in its ecosystem, and the balance-sheet discussion still points to sizable receivables and inventory. So while liquidity is strong, the evidence does not directly confirm that free cash flow will improve quickly or evenly.",
+    "failure_modes": [
+      "EPS quality is overstated because non-operating other income materially supported the result.",
+      "The operating improvement is partly a comparison effect from a prior-year one-time charge.",
+      "Export-control restrictions could pressure future revenue quality and EPS durability.",
+      "Continued ecosystem investment could keep cash deployment elevated.",
+      "Direct CFO/FCF/CapEx metrics are missing, so the FCF improvement case is not directly validated.",
+      "Guidance is missing, so forward revisions and company outlook cannot be judged."
+    ],
+    "counter_to_bull_case": [
+      "Strong headline growth does not automatically imply durable earnings quality when other income was unusually large.",
+      "Core operating improvement is less impressive when part of the year-over-year gain reflects a prior-year charge falling out of the comparison.",
+      "The bull case on future EPS is weakened by explicit export-control risk to competitiveness and future results.",
+      "The bull case on FCF is only inferential because routed data do not include CFO, FCF, CapEx, or working-capital trend metrics.",
+      "Liquidity helps balance-sheet resilience, but it does not by itself prove that operating cash generation is improving.",
+      "Missing guidance means the quarter cannot be confirmed as a positive forward signal versus consensus."
+    ],
+    "finding_coverage": {
+      "earnings_quality": "opposing",
+      "cash_flow_risk": "opposing",
+      "management_intent": "opposing",
+      "guidance": "missing"
+    },
+    "unresolved_risks": [
+      "How much of the EPS strength was non-recurring versus repeatable operating performance.",
+      "Whether export-control constraints worsen or remain manageable.",
+      "Whether ongoing ecosystem investment keeps FCF pressured longer than expected.",
+      "Whether receivables and inventory stay elevated and absorb cash.",
+      "Whether the company can translate operating growth into directly verifiable cash-flow improvement.",
+      "What management would have guided for revenue, EPS, margins, CapEx, or FCF if guidance had been provided."
+    ],
+    "confidence": 0.68,
+    "missing_data": [
+      "No direct CFO, FCF, CapEx, or working-capital change metrics were routed.",
+      "No company-issued guidance figures or assumptions were provided.",
+      "No EPS bridge separating recurring operating performance from non-operating items was provided.",
+      "No valid_positive_evidence_ids or valid_negative_evidence_ids were provided, so evidence selection was based on the supplied pools without extra routing constraints."
+    ]
+  },
+  "debate_result": {
+    "bull_case": "This quarter can be viewed as good because the business delivered a clear top-line and operating profit beat with strong margin expansion, while the core Compute & Networking segment remained the main profit engine. The evidence also supports a constructive medium-term EPS case from operating leverage and a constructive FCF case from strong liquidity and manageable debt, even though the current quarter’s quality is not pristine.",
+    "bear_case": "This quarter is better viewed as neutral rather than cleanly good because the headline EPS beat is not fully recurring-quality, and forward durability remains uncertain. The strongest bear reading is that a meaningful share of the earnings improvement came from unusually large other income and from a favorable comparison against a prior-year H20 charge, while export-control risk and continued ecosystem investment could limit how quickly EPS and FCF improve from here. The quarter shows strong operating momentum, but the evidence does not fully support treating that momentum as durable or purely core-business driven.",
+    "risk_case": "Part of the EPS improvement was inflated by unusually large other income, net.; The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.; Management highlights export-control risk that could impair future results.",
+    "evaluation": "Bull and Bear cases were generated from validated AnalysisBrief only.",
+    "strongest_positive_evidence": [
+      {
+        "evidence_id": "ke1",
+        "polarity": "positive",
+        "summary": "Revenue and diluted EPS were both strong versus consensus context and prior year.",
+        "detail": "The filing shows total revenue of $81,615 million and diluted EPS of $2.39; the routed metrics section provides EPS consensus of 2.09 for fiscal 2027Q1, indicating an EPS beat and very strong top-line performance.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:NVDA:2027Q1",
+          "source_type": "financial_api",
+          "title": "Financial API consensus snapshot",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "consensus_snapshot",
+          "as_of_date": null
+        },
+        "metric_name": "consensus_snapshot",
+        "value": 2.09,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ke2",
+        "polarity": "positive",
+        "summary": "Operating performance improved broadly, with strong margin and operating income expansion.",
+        "detail": "The filing reports gross profit of $61,157 million and operating income of $53,536 million on $81,615 million of revenue, versus $26,668 million gross profit and $21,638 million operating income a year earlier, showing materially better operating leverage and margin expansion.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 81615000000.0,
+        "unit": "USD",
+        "confidence": 0.88
+      },
+      {
+        "evidence_id": "ke3",
+        "polarity": "positive",
+        "summary": "Compute & Networking drove most of the operating profit improvement, supporting the durability of the core business mix.",
+        "detail": "Segment disclosure shows Compute & Networking revenue of $74,550 million and operating income of $53,335 million, and the filing states the year-over-year increase in segment operating income was driven by revenue growth and non-recurrence of a $4.5 billion H20 charge in the prior year.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 53335000000.0,
+        "unit": "USD",
+        "confidence": 0.8
+      }
+    ],
+    "strongest_negative_evidence": [
+      {
+        "evidence_id": "ce1",
+        "polarity": "negative",
+        "summary": "Part of the EPS improvement was inflated by unusually large other income, net.",
+        "detail": "The filing shows other income (expense), net of $15,929 million and total other income, net of $16,367 million, which materially boosted income before tax relative to operating income and makes the EPS beat less purely operational.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 16367000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ce3",
+        "polarity": "negative",
+        "summary": "The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.",
+        "detail": "Management states the increase in Compute & Networking segment operating income was driven in part by the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge in the prior year, so some of the apparent operating improvement is not purely recurring.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.82
+      },
+      {
+        "evidence_id": "ce2",
+        "polarity": "risk",
+        "summary": "Management highlights export-control risk that could impair future results.",
+        "detail": "The filing states competitive position has been harmed by export controls and future results could be further harmed if restrictions remain or expand, which is a meaningful medium-term risk to revenue quality and EPS durability.",
+        "impact_areas": [
+          "guidance",
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.78
+      }
+    ],
+    "unresolved_questions": [
+      "How much of the EPS strength was non-recurring versus repeatable operating performance.",
+      "Whether export-control constraints worsen or remain manageable.",
+      "Whether ongoing ecosystem investment keeps FCF pressured longer than expected.",
+      "Whether receivables and inventory stay elevated and absorb cash.",
+      "Whether the company can translate operating growth into directly verifiable cash-flow improvement.",
+      "What management would have guided for revenue, EPS, margins, CapEx, or FCF if guidance had been provided."
+    ]
+  },
+  "judge_decision": {
+    "verdict": "neutral",
+    "confidence": 0.69,
+    "summary": "Neutral verdict: the quarter was strong on headline operating performance, but EPS quality was mixed and FCF improvement was not directly verified. Missing guidance and cash-flow metrics limit conviction, while export-control and comparison effects keep the forward signal from being unambiguously good.",
+    "rationale": "Bull and bear evidence are both credible. Bull points to a clear EPS beat, strong margin expansion, and core segment strength. Bear counters that the beat was not purely operational, operating improvement benefited from an easier comparison, and export-control risk remains meaningful. Guidance is missing, and direct cash-flow metrics are absent, so the forward view remains incomplete.",
+    "positive_evidence": [
+      {
+        "evidence_id": "ke1",
+        "polarity": "positive",
+        "summary": "Revenue and diluted EPS were both strong versus consensus context and prior year.",
+        "detail": "The filing shows total revenue of $81,615 million and diluted EPS of $2.39; the routed metrics section provides EPS consensus of 2.09 for fiscal 2027Q1, indicating an EPS beat and very strong top-line performance.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:NVDA:2027Q1",
+          "source_type": "financial_api",
+          "title": "Financial API consensus snapshot",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "consensus_snapshot",
+          "as_of_date": null
+        },
+        "metric_name": "consensus_snapshot",
+        "value": 2.09,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ke2",
+        "polarity": "positive",
+        "summary": "Operating performance improved broadly, with strong margin and operating income expansion.",
+        "detail": "The filing reports gross profit of $61,157 million and operating income of $53,536 million on $81,615 million of revenue, versus $26,668 million gross profit and $21,638 million operating income a year earlier, showing materially better operating leverage and margin expansion.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 81615000000.0,
+        "unit": "USD",
+        "confidence": 0.88
+      }
+    ],
+    "negative_evidence": [
+      {
+        "evidence_id": "ce1",
+        "polarity": "negative",
+        "summary": "Part of the EPS improvement was inflated by unusually large other income, net.",
+        "detail": "The filing shows other income (expense), net of $15,929 million and total other income, net of $16,367 million, which materially boosted income before tax relative to operating income and makes the EPS beat less purely operational.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:other",
+          "source_type": "filing",
+          "title": "Filing section: other",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:other",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": 16367000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "ce3",
+        "polarity": "negative",
+        "summary": "The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.",
+        "detail": "Management states the increase in Compute & Networking segment operating income was driven in part by the non-recurrence of a $4.5 billion H20 excess inventory and purchase-obligation charge in the prior year, so some of the apparent operating improvement is not purely recurring.",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "filing:segments",
+          "source_type": "filing",
+          "title": "Filing section: segments",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+          "document_id": "filing-html",
+          "section_id": "filing:segments",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.82
+      }
+    ],
+    "eps_outlook": "mixed",
+    "eps_outlook_reason": "EPS looks positive near term because the company beat consensus and operating profit expanded sharply, but the quality is mixed since unusually large other income and the non-recurrence of a prior H20 charge helped the result. That makes future EPS improvement possible, yet not fully clean or fully proven from the routed evidence.",
+    "fcf_outlook": "neutral",
+    "fcf_outlook_reason": "FCF is supported by strong liquidity and modest debt, but direct CFO, FCF, CapEx, and working-capital trend metrics were not routed, and management expects continued ecosystem investment. So future FCF improvement is plausible, but the evidence is insufficient to call it clearly positive.",
+    "purpose": "earnings_review_not_investment_advice",
+    "is_investment_advice": false
+  },
+  "markdown_report": "# Earnings Review: NVDA 2027Q1\n\n## Verdict\n\nNeutral\n\nConfidence: 0.69\n\n## Summary\n\nNeutral verdict: the quarter was strong on headline operating performance, but EPS quality was mixed and FCF improvement was not directly verified. Missing guidance and cash-flow metrics limit conviction, while export-control and comparison effects keep the forward signal from being unambiguously good.\n\n## Agent Analysis\n\n- **EarningsQualityAnalyst** (mixed, confidence 0.78): Headline results were strong: EPS beat consensus and revenue/operating income expanded sharply, with Compute & Networking as the main growth engine. The quality assessment is mixed because the quarter benefited from very large other income and from a favorable comparison against a prior-year H20 charge, while management also flags export-control risk that could affect future earnings durability. Revenue concentration and segment mix appear supportive near term, but the routed context lacks an EPS bridge, guidance, and cash-flow data, limiting confidence on how much of the improvement will persist into future EPS/FCF.\n- **CashFlowRiskAnalyst** (mixed, confidence 0.58): Liquidity and leverage look supportive for future FCF resilience, with substantial liquid assets and modest debt reducing near-term financing constraint risk. The main offset is ongoing ecosystem investment and large operating assets tied up in receivables and inventory, which could keep cash conversion uneven. Because routed context lacks direct CFO/FCF/CapEx and maturity metrics, the next analyst should treat the FCF-improvement case as plausible but not yet directly proven.\n- **ManagementIntentAnalyst** (mixed, confidence 0.77): Management priorities appear to be scaling Compute & Networking, preserving segment profitability, and continuing ecosystem investment while managing export-control constraints. Near term, EPS appears supported by revenue growth and the absence of the prior H20 charge; FCF likely faces ongoing pressure from inventory, infrastructure, engineering, and ecosystem investment. Longer term, management’s narrative is constructive on the business model but materially conditioned on licensing/export restrictions and customer migration risks.\n- **GuidanceAnalyst** (unclear, confidence 0.60): Guidance sections が欠落しているため、次工程では guidance 数値と assumptions の有無を最優先で確認してください。現状では consensus snapshot のみが存在し、guidance vs consensus、保守性、revision risk、EPS/FCF への方向性は判定不能です。risk 開示は一般的な不確実性を示すだけで、会社の具体的な見通しではありません。\n\n## Positive Evidence\n\n- Revenue and diluted EPS were both strong versus consensus context and prior year.\n- Operating performance improved broadly, with strong margin and operating income expansion.\n\n## Negative Evidence\n\n- Part of the EPS improvement was inflated by unusually large other income, net.\n- The comparison is helped by a prior-year one-time charge, making year-over-year operating growth less clean as a quality signal.\n\n## EPS Outlook\n\nmixed\n\nReason: EPS looks positive near term because the company beat consensus and operating profit expanded sharply, but the quality is mixed since unusually large other income and the non-recurrence of a prior H20 charge helped the result. That makes future EPS improvement possible, yet not fully clean or fully proven from the routed evidence.\n\n## FCF Outlook\n\nneutral\n\nReason: FCF is supported by strong liquidity and modest debt, but direct CFO, FCF, CapEx, and working-capital trend metrics were not routed, and management expects continued ecosystem investment. So future FCF improvement is plausible, but the evidence is insufficient to call it clearly positive.\n\n## Bull Case\n\nThis quarter can be viewed as good because the business delivered a clear top-line and operating profit beat with strong margin expansion, while the core Compute & Networking segment remained the main profit engine. The evidence also supports a constructive medium-term EPS case from operating leverage and a constructive FCF case from strong liquidity and manageable debt, even though the current quarter’s quality is not pristine.\n\n## Bear Case\n\nThis quarter is better viewed as neutral rather than cleanly good because the headline EPS beat is not fully recurring-quality, and forward durability remains uncertain. The strongest bear reading is that a meaningful share of the earnings improvement came from unusually large other income and from a favorable comparison against a prior-year H20 charge, while export-control risk and continued ecosystem investment could limit how quickly EPS and FCF improve from here. The quarter shows strong operating momentum, but the evidence does not fully support treating that momentum as durable or purely core-business driven.\n\n## Analyst Brief\n\nHeadline results were strong: EPS beat consensus and revenue/operating income expanded sharply, with Compute & Networking as the main growth engine. The quality assessment is mixed because the quarter benefited from very large other income and from a favorable comparison against a prior-year H20 charge, while management also flags export-control risk that could affect future earnings durability. Revenue concentration and segment mix appear supportive near term, but the routed context lacks an EPS bridge, guidance, and cash-flow data, limiting confidence on how much of the improvement will persist into future EPS/FCF. Liquidity and leverage look supportive for future FCF resilience, with substantial liquid assets and modest debt reducing near-term financing constraint risk. The main offset is ongoing ecosystem investment and large operating assets tied up in receivables and inventory, which could keep cash conversion uneven. Because routed context lacks direct CFO/FCF/CapEx and maturity metrics, the next analyst should treat the FCF-improvement case as plausible but not yet directly proven. Management priorities appear to be scaling Compute & Networking, preserving segment profitability, and continuing ecosystem investment while managing export-control constraints. Near term, EPS appears supported by revenue growth and the absence of the prior H20 charge; FCF likely faces ongoing pressure from inventory, infrastructure, engineering, and ecosystem investment. Longer term, management’s narrative is constructive on the business model but materially conditioned on licensing/export restrictions and customer migration risks. Guidance sections が欠落しているため、次工程では guidance 数値と assumptions の有無を最優先で確認してください。現状では consensus snapshot のみが存在し、guidance vs consensus、保守性、revision risk、EPS/FCF への方向性は判定不能です。risk 開示は一般的な不確実性を示すだけで、会社の具体的な見通しではありません。\n\n## Sources\n\n### EarningsQualityAnalyst\n- `financial_api:NVDA:2027Q1` (consensus_snapshot): Financial API consensus snapshot — no URL in source_ref\n- `filing:other` (filing:other): Filing section: other — https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm\n- `filing:segments` (filing:segments): Filing section: segments — https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm\n### CashFlowRiskAnalyst\n- `filing:other` (filing:other): Filing section: other — https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm\n- `filing:risk` (filing:risk): Filing section: risk — https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm\n- `financial_api:NVDA:2027Q1` (consensus_snapshot): Financial API consensus snapshot — no URL in source_ref\n### ManagementIntentAnalyst\n- `filing:segments` (filing:segments): Filing section: segments — https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm\n- `filing:risk` (filing:risk): Filing section: risk — https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm\n### GuidanceAnalyst\n- `filing:risk` (filing:risk): Filing section: risk — https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm\n- `financial_api:NVDA:2027Q1` (consensus_snapshot): Financial API consensus snapshot — no URL in source_ref\n\n_This report is an earnings analysis artifact and is not investment advice._",
+  "purpose": "earnings_review_not_investment_advice",
+  "is_investment_advice": false,
+  "disclaimer": "This report is an earnings analysis artifact and is not investment advice."
+}
