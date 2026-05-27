@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from .workflow_models import NormalizedMetric, UnmappedMetric
 
@@ -100,9 +100,12 @@ def _normalized_aliases(source: str) -> dict[str, str]:
     return normalized
 
 
-def resolve_canonical_metric(source: str, raw_key: object) -> str | None:
+def resolve_canonical_metric(source: str, raw_key: object) -> CanonicalMetricKey | None:
     """Return the canonical metric key for a source/raw key exact alias match."""
-    return _normalized_aliases(source).get(normalize_metric_key(raw_key))
+    canonical_key = _normalized_aliases(source).get(normalize_metric_key(raw_key))
+    if canonical_key is None:
+        return None
+    return cast(CanonicalMetricKey, canonical_key)
 
 
 def classify_metric_scope(axis: str | None = None, member: str | None = None) -> MetricScope:
@@ -130,20 +133,30 @@ def normalize_raw_metric(
     raw_key_text = str(raw_key)
     scope = classify_metric_scope(axis, member)
     canonical_key = resolve_canonical_metric(source, raw_key_text)
-    payload = {
-        "raw_key": raw_key_text,
-        "value": value,
-        "unit": unit,
-        "period": period,
-        "source": source,
-        "axis": axis,
-        "member": member,
-        "scope": scope,
-    }
 
     if canonical_key is None:
-        return UnmappedMetric(**payload, reason="no_alias_match")
-    return NormalizedMetric(**payload, canonical_key=canonical_key)
+        return UnmappedMetric(
+            raw_key=raw_key_text,
+            value=value,
+            unit=unit,
+            period=period,
+            source=source,
+            axis=axis,
+            member=member,
+            scope=scope,
+            reason="no_alias_match",
+        )
+    return NormalizedMetric(
+        canonical_key=canonical_key,
+        raw_key=raw_key_text,
+        value=value,
+        unit=unit,
+        period=period,
+        source=source,
+        axis=axis,
+        member=member,
+        scope=scope,
+    )
 
 
 def normalize_raw_metrics(
