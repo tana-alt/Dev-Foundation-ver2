@@ -21,7 +21,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "mypy>=1.13.0",
     "pytest>=8.0.0",
+    "ruff>=0.8.0",
+    "types-requests>=2.32.0",
 ]
 
 [project.scripts]
@@ -38,3 +41,41 @@ include = ["src*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".serena",
+    ".venv",
+    "archive",
+    "outputs",
+    "samples/cache",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = [
+    "E501", # Let the formatter handle practical wrapping; keep CI focused on defects/imports.
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src", "tests"]
+exclude = [
+    "^archive/",
+    "^outputs/",
+    "^samples/cache/",
+]
+ignore_missing_imports = true
+warn_unused_configs = true
+check_untyped_defs = false
+disallow_untyped_defs = false
