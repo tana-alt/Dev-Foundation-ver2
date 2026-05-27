@@ -9,10 +9,14 @@ from tests.test_workflow_api import FakeLLM, InvestmentAdviceJudgeLLM, _request_
 
 class InvestmentAdviceSpecialistLLM(FakeLLM):
     def _finding_json(self, role: str) -> str:
-        return super()._finding_json(role).replace(
-            f"{role} summary",
-            "Investors should buy the stock.",
-            1,
+        return (
+            super()
+            ._finding_json(role)
+            .replace(
+                f"{role} summary",
+                "Investors should buy the stock.",
+                1,
+            )
         )
 
 
