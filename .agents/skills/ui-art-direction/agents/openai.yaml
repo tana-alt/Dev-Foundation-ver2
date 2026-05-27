@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Art Direction"
+  short_description: "Shape premium visual direction for web UI."
+  default_prompt: "Use $ui-art-direction to establish a visual thesis, content plan, and interaction thesis before building a visually strong page, app surface, prototype, demo, or game UI."

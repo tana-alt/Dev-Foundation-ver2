@@ -11,6 +11,8 @@ Prevent deployment regressions caused by configuration, packaging, runtime, or r
 ## Use when
 
 - Dockerfile, CI/CD, deployment scripts, env vars, or runtime config change.
+- GitHub Actions or CI checks that affect build, test, release, or deployment
+  readiness change.
 - A build or production startup behavior changes.
 - Health checks, rollback, monitoring, or release commands are touched.
 
@@ -21,6 +23,18 @@ Prevent deployment regressions caused by configuration, packaging, runtime, or r
 - Health check or smoke test exists when repo pattern supports it.
 - Rollback or mitigation path is clear for risky changes.
 - Runtime image and permissions follow repo security expectations.
+
+## GitHub Actions / CI mode
+
+Use this thin mode only when CI remains part of release or deploy readiness.
+
+- Confirm changed workflows run the repo's required checks.
+- Avoid broadening permissions, token access, caches, or artifacts without a
+  readiness reason.
+- Keep secrets out of workflow logs and generated artifacts.
+- Record which local command maps to the changed CI job when a mapping exists.
+- Require human review before operational use of release/deploy workflow
+  changes.
 
 ## Constraints
 

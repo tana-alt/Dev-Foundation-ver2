@@ -2,21 +2,26 @@
 
 Use this reference during image generation, detailed prompt writing, implementation, and screenshot comparison for high-fidelity website and page builds. The guidance is intentionally abstract: choose concrete visual decisions from the user's brief, not from this document's wording.
 
-## Mandatory Image-First Gate
+## Image-First Gate
 
-The workflow must start with actual image generation.
+The workflow starts from an image reference. That image may be supplied by the
+user, already generated in context, or generated during an explicit concept
+exploration request.
 
-- Invoke `$imagegen` before writing any build prompt.
-- Generate exactly four distinct website/page images unless the user requested a different count.
-- Use built-in image generation by default, following the imagegen skill's default mode.
-- Use one image-generation call per concept when possible so each direction can have a focused prompt.
-- Present the four images to the user with short labels.
-- Stop after the four images are shown.
-- Ask the user which image to turn into the detailed build prompt.
-- Do not continue to detailed prompt-writing or code until the user selects one.
-- If image generation is unavailable, state the blocker and ask whether to proceed with text-only concepts. Do not silently downgrade.
+- If the user supplied a screenshot or image, use it directly.
+- If the user selected a generated design already in context, use that directly.
+- If the user explicitly asks for concept exploration, invoke `$imagegen` and
+  generate 2-4 distinct website/page images unless the user requested a
+  different count.
+- Use one image-generation call per concept when possible so each direction can
+  have a focused prompt.
+- Present generated concepts with short labels and pause for selection.
+- Do not continue to detailed prompt-writing or code until a reference image is
+  selected or the user explicitly asks to skip selection.
+- If image generation is requested but unavailable, state the blocker and ask
+  whether to proceed with text-only concepts. Do not silently downgrade.
 
-## Four-Concept Generation Checklist
+## Concept Generation Checklist
 
 Each generated image direction must be meaningfully distinct and must grow from the user's brief. Do not treat this checklist as a menu of styles to copy. First infer what the site must help a visitor understand, feel, compare, choose, buy, join, learn, or do. Then create four directions that solve that communication problem through different visual systems.
 
@@ -31,7 +36,9 @@ For each direction, make deliberate choices across these axes:
 - Density and pacing: how much the user should see at once, where the layout should breathe, and where it should become efficient.
 - Trust and specificity: what makes the experience credible, concrete, and fitted to this exact site rather than a generic template.
 
-The four concepts should differ in several of these axes at once. Avoid versions that only change palette, button labels, image choices, or decorative surface treatment.
+Concepts should differ in several of these axes at once. Avoid versions that
+only change palette, button labels, image choices, or decorative surface
+treatment.
 
 ## Image Generation Prompt Pattern
 
@@ -47,7 +54,9 @@ Each image prompt should include:
 - Constraints: no generic template look, no crowded layout, no unreadable tiny text, no watermark.
 - Differentiator: the core design decision that separates this concept from the other three, expressed as an intention rather than a copied style label.
 
-Do not generate four prompts that only differ in adjectives. Change the underlying design strategy, hierarchy, content emphasis, interaction model, density, and brand behavior. Make them visually distinct from one another.
+Do not generate prompts that only differ in adjectives. Change the underlying
+design strategy, hierarchy, content emphasis, interaction model, density, and
+brand behavior. Make them visually distinct from one another.
 
 Refrain from creating cluttered, busy UIs with lots of SVGs and elements that will be difficult to replicate in prod.
 

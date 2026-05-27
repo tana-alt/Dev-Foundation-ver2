@@ -1,6 +1,6 @@
 ---
 name: api-contract
-description: "Use when creating or changing API endpoints, request/response schemas, status codes, pagination, auth, rate limits, webhooks, or error formats."
+description: "Use when creating or changing API endpoints, request/response schemas, status codes, pagination, auth, rate limits, webhooks, OpenAPI descriptions, generated clients/servers, or error formats."
 ---
 
 
@@ -14,6 +14,8 @@ Make API changes explicit and stable before implementation is considered done.
 - Changing request or response shape.
 - Adding pagination, filtering, sorting, rate limits, auth, or webhooks.
 - Modifying error behavior or status codes.
+- Creating, changing, or reviewing OpenAPI descriptions, generated API clients,
+  generated servers, or HTTP API documentation.
 
 ## Success conditions
 
@@ -21,6 +23,17 @@ Make API changes explicit and stable before implementation is considered done.
 - Status codes distinguish success, validation errors, auth failures, forbidden access, missing resources, conflicts, and server errors.
 - API behavior matches existing repo conventions.
 - Contract docs, types, or OpenAPI-like references are updated if the repo uses them.
+
+## OpenAPI mode
+
+Use this mode when an OpenAPI file or generated contract is in scope.
+
+- Validate operation `method` and `path` against the implementation route.
+- Keep request bodies, parameters, headers, responses, auth, pagination, and
+  error schemas explicit.
+- Preserve compatibility unless the task explicitly allows a breaking contract.
+- Prefer the repo's current OpenAPI version and generator conventions.
+- Use `doc-lookup` for current OpenAPI specification details when needed.
 
 ## Constraints
 

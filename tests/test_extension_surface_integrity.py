@@ -1,10 +1,12 @@
 import json
+import re
 from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+SKILL_INDEX_ENTRY_RE = re.compile(r"^- `([^`]+)`$")
 
 
 def read_json(relative_path: str) -> dict[str, Any]:
@@ -43,13 +45,22 @@ def assert_relative_child_path(base: Path, raw_path: object, label: str) -> Path
     return resolved
 
 
+def skill_index_entries(index: str) -> list[str]:
+    return [
+        match.group(1) for line in index.splitlines() if (match := SKILL_INDEX_ENTRY_RE.match(line))
+    ]
+
+
 def test_agent_skill_front_matter_and_index_cover_local_skill_roots() -> None:
     skill_root = ROOT / ".agents" / "skills"
     index = (skill_root / "SKILL_INDEX.md").read_text(encoding="utf-8")
+    indexed_skill_names = skill_index_entries(index)
     skill_dirs = sorted(path for path in skill_root.iterdir() if path.is_dir())
     seen_skill_names: set[str] = set()
 
     assert skill_dirs
+    assert len(indexed_skill_names) == len(set(indexed_skill_names))
+    assert set(indexed_skill_names) == {path.name for path in skill_dirs}
 
     for skill_dir in skill_dirs:
         skill_file = skill_dir / "SKILL.md"
@@ -57,10 +68,10 @@ def test_agent_skill_front_matter_and_index_cover_local_skill_roots() -> None:
         metadata = parse_skill_front_matter(skill_file)
         skill_name = metadata.get("name")
         assert_non_empty_string(skill_name, f"{skill_file}: name")
+        assert skill_name == skill_dir.name, f"{skill_file}: name must match directory"
         assert skill_name not in seen_skill_names, f"duplicate skill name: {skill_name}"
         seen_skill_names.add(cast(str, skill_name))
         assert_non_empty_string(metadata.get("description"), f"{skill_file}: description")
-        assert index.count(f"`{skill_dir.name}`") == 1, skill_dir.name
 
 
 def test_plugin_registry_and_manifest_paths_are_structural() -> None:

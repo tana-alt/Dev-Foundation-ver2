@@ -1,50 +1,58 @@
 ---
 name: img-to-frontend
-description: "Use when the user wants an end-to-end premium visual design workflow for any type of website or web page created directly from images."
+description: "Use only for explicit image-first concept exploration, screenshot-to-code, generated-design-to-code, or premium visual exploration where images are the primary design reference. Do not use for ordinary frontend implementation."
 ---
 
 # Img to Frontend
 
 ## Overview
 
-Use this skill to run an image-first design-to-code workflow for visually appealing awwward winning websites. It must adapt to the user's brief, audience, content model, interaction needs, and brand intent rather than forcing a fixed category or visual trope.
+Use this skill to run an image-first design-to-code workflow. It must adapt to
+the user's brief, audience, content model, interaction needs, and brand intent
+rather than forcing a fixed category or visual trope.
 
-The workflow is intentionally staged:
+The workflow is staged only when the request is explicitly image-first:
 
-1. Invoke `$imagegen` to create four distinct website/page design images.
-2. Stop so the user can select the image or images to use as the design reference.
-3. Translate only the selected image into a precise implementation prompt.
-4. Build the real page and iterate against screenshots until structure, hierarchy, typography, spacing, color, media treatment, component geometry, interactions, and responsive behavior are close to the reference.
+1. Establish or receive the image reference.
+2. Translate the selected image into a precise implementation prompt when useful.
+3. Build the real page and iterate against screenshots until structure,
+   hierarchy, typography, spacing, color, media treatment, component geometry,
+   interactions, and responsive behavior are close to the reference.
 
 Load `references/visual-iteration-checklist.md` for design variety, implementation, close visual replication, premium website work, complex UI sections, or repeated visual refinement.
 
 ## When To Use
 
-Use this skill when the user asks to:
+Use this skill only when the user explicitly asks to:
 
 - Create several distinct website or page concepts before coding.
 - Turn an image or generated design into a real frontend page.
 - Produce a detailed prompt another coding agent can use to build a design.
 - Replicate a screenshot as real HTML/CSS/React rather than as an image.
-- Iterate on visual details like spacing, scale, typography, media treatment, visual systems, component alignment, interaction states, or responsive breakpoints.
+- Do premium visual exploration where generated images are the primary
+  deliverable or design reference.
 
-Do not use this skill for ordinary business-logic changes, backend features, simple copy edits, or design critique that will not lead to generated images, a detailed implementation prompt, or frontend code.
+Do not use this skill for ordinary frontend implementation, business-logic
+changes, backend features, simple copy edits, or design critique that will not
+lead to generated images, a detailed implementation prompt, or frontend code.
 
-## Non-Negotiable Image Gate
+## Image Reference Gate
 
-The first deliverable is always four generated images. Do not jump straight to text prompts, implementation prompts, or code.
+Do not force image generation when the user already supplied the reference image,
+screenshot, or generated design to implement.
 
-Required behavior:
+Use the smallest image step that matches the request:
 
-- Load and use the `$imagegen` skill for phase 1.
-- Generate four unique website/page images with the built-in image generation tool by default.
-- Make one image-generation call per concept unless the image tool supports equivalent multi-output generation in the current environment.
-- Render or present all four images to the user, one at a time.
-- Stop after presenting the images and ask which one the user wants to explore.
-- Do not write the detailed build prompt until the user selects a specific image.
-- Do not implement frontend code until the selected-image prompt phase is complete or the user explicitly skips it.
+- Existing screenshot/image: use it directly as the design reference.
+- Generated-design-to-code: use the selected generated image already in context.
+- Concept exploration: generate 2-4 distinct website/page images, or the exact
+  count requested by the user, then pause for selection.
+- Direct implementation request with a selected image: proceed to implementation
+  after extracting the build prompt.
 
-If image generation is unavailable or fails, report that blocker and ask whether the user wants text-only fallbacks. Do not silently substitute text briefs for the image stage.
+If image generation is requested but unavailable or fails, report that blocker
+and ask whether the user wants text-only fallbacks. Do not silently substitute
+text briefs for an explicitly requested image stage.
 
 ## Core Workflow
 
@@ -52,7 +60,11 @@ If image generation is unavailable or fails, report that blocker and ask whether
 
 Start by identifying the site context, audience, goal, style constraints, viewport, and must-have sections. If the user already gave enough context, do not pause for more input.
 
-Generate four distinct website/page images through `$imagegen`. Each image must have its own visual language, not minor palette swaps. Vary structure, hierarchy, typography strategy, interaction model, information architecture, content emphasis, density, and brand behavior.
+For explicit concept exploration, generate 2-4 distinct website/page images
+through `$imagegen` unless the user requested a specific count. Each image must
+have its own visual language, not minor palette swaps. Vary structure,
+hierarchy, typography strategy, interaction model, information architecture,
+content emphasis, density, and brand behavior.
 
 Choose directions that fit the site's purpose and audience. Different website types should develop from their own communication needs, not from a shared default template.
 
@@ -71,7 +83,10 @@ For each direction, briefly label:
 
 ### 2. Selection Pause
 
-After the four images are created, stop and wait for the user to pick one or request revisions. Do not write the detailed build prompt and do not begin implementation until the user selects an image or explicitly asks to skip selection.
+After concept images are created, stop and wait for the user to pick one or
+request revisions. Do not write the detailed build prompt and do not begin
+implementation until the user selects an image or explicitly asks to skip
+selection.
 
 When the user references a selected image, verify which image they mean from the conversation context. If there is ambiguity, ask a short clarification before writing the prompt or coding.
 

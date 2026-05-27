@@ -1,0 +1,14 @@
+interface:
+  display_name: "Figma Design To Code"
+  short_description: "Turn Figma designs into production-ready code"
+  icon_small: "./assets/figma-small.svg"
+  icon_large: "./assets/figma.png"
+  default_prompt: "Use $figma-design-to-code to implement this Figma design in this codebase, matching layout, states, assets, and responsive behavior."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "figma"
+      description: "Figma MCP server"
+      transport: "streamable_http"
+      url: "https://mcp.figma.com/mcp"
