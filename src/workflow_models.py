@@ -191,6 +191,34 @@ class DocumentFile(WorkflowModel):
     title: str = Field(min_length=1, max_length=300)
 
 
+class RawMetricBase(WorkflowModel):
+    raw_key: str = Field(min_length=1, max_length=200)
+    value: float | None = None
+    unit: str | None = Field(default=None, max_length=40)
+    period: str | None = Field(default=None, max_length=40)
+    source: str = Field(min_length=1, max_length=40)
+    axis: str | None = Field(default=None, max_length=200)
+    member: str | None = Field(default=None, max_length=200)
+    scope: Literal["consolidated", "segment", "dimensional"] = "consolidated"
+
+
+class NormalizedMetric(RawMetricBase):
+    canonical_key: Literal[
+        "revenue",
+        "eps_basic",
+        "eps_diluted",
+        "operating_income",
+        "operating_margin",
+        "operating_cash_flow",
+        "capex",
+        "free_cash_flow",
+    ]
+
+
+class UnmappedMetric(RawMetricBase):
+    reason: str | None = Field(default=None, max_length=200)
+
+
 class FinancialMetrics(WorkflowModel):
     ticker: str = Field(min_length=1, max_length=15)
     fiscal_period: str = Field(pattern=r"^\d{4}Q[1-4]$")
@@ -212,6 +240,8 @@ class FinancialMetrics(WorkflowModel):
 
     guidance: str | None = Field(default=None, max_length=2000)
     source_refs: list[SourceRef] = Field(default_factory=list, max_length=20)
+    segment_metrics: list[NormalizedMetric] = Field(default_factory=list, max_length=500)
+    unmapped_metrics: list[UnmappedMetric] = Field(default_factory=list, max_length=500)
 
     @field_validator("ticker", mode="before")
     @classmethod

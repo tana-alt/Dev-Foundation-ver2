@@ -19,7 +19,16 @@ import yfinance as yf
 from bs4 import BeautifulSoup
 from pydantic import ValidationError
 
-from .workflow_models import DocumentFile, DocumentSection, FinancialMetrics, SourceRef, SourceType
+from .metric_normalizer import resolve_canonical_metric
+from .workflow_models import (
+    DocumentFile,
+    DocumentSection,
+    FinancialMetrics,
+    NormalizedMetric,
+    SourceRef,
+    SourceType,
+    UnmappedMetric,
+)
 
 log = structlog.get_logger()
 
@@ -214,6 +223,18 @@ def calculate_surprise_pct(actual: float | None, consensus: float | None) -> flo
     return ((actual - consensus) / abs(consensus)) * 100
 
 
+def _first_metric_value(frame: Any, canonical_key: str) -> float | None:
+    if frame is None or getattr(frame, "empty", True):
+        return None
+    for raw_key in frame.index:
+        if resolve_canonical_metric("yfinance", raw_key) == canonical_key:
+            row = frame.loc[raw_key]
+            if hasattr(row, "iloc"):
+                return safe_float(row.iloc[0])
+            return safe_float(row)
+    return None
+
+
 def build_financial_metrics(
     *,
     ticker: str,
@@ -229,13 +250,15 @@ def build_financial_metrics(
     free_cash_flow: float | None = None,
     capex: float | None = None,
     guidance: str | None = None,
+    segment_metrics: list[NormalizedMetric] | None = None,
+    unmapped_metrics: list[UnmappedMetric] | None = None,
 ) -> FinancialMetrics:
     """Build normalized financial metrics passed to workflow agents."""
     if eps_surprise_pct is None:
         eps_surprise_pct = calculate_surprise_pct(eps, eps_consensus)
     if revenue_surprise_pct is None:
         revenue_surprise_pct = calculate_surprise_pct(revenue, revenue_consensus)
-    if free_cash_flow is None and operating_cash_flow is not None and capex is not None:
+    if operating_cash_flow is not None and capex is not None:
         free_cash_flow = operating_cash_flow - abs(capex)
 
     return FinancialMetrics(
@@ -252,6 +275,8 @@ def build_financial_metrics(
         free_cash_flow=free_cash_flow,
         capex=capex,
         guidance=guidance,
+        segment_metrics=segment_metrics or [],
+        unmapped_metrics=unmapped_metrics or [],
         source_refs=[
             SourceRef(
                 source_id=f"financial_api:{ticker.upper()}:{fiscal_period}",
@@ -351,6 +376,9 @@ def fetch_consensus(ticker: str, fiscal_period: str) -> FinancialMetrics:
     eps_consensus = None
     eps_surprise_pct = None
     revenue_actual = None
+    operating_cash_flow = None
+    capex = None
+    free_cash_flow = None
     try:
         earnings_dates = t.earnings_dates
         if earnings_dates is not None and not earnings_dates.empty:
@@ -364,10 +392,18 @@ def fetch_consensus(ticker: str, fiscal_period: str) -> FinancialMetrics:
     try:
         quarterly_financials = t.quarterly_financials
         if quarterly_financials is not None and not quarterly_financials.empty:
-            if "Total Revenue" in quarterly_financials.index:
-                revenue_actual = safe_float(quarterly_financials.loc["Total Revenue"].iloc[0])
+            revenue_actual = _first_metric_value(quarterly_financials, "revenue")
     except Exception as e:
         log.warning("yfinance.revenue_fetch_failed", error=str(e))
+
+    try:
+        quarterly_cashflow = t.quarterly_cashflow
+        if quarterly_cashflow is not None and not quarterly_cashflow.empty:
+            operating_cash_flow = _first_metric_value(quarterly_cashflow, "operating_cash_flow")
+            capex = _first_metric_value(quarterly_cashflow, "capex")
+            free_cash_flow = _first_metric_value(quarterly_cashflow, "free_cash_flow")
+    except Exception as e:
+        log.warning("yfinance.cashflow_fetch_failed", error=str(e))
 
     return build_financial_metrics(
         ticker=ticker,
@@ -376,4 +412,7 @@ def fetch_consensus(ticker: str, fiscal_period: str) -> FinancialMetrics:
         eps_consensus=eps_consensus,
         eps_surprise_pct=eps_surprise_pct,
         revenue=revenue_actual,
+        operating_cash_flow=operating_cash_flow,
+        capex=capex,
+        free_cash_flow=free_cash_flow,
     )

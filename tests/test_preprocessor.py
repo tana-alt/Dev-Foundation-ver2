@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from src.preprocessor import (
@@ -35,6 +36,32 @@ def test_build_financial_metrics_computes_eps_surprise():
 
     assert metrics.ticker == "NVDA"
     assert round(metrics.eps_surprise_pct or 0, 2) == 8.0
+
+
+def test_fetch_consensus_uses_yfinance_revenue_alias(monkeypatch):
+    from src.preprocessor import fetch_consensus
+
+    class FakeTicker:
+        earnings_dates = pd.DataFrame(
+            [{"Reported EPS": 0.81, "EPS Estimate": 0.75, "Surprise(%)": 8.0}]
+        )
+        quarterly_financials = pd.DataFrame([[123_000.0]], index=["Operating Revenue"])
+        quarterly_cashflow = pd.DataFrame(
+            [[20_000.0], [-5_000.0], [99_000.0]],
+            index=["OperatingCashFlow", "Capital Expenditure", "Free Cash Flow"],
+        )
+
+        def __init__(self, ticker):
+            self.ticker = ticker
+
+    monkeypatch.setattr("src.preprocessor.yf.Ticker", FakeTicker)
+
+    metrics = fetch_consensus("nvda", "2025Q3")
+
+    assert metrics.revenue == 123_000.0
+    assert metrics.operating_cash_flow == 20_000.0
+    assert metrics.capex == -5_000.0
+    assert metrics.free_cash_flow == 15_000.0
 
 
 def test_segment_filing_extracts_semantic_sections():
