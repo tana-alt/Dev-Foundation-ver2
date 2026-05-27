@@ -69,10 +69,12 @@ validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を 
 {bear_case_json}
 
 制約:
-- label は good / neutral / bad のいずれか
+- verdict は good / neutral / bad のいずれか
 - positive_evidence と negative_evidence はどちらも空にしない
+- rationale を空にしない
 - eps_outlook_reason と fcf_outlook_reason は空にしない
-- non_advice_disclaimer を必ず入れる
+- purpose は `earnings_review_not_investment_advice`
+- is_investment_advice は false
 - Markdown は生成しない
 - JSONのみを返す
 ```
@@ -80,29 +82,35 @@ validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を 
 ## Required Output Model
 
 ```python
-FinalVerdict:
-  agent_name: Literal["JudgeAgent"]
-  label: Literal["good", "neutral", "bad"]
+JudgeDecision:
+  verdict: Literal["good", "neutral", "bad"]
   confidence: float
   summary: str
+  rationale: str
   positive_evidence: list[EvidenceItem]
   negative_evidence: list[EvidenceItem]
-  eps_outlook: Literal["positive", "negative", "neutral", "mixed", "unclear"]
+  eps_outlook: str
   eps_outlook_reason: str
-  fcf_outlook: Literal["positive", "negative", "neutral", "mixed", "unclear"]
+  fcf_outlook: str
   fcf_outlook_reason: str
-  key_disputes: list[str]
-  missing_data_impact: str
-  non_advice_disclaimer: str
+  purpose: Literal["earnings_review_not_investment_advice"]
+  is_investment_advice: Literal[false]
 ```
+
+Do not include extra top-level fields such as `agent_name`, `label`,
+`key_disputes`, `missing_data_impact`, `non_advice_disclaimer`,
+`missing_data`, or `disclaimer`. If missing data affects the verdict, explain
+that limitation inside `summary`, `rationale`, `eps_outlook_reason`, or
+`fcf_outlook_reason`.
 
 ## Validation Rules
 
-- `label` must be `good`, `neutral`, or `bad`.
+- `verdict` must be `good`, `neutral`, or `bad`.
 - `positive_evidence` and `negative_evidence` must both be non-empty.
+- `rationale` must be non-empty.
 - `eps_outlook_reason` and `fcf_outlook_reason` must be non-empty.
-- `non_advice_disclaimer` must state that the output is an earnings-analysis
-  report, not investment advice.
+- `purpose` must be `earnings_review_not_investment_advice`.
+- `is_investment_advice` must be false.
 - Prefer `neutral` when Bull and Bear are close.
 - Prefer `neutral` when EPS outlook and FCF outlook point in opposite
   directions.

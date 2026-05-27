@@ -102,6 +102,18 @@ def test_numeric_grounding_rejects_material_claim_without_number(monkeypatch):
         validate_numeric_grounding([item])
 
 
+def test_numeric_grounding_accepts_explicit_missing_data_caveat(monkeypatch):
+    monkeypatch.delenv("EARNINGS_DEBATE_REQUIRE_NUMERIC_GROUNDING", raising=False)
+    item = evidence(
+        summary="FCF improvement is unclear because direct FCF metrics are absent.",
+        detail="FCF improvement is unclear because direct FCF metrics are not available.",
+        value=None,
+        metric_name=None,
+    )
+
+    validate_numeric_grounding([item])
+
+
 def test_source_timing_primary_source():
     assert classify_source_timing(ref()).value == "same_period_primary"
 

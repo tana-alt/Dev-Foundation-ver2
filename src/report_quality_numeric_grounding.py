@@ -18,6 +18,23 @@ TRIGGER_RE = re.compile(
 NUMBER_RE = re.compile(
     r"(?:\$|¥|€)?\s?\d+(?:\.\d+)?\s?(?:%|bps|million|billion|m|bn|x)?", re.IGNORECASE
 )
+CAVEAT_TERMS = (
+    "missing",
+    "not routed",
+    "not provided",
+    "not available",
+    "not disclosed",
+    "not directly verified",
+    "no guidance",
+    "absence",
+    "absent",
+    "lack",
+    "lacks",
+    "insufficient",
+    "cannot determine",
+    "cannot be determined",
+    "unclear",
+)
 
 
 def _source_type_value(ref) -> str:
@@ -49,7 +66,8 @@ def has_numeric_grounding(item) -> bool:
     )
     if NUMBER_RE.search(text):
         return True
-    if "missing" in text.lower() or "not routed" in text.lower() or "not provided" in text.lower():
+    lowered = text.lower()
+    if any(term in lowered for term in CAVEAT_TERMS):
         return True
     return False
 
