@@ -28,8 +28,8 @@ broad logs, browser sessions, caches, or secret-bearing material.
 Track sanitized templates, restore scripts, compact contracts, references, and
 verification helpers instead of local operational state.
 
-`Plan/` stores project-scoped agent plans and logs; it is not a runtime queue
-or lock ledger. Local worktrees are execution workspaces, not repo truth.
+`Plan/` stores project-scoped agent plans, logs, and optional durable lane-map
+records for planning and handoff; it is not runtime state. Local worktrees are not repo truth.
 
 ## Secrets And Past Source
 `.serena/`, `archive/`, auth files, tokens, cookies, API keys, logs, caches,

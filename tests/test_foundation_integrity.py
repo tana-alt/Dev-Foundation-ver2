@@ -31,6 +31,7 @@ TEMPLATES = (
     "templates/project-storage-map.yaml",
     "templates/serena-project.yml",
     "templates/codex-config.toml.example",
+    "templates/parallel-lane-map.yaml",
 )
 
 ROOT_READMES = (
@@ -248,6 +249,7 @@ def test_project_storage_routes_are_documented() -> None:
         "Plan/<project_id>/index.yaml",
         "Plan/<project_id>/plans/Plan_N0001.md",
         "Plan/<project_id>/logs/Plan_N0001.log.md",
+        "Plan/<project_id>/lane-maps/<work_id>.yaml",
         "artifact/<project_id>/manifest.yaml",
         "src/<project_id>/",
         "`project_id`",
@@ -259,6 +261,7 @@ def test_project_plan_artifact_and_source_rules_are_project_scoped() -> None:
     plan_readme = read_text("Plan/README.md")
     artifact_readme = read_text("artifact/README.md")
     templates_readme = read_text("templates/README.md")
+    runtime_reference = read_text("docs/reference/agent-runtime-and-scope-reference.md")
     src_readme = read_text("src/README.md")
     git_reference = read_text("docs/reference/git-worktree-and-branch-reference.md")
 
@@ -274,8 +277,11 @@ def test_project_plan_artifact_and_source_rules_are_project_scoped() -> None:
     assert "artifact/<project_id>/" in artifact_readme
     assert "manifest.yaml" in artifact_readme
     assert "<project_id>" in templates_readme
+    assert "templates/parallel-lane-map.yaml" in templates_readme
     assert "src/<project_id>/" in src_readme
+    assert "Plan/<project_id>/lane-maps/" in plan_readme
     assert "project_id" in git_reference
+    assert "lane map" in runtime_reference
     assert "do not share a\nworktree across project IDs" in git_reference
 
 
@@ -759,6 +765,7 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     hygiene_check = read_text("scripts/check-repo-hygiene.sh")
     secret_check = read_text("scripts/check-secrets.sh")
     shell_check = read_text("scripts/check-shell-static-analysis.sh")
+    lane_check = read_text("scripts/check-lane-map.py")
     verification_reference = read_text("docs/reference/verification-ci-and-pr-reference.md")
     workflow = read_text(".github/workflows/ci.yml")
 
@@ -780,6 +787,7 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert "check-hygiene:" in makefile
     assert "check-shell:" in makefile
     assert "check-secrets:" in makefile
+    assert "check-lanes:" in makefile
     assert make_target_dependencies(makefile, "check-required") == [
         "format-check",
         "lint",
@@ -788,9 +796,10 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
         "check-shell",
         "check-hygiene",
         "check-secrets",
+        "check-lanes",
         "test",
     ]
-    assert "check-shell check-hygiene check-secrets test" in makefile
+    assert "check-shell check-hygiene check-secrets check-lanes test" in makefile
     assert "core.hooksPath" in dev_check
     assert "foundation.canonicalRoot" in dev_check
     assert "command -v shellcheck" in dev_check
@@ -811,6 +820,9 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert 'git -C "$ROOT" grep --cached -I -n -e . -- .' in secret_check
     assert 'gitleaks --config "$ROOT/.gitleaks.toml" --redact --no-banner' in secret_check
     assert 'gitleaks git --config "$ROOT/.gitleaks.toml" --redact' in secret_check
+    assert "parallel-lane-map.yaml" in lane_check
+    assert "Plan" in lane_check
+    assert "no_overlap" in lane_check
     assert "Install OSS check tools" in workflow
     assert "runs-on: ubuntu-24.04" in workflow
     assert "apt-get install -y shellcheck" in workflow
@@ -822,6 +834,43 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert "make check-hygiene" in verification_reference
     assert "make check-shell" in verification_reference
     assert "make check-secrets" in verification_reference
+    assert "make check-lanes" in verification_reference
+
+
+def test_parallel_lane_management_is_routed_and_checked() -> None:
+    runtime_reference = read_text("docs/reference/agent-runtime-and-scope-reference.md")
+    git_reference = read_text("docs/reference/git-worktree-and-branch-reference.md")
+    packet_reference = read_text("docs/reference/packet-evidence-and-rework-reference.md")
+    storage_contract = read_text("docs/03-repo-boundary-and-storage-contract.md")
+    boundary_reference = read_text("docs/reference/repo-boundary-and-storage-reference.md")
+    verification_reference = read_text("docs/reference/verification-ci-and-pr-reference.md")
+    plan_readme = read_text("Plan/README.md")
+    lane_template = read_text("templates/parallel-lane-map.yaml")
+    lane_check = read_text("scripts/check-lane-map.py")
+    makefile = read_text("Makefile")
+
+    assert "templates/parallel-lane-map.yaml" in runtime_reference
+    assert "lane_map_ref" in runtime_reference
+    assert "lane slice" in runtime_reference
+    assert "make check-lanes" in runtime_reference
+    assert "lane-map\nrecords for planning and handoff" in storage_contract
+    assert "Plan/<project_id>/lane-maps/<work_id>.yaml" in boundary_reference
+    assert "not a scheduler, runtime queue, lock ledger" in boundary_reference
+    assert "lane_map_ref" in git_reference
+    assert "make check-lanes" in git_reference
+    assert "templates/parallel-lane-map.yaml" in packet_reference
+    assert "Plan/<project_id>/lane-maps/" in packet_reference
+    assert "make check-lanes" in verification_reference
+    assert "parallel lane-map validation" in verification_reference
+    assert "Plan/<project_id>/lane-maps/" in plan_readme
+    assert "runtime queue, lock ledger" in plan_readme
+    assert "record_type: parallel_lane_map" in lane_template
+    assert "deny_broad_repo_scan: true" in lane_template
+    assert "conflict_policy: no_overlap" in lane_template
+    assert "assigned" in lane_check
+    assert "Plan/<project_id>/lane-maps/<work_id>.yaml" in lane_check
+    assert "branch_target must be agent/<work_id>/<lane>/<slug>" in lane_check
+    assert "check-lanes" in make_target_dependencies(makefile, "check-fast")
 
 
 def test_pytest_collection_is_aggregate_foundation_gate() -> None:
@@ -857,6 +906,8 @@ def test_verification_reference_documents_pytest_aggregate_gate() -> None:
         "`make check-fast`",
         "`make check-push`",
         "`make check-ci`",
+        "`make check-lanes`",
+        "lane-map validation",
         "Fast And Full Gate Mapping",
         "not automatic test classification",
         "local edit loop",

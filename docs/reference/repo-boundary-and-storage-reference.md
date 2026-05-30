@@ -64,6 +64,7 @@ Project-scoped storage uses one `project_id` per root:
 Plan/<project_id>/index.yaml
 Plan/<project_id>/plans/Plan_N0001.md
 Plan/<project_id>/logs/Plan_N0001.log.md
+Plan/<project_id>/lane-maps/<work_id>.yaml
 
 artifact/<project_id>/manifest.yaml
 artifact/<project_id>/evidence/
@@ -98,8 +99,9 @@ verification, artifact, or implementation files belong under the owning
 - `.agents/plugins/marketplace.json`: local plugin registry. It may be empty by
   default to avoid implying that optional payloads are installed.
 - `plugins/`: optional local plugin bundles and downloaded plugin payloads.
-- `Plan/`: project-scoped agent plans and logs, not a runtime queue or lock
-  ledger.
+- `Plan/`: project-scoped agent plans, logs, and optional durable lane-map
+  records for planning and handoff, not a runtime queue, lock ledger, worker
+  heartbeat, or claim source of truth.
 - `app/`: reserved runnable app surface; keep empty unless truly needed.
 - `src/`: project-scoped or documented shared implementation surface.
 - `artifact/`: project-scoped durable outputs, evidence, verification, and
@@ -119,6 +121,13 @@ should not become a generic unscoped storage root.
 When project storage exists, it should be self-describing: state, decisions,
 artifacts, logs, evidence, verification, implementation refs, and overlays
 should be discoverable from project-local records.
+
+`Plan/<project_id>/lane-maps/` stores optional durable parallel lane allocation
+records only while they are needed for planning, handoff, or review. A lane map
+is not a scheduler, runtime queue, lock ledger, worker heartbeat, or claim
+source of truth. Completed maps may remain only when referenced by
+project-local plan, log, or evidence records; stale unreferenced maps should be
+removed or folded into the owning plan/log.
 
 ## Overlays
 

@@ -76,6 +76,10 @@ Required fields:
 If required parallel fields are missing, return rework. Do not invent branch or
 worktree ownership.
 
+A lane map may supply the fields for each lane before individual workers start.
+Workers should receive only their lane slice plus `lane_map_ref`, not the full
+map, unless they are coordinating the split.
+
 ## Branch And Worktree Naming
 
 Use explicit branch targets from scope when provided.
@@ -126,6 +130,10 @@ For each lane, define:
 - `allowed_write_targets`: lane-owned path prefixes
 - `branch_target` and `worktree_target`, or enough fields to derive them
 - `conflict_policy` and optional `sibling_branch_refs`
+
+When scope includes `lane_map_ref`, first validate the map with
+`make check-lanes`, then derive per-lane branch/worktree values from the lane
+entry.
 
 To locally enforce worktree separation, set one of:
 

@@ -1,0 +1,74 @@
+schema_version: "0.1"
+record_type: parallel_lane_map
+status: draft
+
+identity:
+  work_id: <work-id>
+  project_id: <project-id>
+  created_at: "YYYY-MM-DD"
+
+governance:
+  map_owner: "human | agent | scheduler"
+  update_rule: "Update this map before assigning or changing any parallel lane. It is not a runtime lock."
+  context_budget:
+    required_source_refs_per_lane_max: 4
+    deny_broad_repo_scan: true
+
+git_scope:
+  mode: parallel
+  base_ref: origin/main
+  merge_target: origin/main
+  conflict_policy: no_overlap
+  sibling_branch_refs: []
+
+lanes:
+  - lane: docs
+    status: planned
+    owner: unassigned
+    task_intent: "Update routed docs or contracts for the scoped change."
+    source_refs:
+      - AGENTS.md
+      - docs/reference/agent-runtime-and-scope-reference.md
+    allowed_write_targets:
+      - docs/reference/
+      - templates/
+    denied_context:
+      - past_source_material
+      - secrets
+      - unrelated_project_logs
+    expected_outputs:
+      - "Doc or template change with source refs cited in handoff."
+    verification_required:
+      - make check-lanes
+      - make check-doc-consistency
+    branch_target: agent/<work-id>/docs/<short-slug>
+    worktree_target: ../worktrees/<repo>/<work-id>-docs
+
+  - lane: verification
+    status: planned
+    owner: unassigned
+    task_intent: "Add or update tests for the scoped contract surface."
+    source_refs:
+      - tests/test_contract_models.py
+      - tests/test_foundation_integrity.py
+    allowed_write_targets:
+      - tests/
+      - scripts/
+    denied_context:
+      - past_source_material
+      - secrets
+      - unrelated_project_logs
+    expected_outputs:
+      - "Targeted tests or verification helper for the scoped change."
+    verification_required:
+      - make check-lanes
+      - make test-fast
+    branch_target: agent/<work-id>/verification/<short-slug>
+    worktree_target: ../worktrees/<repo>/<work-id>-verification
+
+handoff:
+  evidence_required:
+    - source_refs
+    - changed_paths
+    - verification_results
+  next_action: "complete | rework | review | continue"

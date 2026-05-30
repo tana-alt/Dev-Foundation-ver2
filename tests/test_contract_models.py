@@ -129,6 +129,126 @@ class WorkContractBoundaries(StrictModel):
     risk_flags: list[str]
 
 
+class LaneMapIdentity(StrictModel):
+    work_id: str
+    project_id: str
+    created_at: str
+
+
+class LaneMapContextBudget(StrictModel):
+    required_source_refs_per_lane_max: int
+    deny_broad_repo_scan: bool
+
+    @model_validator(mode="after")
+    def budget_must_limit_context(self) -> Self:
+        if self.required_source_refs_per_lane_max < 1:
+            raise ValueError("required_source_refs_per_lane_max must be positive")
+        if not self.deny_broad_repo_scan:
+            raise ValueError("lane maps must deny broad repo scans")
+        return self
+
+
+class LaneMapGovernance(StrictModel):
+    map_owner: str
+    update_rule: str
+    context_budget: LaneMapContextBudget
+
+
+class LaneMapGitScope(StrictModel):
+    mode: Literal["parallel"]
+    base_ref: str
+    merge_target: str
+    conflict_policy: Literal["no_overlap", "report_overlap", "explicitly_scoped"]
+    sibling_branch_refs: list[str]
+
+
+class LaneEntry(StrictModel):
+    lane: str
+    status: Literal[
+        "planned",
+        "assigned",
+        "in_progress",
+        "blocked",
+        "ready_for_review",
+        "complete",
+        "rework",
+    ]
+    owner: str
+    task_intent: str
+    source_refs: list[str]
+    allowed_write_targets: list[str]
+    denied_context: list[str]
+    expected_outputs: list[str]
+    verification_required: list[str]
+    branch_target: str
+    worktree_target: str
+
+    @model_validator(mode="after")
+    def lane_fields_must_be_explicit(self) -> Self:
+        for field_name in (
+            "source_refs",
+            "allowed_write_targets",
+            "denied_context",
+            "expected_outputs",
+            "verification_required",
+        ):
+            if not getattr(self, field_name):
+                raise ValueError(f"{field_name} must be explicit")
+
+        branch_parts = self.branch_target.split("/")
+        if len(branch_parts) != 4:
+            raise ValueError("branch_target must be agent/<work-id>/<lane>/<slug>")
+        agent, branch_work_id, branch_lane, slug = branch_parts
+        if (
+            agent != "agent"
+            or branch_work_id != "<work-id>"
+            or branch_lane != self.lane
+            or not slug
+            or slug == "none"
+        ):
+            raise ValueError("branch_target must match lane ownership")
+
+        expected_worktree_fragment = f"<work-id>-{self.lane}"
+        if expected_worktree_fragment not in self.worktree_target:
+            raise ValueError("worktree_target must include work_id and lane")
+
+        return self
+
+
+class ParallelLaneMapTemplate(StrictModel):
+    schema_version: str
+    record_type: Literal["parallel_lane_map"]
+    status: Literal["draft", "active", "review", "complete"]
+    identity: LaneMapIdentity
+    governance: LaneMapGovernance
+    git_scope: LaneMapGitScope
+    lanes: list[LaneEntry]
+    handoff: dict[str, Any]
+
+    @model_validator(mode="after")
+    def lanes_must_be_unique_and_non_overlapping(self) -> Self:
+        lane_names = [lane.lane for lane in self.lanes]
+        if not lane_names:
+            raise ValueError("lanes must be explicit")
+        if len(lane_names) != len(set(lane_names)):
+            raise ValueError("lane names must be unique")
+
+        if self.git_scope.conflict_policy == "no_overlap":
+            targets: list[tuple[str, str]] = []
+            for lane in self.lanes:
+                targets.extend(
+                    (lane.lane, normalize_prefix(target)) for target in lane.allowed_write_targets
+                )
+            for left_index, (left_lane, left_target) in enumerate(targets):
+                for right_lane, right_target in targets[left_index + 1 :]:
+                    if left_lane != right_lane and prefixes_overlap(left_target, right_target):
+                        raise ValueError(
+                            f"allowed_write_targets overlap: {left_lane}:{left_target} "
+                            f"<-> {right_lane}:{right_target}"
+                        )
+        return self
+
+
 class DesignGate(StrictModel):
     architecture_significance: Literal["none", "local", "significant"]
     system_design_skill_required: bool
@@ -214,6 +334,14 @@ class ProjectStorageMapTemplate(StrictModel):
     rules: dict[str, Any]
 
 
+def normalize_prefix(raw_path: str) -> str:
+    return raw_path.strip().lstrip("./").rstrip("/")
+
+
+def prefixes_overlap(left: str, right: str) -> bool:
+    return left == right or left.startswith(f"{right}/") or right.startswith(f"{left}/")
+
+
 def load_yaml(relative_path: str) -> dict[str, Any]:
     raw_data: object = yaml.safe_load((ROOT / relative_path).read_text(encoding="utf-8"))
     assert isinstance(raw_data, dict), relative_path
@@ -227,6 +355,7 @@ def test_templates_validate_with_pydantic_models() -> None:
         ("templates/verification-record.yaml", VerificationRecordTemplate),
         ("templates/rework-record.yaml", ReworkRecordTemplate),
         ("templates/project-storage-map.yaml", ProjectStorageMapTemplate),
+        ("templates/parallel-lane-map.yaml", ParallelLaneMapTemplate),
     )
 
     for relative_path, model in cases:
@@ -287,3 +416,33 @@ def test_work_contract_rejects_non_significant_design_with_skill() -> None:
 
     with pytest.raises(ValidationError):
         WorkContractTemplate.model_validate(data)
+
+
+def test_parallel_lane_map_rejects_duplicate_lane_names() -> None:
+    data = load_yaml("templates/parallel-lane-map.yaml")
+    lanes = cast(list[dict[str, Any]], data["lanes"])
+    lanes[1]["lane"] = lanes[0]["lane"]
+    lanes[1]["branch_target"] = "agent/<work-id>/docs/<short-slug-2>"
+    lanes[1]["worktree_target"] = "../worktrees/<repo>/<work-id>-docs-2"
+
+    with pytest.raises(ValidationError):
+        ParallelLaneMapTemplate.model_validate(data)
+
+
+def test_parallel_lane_map_rejects_contextless_lanes() -> None:
+    data = load_yaml("templates/parallel-lane-map.yaml")
+    lanes = cast(list[dict[str, Any]], data["lanes"])
+    lanes[0]["source_refs"] = []
+
+    with pytest.raises(ValidationError):
+        ParallelLaneMapTemplate.model_validate(data)
+
+
+def test_parallel_lane_map_rejects_no_overlap_path_collisions() -> None:
+    data = load_yaml("templates/parallel-lane-map.yaml")
+    lanes = cast(list[dict[str, Any]], data["lanes"])
+    lanes[0]["allowed_write_targets"] = ["docs/"]
+    lanes[1]["allowed_write_targets"] = ["docs/reference/"]
+
+    with pytest.raises(ValidationError):
+        ParallelLaneMapTemplate.model_validate(data)

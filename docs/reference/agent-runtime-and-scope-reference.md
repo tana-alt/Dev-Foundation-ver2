@@ -21,8 +21,9 @@ Open this reference when:
   idempotent retry, duplicate output prevention, partial generated output, or
   atomic artifact replacement, even when the retry mentions artifact output or
   project truth but asks no repo-layout or storage-placement question;
-- parallel lanes need conceptual input, scope, and handoff boundaries before
-  any concrete branch or worktree operation.
+- parallel lanes need conceptual input, scope, ownership, and handoff boundaries
+  before any concrete branch or worktree operation;
+- a human, lead agent, or scheduler needs a lane map without reading the repo.
 
 Do not open this reference when:
 
@@ -60,6 +61,7 @@ A useful scope may include:
 - `success_criteria`
 - `source_refs`
 - `optional_refs`
+- `lane_map_ref`
 - `expected_outputs`
 - `allowed_write_targets`
 - `denied_context`
@@ -92,9 +94,33 @@ or selected skill. This foundation repo does not define a scheduler, runtime
 queue, lock system, or plan ledger unless a current repo file explicitly adds
 one.
 
+A parallel lane map is a scoped planning artifact, not a scheduler, queue, lock
+system, or claim source of truth. Use it to keep lane ownership, refs, write
+targets, branch/worktree targets, and handoff shape explicit before deriving
+per-lane work contracts.
+
 If an external runtime or scheduler supplies scope, workers still follow the
 same active contracts: bounded inputs, allowed write targets, evidence,
 verification, storage boundaries, and human gates.
+
+## Parallel Lane Map
+
+Use `templates/parallel-lane-map.yaml` when parallel work must be split by a
+human, lead agent, scheduler, or reviewer before worker sessions start. Store
+instantiated maps under `Plan/<project_id>/lane-maps/` only when durable handoff
+or review needs them.
+
+Each lane carries the minimum worker input:
+
+- lane name, owner/status, and task intent
+- `source_refs` within the lane context budget
+- `allowed_write_targets` and `denied_context`
+- expected outputs and verification requirements
+- branch and worktree target derived from `work_id` and `lane`
+
+Do not give a worker the full lane map unless it is managing the split. Normal
+worker input is the lane slice, named refs, and any required work-contract
+fields. Run `make check-lanes` when lane maps are tracked.
 
 ## Retry And Atomic Output
 

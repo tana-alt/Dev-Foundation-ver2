@@ -123,6 +123,8 @@ include:
 - `make check-hooks`: run shell syntax checks for tracked hook scripts.
 - `make check-shell`: run ShellCheck static analysis on shell hooks and
   scripts.
+- `make check-lanes`: validate `templates/parallel-lane-map.yaml` and tracked
+  `Plan/<project_id>/lane-maps/*.yml` or `*.yaml` records.
 - `make check-hygiene`: check tracked ignored files, forbidden local or
   past-source roots, sensitive tracked path names, gitlink metadata, and
   unignored nested Git directories.
@@ -149,7 +151,7 @@ collection order.
 
 | Situation | Use | Includes | Excludes |
 |---|---|---|---|
-| local edit loop | `make check-fast` | format check, lint, hook syntax, `make test-fast` | full typecheck, full pytest, Gitleaks history scan, CD guard |
+| local edit loop | `make check-fast` | format check, lint, hook syntax, lane-map validation, `make test-fast` | full typecheck, full pytest, Gitleaks history scan, CD guard |
 | normal push | `make check-push` | default `make check-fast` plus branch/worktree hook policy | full gate unless requested |
 | PR handoff or high-risk change | `make check-foundation` | toolchain, full required chain, CD guard | none of the current foundation gate |
 | CI / merge readiness | `make check-foundation` | same full foundation gate used locally | local-only shortcuts |
@@ -189,7 +191,8 @@ The test suite validates repo structure, active doc compactness, doc routing,
 required templates and scripts, tracked hook installation, clean-checkout
 tracked-file reproducibility, ignored runtime surfaces, local environment
 restore behavior, lightweight dev defaults, ShellCheck and Gitleaks wiring,
-explicit skill roots, structural plugin integrity, YAML contract models,
+explicit skill roots, structural plugin integrity, parallel lane-map validation,
+YAML contract models,
 result-state spelling, work contract `git_scope`, and CD readiness.
 
 ## Result States

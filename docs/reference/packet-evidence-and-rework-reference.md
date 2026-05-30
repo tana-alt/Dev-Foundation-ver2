@@ -67,6 +67,7 @@ Core fields:
 - `evidence_required`
 - `verification_required`
 - `git_scope`
+- `lane_map_ref`
 - `artifact_refs`
 - `changed_paths`
 - `decision_refs`
@@ -94,6 +95,17 @@ git_scope:
   sibling_branch_refs: []
   conflict_policy: no_overlap
 ```
+
+## Parallel Lane Map Template
+
+Use `templates/parallel-lane-map.yaml` when the task is to split or govern
+multiple agent lanes before individual work contracts are issued. The lane map
+records lane status, owner, task intent, source refs, allowed write targets,
+denied context, expected outputs, verification, and branch/worktree target.
+
+Keep lane maps thin. Store durable maps under `Plan/<project_id>/lane-maps/`
+only when handoff or review needs repo-tracked lane allocation. Do not use them
+as runtime queues, locks, or broad context bundles.
 
 ## Design Gate
 
@@ -184,5 +196,6 @@ Common types: `missing_context`, `ambiguous_instruction`, `contract_mismatch`,
 ## Template Locations
 
 Use `templates/work-contract.yaml`, `templates/evidence-record.yaml`,
-`templates/verification-record.yaml`, and `templates/rework-record.yaml` when the
-task asks for structured records.
+`templates/verification-record.yaml`, `templates/rework-record.yaml`, and
+`templates/parallel-lane-map.yaml` when the task asks for structured records or
+parallel lane allocation.

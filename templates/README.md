@@ -11,3 +11,5 @@
   state, local paths, or secrets here.
 - Add a template only when an active contract or reference explains when it is
   used.
+- Use `templates/parallel-lane-map.yaml` for lane allocation templates; completed
+  lane maps belong under `Plan/<project_id>/lane-maps/` when tracked.
