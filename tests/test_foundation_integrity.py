@@ -82,6 +82,7 @@ DEPLOYMENT_WORKFLOW_KEYWORDS = (
 EXPECTED_TRACKED_TOP_LEVELS = {
     ".agents",
     ".editorconfig",
+    ".env.example",
     ".gitattributes",
     ".gitleaks.toml",
     ".github",
@@ -95,12 +96,15 @@ EXPECTED_TRACKED_TOP_LEVELS = {
     "artifact",
     "docs",
     "hooks",
+    "outputs",
     "plugins",
     "pyproject.toml",
+    "samples",
     "scripts",
     "src",
     "templates",
     "tests",
+    "tools",
     "uv.lock",
 }
 
@@ -120,7 +124,6 @@ PLAN_ID_RE = re.compile(r"^Plan_N\d{4}$")
 PROJECT_SCOPED_ROOT_DIRECT_FILES = {
     "Plan": {"README.md"},
     "artifact": {"README.md", ".gitkeep"},
-    "src": {"README.md", ".gitkeep"},
 }
 
 ARTIFACT_PROJECT_DIRS = {"evidence", "verification", "output"}
@@ -358,15 +361,18 @@ def test_artifact_project_records_have_manifest_and_allowed_sections() -> None:
             assert section in ARTIFACT_PROJECT_DIRS, path
 
 
-def test_source_project_records_are_project_scoped() -> None:
+def test_source_root_contains_product_code_not_storage_artifacts() -> None:
+    tracked = set(tracked_files())
+    assert "src/workflow.py" in tracked
+    assert "src/prompts/README.md" in tracked
+
     for path in tracked_files():
         if not path.startswith("src/") or path in {"src/README.md", "src/.gitkeep"}:
             continue
 
         parts = Path(path).parts
-        assert len(parts) >= 3, path
         assert parts[1].strip(), path
-        assert parts[1] not in {"shared", "common", "logs", "notes", "artifacts"}, path
+        assert not {"logs", "notes", "artifacts", "output", "outputs", "cache"} & set(parts), path
 
 
 def test_project_storage_template_uses_external_placeholder() -> None:

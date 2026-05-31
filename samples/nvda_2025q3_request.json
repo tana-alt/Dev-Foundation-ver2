@@ -1,0 +1,54 @@
+{
+  "ticker": "NVDA",
+  "fiscal_period": "2025Q3",
+  "financial_metrics": {
+    "ticker": "NVDA",
+    "fiscal_period": "2025Q3",
+    "eps": 0.81,
+    "eps_consensus": 0.75,
+    "eps_surprise_pct": 8.0,
+    "revenue": 35000000000,
+    "revenue_consensus": 33000000000,
+    "revenue_surprise_pct": 6.1,
+    "operating_margin_pct": 62.0,
+    "operating_cash_flow": 15400000000,
+    "free_cash_flow": 12000000000,
+    "capex": 1100000000,
+    "guidance": "Management guided to continued revenue growth with elevated investment."
+  },
+  "document_sections": [
+    {
+      "section_id": "eps",
+      "source_ref": {
+        "source_id": "filing:eps",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "eps"
+      },
+      "heading": "EPS",
+      "text": "Diluted EPS exceeded consensus and margin quality improved."
+    },
+    {
+      "section_id": "guidance",
+      "source_ref": {
+        "source_id": "filing:guidance",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "guidance"
+      },
+      "heading": "Guidance",
+      "text": "Management guidance implies continued revenue growth with elevated investment."
+    },
+    {
+      "section_id": "risk",
+      "source_ref": {
+        "source_id": "filing:risk",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "risk"
+      },
+      "heading": "Risk",
+      "text": "Forward-looking statements note demand uncertainty and CapEx execution risk."
+    }
+  ]
+}

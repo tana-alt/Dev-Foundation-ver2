@@ -1,0 +1,104 @@
+{
+  "request_id": "sample-nvda-2025q3",
+  "ticker": "NVDA",
+  "fiscal_period": "2025Q3",
+  "financial_metrics": {
+    "ticker": "NVDA",
+    "fiscal_period": "2025Q3",
+    "currency": "USD",
+    "eps": 0.81,
+    "eps_consensus": 0.75,
+    "eps_surprise_pct": 8.0,
+    "revenue": 35000000000,
+    "revenue_consensus": 33000000000,
+    "revenue_surprise_pct": 6.06,
+    "operating_margin_pct": 62.0,
+    "operating_cash_flow": 15000000000,
+    "free_cash_flow": 12000000000,
+    "capex": 3000000000,
+    "guidance": "Management guided to continued revenue growth and stable gross margin while maintaining elevated investment.",
+    "source_refs": [
+      {
+        "source_id": "financial_api:NVDA:2025Q3",
+        "source_type": "financial_api",
+        "metric_name": "consensus_snapshot",
+        "title": "Fixture financial metrics"
+      }
+    ]
+  },
+  "document_sections": [
+    {
+      "section_id": "eps",
+      "source_ref": {
+        "source_id": "filing:eps",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "eps",
+        "title": "Sample filing EPS section"
+      },
+      "heading": "EPS",
+      "text": "Diluted EPS exceeded consensus. Margin expansion and operating leverage supported the EPS beat, while tax and one-time items should be checked before treating the beat as fully recurring."
+    },
+    {
+      "section_id": "revenue",
+      "source_ref": {
+        "source_id": "filing:revenue",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "revenue",
+        "title": "Sample filing revenue section"
+      },
+      "heading": "Revenue",
+      "text": "Net revenue increased year over year, supported by enterprise demand and higher cloud-related product shipments. The growth rate exceeded the provided consensus snapshot."
+    },
+    {
+      "section_id": "cash_flow",
+      "source_ref": {
+        "source_id": "filing:cash_flow",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "cash_flow",
+        "title": "Sample filing cash-flow section"
+      },
+      "heading": "Cash Flow",
+      "text": "Operating cash flow remained strong, but elevated capital expenditure may pressure near-term free cash flow before investment intensity moderates."
+    },
+    {
+      "section_id": "guidance",
+      "source_ref": {
+        "source_id": "filing:guidance",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "guidance",
+        "title": "Sample filing guidance section"
+      },
+      "heading": "Guidance",
+      "text": "Management guidance assumes continued demand from large customers, stable gross margin, and sustained investment to support future capacity."
+    },
+    {
+      "section_id": "segments",
+      "source_ref": {
+        "source_id": "filing:segments",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "segments",
+        "title": "Sample filing segment section"
+      },
+      "heading": "Segments",
+      "text": "Segment performance improved in data center and software, while consumer-exposed businesses remained more sensitive to channel inventory normalization."
+    },
+    {
+      "section_id": "risk",
+      "source_ref": {
+        "source_id": "filing:risk",
+        "source_type": "filing",
+        "document_id": "10q-2025q3",
+        "section_id": "risk",
+        "title": "Sample filing risk section"
+      },
+      "heading": "Risk",
+      "text": "Forward-looking statements highlight demand uncertainty, customer concentration, supply constraints, foreign exchange volatility, and execution risk around elevated capital investment."
+    }
+  ],
+  "include_markdown": true
+}

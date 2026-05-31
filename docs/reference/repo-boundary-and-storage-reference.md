@@ -83,12 +83,16 @@ verification, artifact, or implementation files belong under the owning
 - `AGENTS.md`: thin agent entrypoint and routing document.
 - `docs/`: compact active agent contracts.
 - `docs/reference/`: detailed reference material opened only when needed.
-- `README.md`: human-facing overview and restore instructions.
+- `README.md`: product-facing overview, setup, run, and submission notes.
+- `.env.example`: tracked public environment-variable template; `.env` remains
+  ignored local secret-bearing state.
 - `templates/`: reusable contract, evidence, verification, rework, storage, and
   local environment templates.
 - `scripts/setup-agent-environment.sh`: local agent environment restore script.
 - `scripts/check-dev-environment.sh`: read-only local environment inspection.
 - `scripts/check-repo-hygiene.sh`: tracked-file and metadata hygiene check.
+- `scripts/validate_agent_assets.py`: product prompt-asset validation helper.
+- `tools/`: product support tools that are safe to track.
 - `hooks/`: tracked Git hooks installed by the restore script.
 - `tests/`: integrity, contract, and readiness checks.
 - `pyproject.toml`, `uv.lock`, `Makefile`: local verification tooling.
@@ -103,7 +107,12 @@ verification, artifact, or implementation files belong under the owning
   records for planning and handoff, not a runtime queue, lock ledger, worker
   heartbeat, or claim source of truth.
 - `app/`: reserved runnable app surface; keep empty unless truly needed.
-- `src/`: project-scoped or documented shared implementation surface.
+- `src/`: Earnings Debate Agent product package and prompt assets. Additional
+  project-scoped implementation may use `src/<project_id>/` only when
+  documented.
+- `samples/`: small checked-in request fixtures for reproducible local runs.
+- `outputs/`: selected checked-in example reports and workflow outputs. Broad
+  generated outputs remain ignored.
 - `artifact/`: project-scoped durable outputs, evidence, verification, and
   fixtures, not a broad project log.
 

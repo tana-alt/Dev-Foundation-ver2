@@ -1,0 +1,7 @@
+project_id: intern-assignment-integration
+status: planning
+plans:
+  - plan_id: Plan_N0001
+    status: draft
+    plan_ref: Plan/intern-assignment-integration/plans/Plan_N0001.md
+    log_ref: Plan/intern-assignment-integration/logs/Plan_N0001.log.md

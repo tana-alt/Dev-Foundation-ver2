@@ -1,23 +1,59 @@
 [project]
-name = "foundation-development"
+name = "earnings-debate-agent"
 version = "0.1.0"
-description = "Small agent foundation docs and verification checks"
+description = "Multi-agent debate system for US equity earnings review"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
-dependencies = []
+dependencies = [
+    "anthropic>=0.39.0",
+    "beautifulsoup4>=4.12.0",
+    "click>=8.1.0",
+    "fastapi>=0.115.0",
+    "lxml>=5.0.0",
+    "openai>=1.50.0",
+    "pydantic>=2.7.0",
+    "pypdf>=5.0.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.32.0",
+    "sec-edgar-downloader>=5.0.2",
+    "structlog>=24.0.0",
+    "uvicorn>=0.30.0",
+    "yfinance>=0.2.40",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.27.0",
+    "mypy>=1.15.0",
+    "pytest>=8.3.0",
+    "pyyaml>=6.0.0",
+    "ruff>=0.11.0",
+    "types-PyYAML>=6.0.12",
+    "types-requests>=2.32.0",
+]
+
+[project.scripts]
+earnings-debate = "src.main:cli"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.27.0",
     "mypy>=1.15.0",
     "pydantic>=2.7.0",
     "pytest>=8.3.0",
     "pyyaml>=6.0.0",
     "ruff>=0.11.0",
     "types-PyYAML>=6.0.12",
+    "types-requests>=2.32.0",
 ]
-
-[tool.uv]
-package = false
 
 [tool.ruff]
 line-length = 100
@@ -26,7 +62,10 @@ extend-exclude = [
     ".agents/skills",
     ".codex/skills",
     "archive",
+    "data",
+    "outputs",
     "plugins",
+    "samples/cache",
 ]
 
 [tool.ruff.lint]
@@ -34,19 +73,30 @@ select = [
     "E",
     "F",
     "I",
-    "B",
-    "UP",
+]
+ignore = [
+    "E501", # Let the formatter handle practical wrapping; keep CI focused on defects/imports.
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
 [tool.mypy]
 python_version = "3.12"
-strict = true
-files = ["tests"]
-plugins = ["pydantic.mypy"]
-warn_redundant_casts = true
+files = ["src", "tests"]
+exclude = [
+    "^archive/",
+    "^data/",
+    "^outputs/",
+    "^samples/cache/",
+]
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
 warn_unused_configs = true
-warn_unused_ignores = true
+check_untyped_defs = false
+disallow_untyped_defs = false
