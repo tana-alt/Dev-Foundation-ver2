@@ -216,13 +216,18 @@ def validate_source_ref_registered_and_consistent(
         "document_id",
         "section_id",
         "page",
+        "line_range",
         "reported_period",
         "as_of_date",
     )
     for field_name in fields_to_compare:
         source_value = getattr(source_ref, field_name)
         manifest_value = getattr(manifest_entry, field_name)
-        if source_value is not None and manifest_value is not None and source_value != manifest_value:
+        if (
+            source_value is not None
+            and manifest_value is not None
+            and source_value != manifest_value
+        ):
             raise ValueError(
                 "source_manifest mismatch in "
                 f"{context} for {source_ref.source_id}: {field_name} "
@@ -576,7 +581,9 @@ class ClaimRecord(WorkflowModel):
     def validate_evidence_ids(self) -> ClaimRecord:
         all_ids = self.evidence_ids + self.counter_evidence_ids
         if len(all_ids) != len(set(all_ids)):
-            raise ValueError("claim evidence_ids must be unique across support and counter evidence")
+            raise ValueError(
+                "claim evidence_ids must be unique across support and counter evidence"
+            )
         return self
 
 

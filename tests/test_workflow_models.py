@@ -25,6 +25,7 @@ from src.workflow_models import (
     ImpactArea,
     JudgeDecision,
     JudgeTreatment,
+    LineRange,
     ManagementIntentFinding,
     MissingDataItem,
     NormalizedReviewRequest,
@@ -633,6 +634,22 @@ def test_report_matrix_rejects_document_source_mismatch():
 
     with pytest.raises(ValidationError, match="source_manifest mismatch.*section_id"):
         ReportMatrix(source_manifest=source_manifest(), evidence_items=[fact])
+
+
+def test_report_matrix_rejects_document_line_range_mismatch():
+    fact = evidence()
+    fact.source_ref = SourceRef(
+        source_id="filing:10q:item2",
+        source_type=SourceType.FILING,
+        document_id="10q-2025q3",
+        section_id="item2",
+        line_range=LineRange(start=20, end=22),
+    )
+    manifest = source_manifest()
+    manifest[1] = manifest[1].model_copy(update={"line_range": LineRange(start=10, end=12)})
+
+    with pytest.raises(ValidationError, match="source_manifest mismatch.*line_range"):
+        ReportMatrix(source_manifest=manifest, evidence_items=[fact])
 
 
 def test_response_envelopes_keep_dry_run_separate_from_final_report():
