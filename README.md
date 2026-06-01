@@ -355,38 +355,76 @@ curl -X POST http://127.0.0.1:8000/reviews \
 
 ## 10. 出力例
 
-出力は Markdown report です。
+出力は Markdown report です。Report renderer contract は、検証済みの `ReportMatrix`
+から次の固定順で section を出力します。これは投資助言ではなく、決算レビュー用の
+構造化 artifact です。
 
 ```markdown
 # Earnings Review: NVDA 2025Q3
 
-## Verdict
+## Judge Rationale
 
-Good
+- Verdict: neutral
+- Confidence: 0.66
+- Summary: The quarter is constructive, with cash-flow caveats.
+- Rationale: The Judge treats checked EPS evidence as supportive, but limits durability because FCF evidence is incomplete.
+- EPS outlook: EPS outlook is constructive if margin support persists.
+- EPS rationale: The EPS beat is supported by a checked financial source.
+- FCF outlook: FCF outlook remains uncertain until the CapEx bridge is clearer.
+- FCF rationale: CapEx pressure and missing bridge data limit confidence.
 
-Confidence: 0.76
+## Bull vs Bear Tension
 
-## Summary
+### Bull Case
 
-EPS quality and the FCF path look constructive, while CapEx and demand concentration remain caveats.
+EPS quality improved on a verified beat.
 
-## Positive Evidence
+### Bear Case
 
-- EPS surprise was positive.
-- Management guidance implies continued revenue growth.
+CapEx pressure can delay FCF conversion.
 
-## Negative Evidence
+### Risk Case
 
-- Elevated investment may delay near-term FCF improvement.
-- Demand concentration remains a risk.
+Missing guidance limits forward confidence.
 
-## EPS Outlook
+### Judge Tension
 
-EPS can improve if revenue growth and margin discipline continue.
+Bull evidence is stronger for the current quarter, while bear evidence limits durability.
 
-## FCF Outlook
+## Evidence Matrix
 
-FCF can improve after investment intensity moderates.
+| Claim ID | Fact | Interpretation | Implication | Time scope | Fact-check status | Judge treatment | Sources |
+|---|---|---|---|---|---|---|---|
+| claim:eps-quality | Adjusted EPS of $1.23 exceeded consensus by 8%. | The fact supports current-quarter EPS quality. | The report should avoid converting the fact into a durable forecast. | Current quarter 2025Q3 | supported | supporting | api:eps:2025Q3 / eps |
+
+## Agent Contribution
+
+| Agent | Stance | Contribution | Key evidence | Counter evidence | Confidence | Missing data |
+|---|---|---|---|---|---:|---|
+| EarningsQualityAnalyst | mixed | Uses validated evidence only. | ev:eps-beat | ev:capex-pressure | 0.74 | - |
+
+## Uncertainty And Missing Data
+
+| Topic | Materiality | Blocks verdict | Reason |
+|---|---|---:|---|
+| FCF bridge | medium | false | The source set does not explain conversion from operating cash flow to FCF. |
+
+## Quality Gates
+
+- ReportMatrix validation: passed
+- Evidence items: 2
+- Source references: registered and internally consistent
+- No-advice framing: present in Disclaimer
+
+## Source Appendix
+
+| Source ID | Type | Locator | Title | Reported period | URL |
+|---|---|---|---|---|---|
+| `api:eps:2025Q3` | financial_api | eps | Financial API EPS | 2025Q3 | no URL |
+
+## Disclaimer
+
+This report is an earnings analysis artifact and is not investment advice.
 ```
 
 ---
@@ -399,6 +437,7 @@ FCF can improve after investment intensity moderates.
 │  ├─ api.py                # FastAPI entry point
 │  ├─ main.py               # CLI wrapper
 │  ├─ workflow.py           # Explicit workflow orchestration
+│  ├─ report_renderer.py    # Deterministic report renderer contract
 │  ├─ workflow_agents.py    # LLM agent wrappers
 │  ├─ workflow_models.py    # Pydantic contracts
 │  ├─ preprocessor.py       # Metrics normalization and filing segmentation
@@ -408,6 +447,7 @@ FCF can improve after investment intensity moderates.
 │  ├─ test_workflow_api.py
 │  ├─ test_workflow_agents.py
 │  ├─ test_workflow_models.py
+│  ├─ test_report_renderer.py
 │  └─ test_preprocessor.py
 ├─ samples/
 │  ├─ request.example.json
