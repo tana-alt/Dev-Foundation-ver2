@@ -22,7 +22,9 @@ The core questions are:
 - Do not use unstated background knowledge.
 - Do not calculate financial metrics from raw values.
 - Use only precomputed metrics supplied by the Python workflow.
-- If a required metric is missing, record it in `missing_data`.
+- If a required metric is missing, use `missing_data` only when the role output
+  contract includes `missing_data`; otherwise describe material gaps inside
+  allowed fields and lower `confidence`.
 - Do not output Markdown, prose outside JSON, or hidden reasoning.
 - Do not make a final `good | neutral | bad` verdict unless the prompt is
   `JudgeAgent`.

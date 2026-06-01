@@ -92,19 +92,20 @@ EPS の質を判断するには revenue、margin、operating expense、segment m
 8. JSONのみを返してください。
 ```
 
-## Required Output Model
+## Required Output Contract
 
-```python
-EarningsQualityFinding:
-  agent_name: Literal["EarningsQualityAnalyst"]
-  stance: Literal["positive", "negative", "mixed", "neutral", "unclear"]
-  summary: str
-  key_evidence: list[EvidenceItem]
-  counter_evidence: list[EvidenceItem]
-  confidence: float
-  missing_data: list[str]
-  handoff_summary: str
-```
+Return JSON matching `EarningsQualityFinding` with these top-level fields:
+
+- `agent_name`: `EarningsQualityAnalyst`
+- `stance`
+- `summary`
+- `key_evidence`
+- `counter_evidence`
+- `confidence`
+- `missing_data`
+- `handoff_summary`
+
+`key_evidence` and `counter_evidence` contain `EvidenceItem` objects.
 
 Do not include extra top-level fields such as `eps_surprise_assessment`,
 `quality_of_earnings`, `revenue_quality`, `margin_trend`,

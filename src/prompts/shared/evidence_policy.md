@@ -4,27 +4,61 @@ Apply this policy to every agent output.
 
 ## Evidence Requirements
 
-Every evidence item must include:
+Use the frozen trace vocabulary. Do not invent alternate field names.
 
-- `source_ref`
-- `source_type`
-- `claim`
-- `quote_or_value`
-- `interpretation`
-- `polarity`
+`ReportMatrix` groups `source_manifest`, `evidence_items`, `claim_records`,
+`decision_uses`, and `missing_data_items`. Agent outputs are narrower than the
+full matrix, but every evidence-bearing answer must stay compatible with these
+names.
 
-`source_ref` must point to a routed source section or precomputed metric supplied
-by the workflow. Do not invent source identifiers.
+`EvidenceItem` fields are `evidence_id`, `polarity`, `summary`, `detail`,
+`impact_areas`, `source_ref`, `metric_name`, `value`, `unit`, `quote`,
+`reported_period`, `as_of_date`, `fact_check_status`, and `confidence`.
 
-Copy `source_ref` from the supplied `source_index` exactly. Do not abbreviate,
-rename, or generalize `source_id`. Do not create generic identifiers such as
-`financial_api:<ticker>:<period>`. Preserve locator fields including
-`url`, `document_id`, `section_id`, `metric_name`, `page`, and `title` when
+`ClaimRecord` fields are `claim_id`, `claim_type`, `agent_role`, `time_scope`,
+`claim`, `evidence_ids`, `counter_evidence_ids`, `interpretation`,
+`implication`, `confidence`, and `limitations`.
+
+`DecisionUse` fields are `decision_use_id`, `treatment`, `claim_id`,
+`decisive_evidence_ids`, `rationale`, `verdict_impact`, and
+`confidence_impact`.
+
+`MissingDataItem` fields are `missing_data_id`, `topic`, `reason`,
+`materiality`, `requested_source_type`, and `blocks_verdict`.
+`MissingDataItem` is report-matrix vocabulary, not a top-level field every role
+can emit.
+
+`SourceRef` fields are `source_id`, `source_type`, `title`, `url`,
+`document_id`, `section_id`, `page`, `line_start`, `line_end`, `line_range`,
+`metric_name`, `reported_period`, and `as_of_date`.
+
+The workflow may provide `source_index` as a compact lookup view over
+`source_manifest`. Treat `source_manifest` as the authoritative registration
+set and copy `source_ref` from the supplied `source_index` exactly. Do not
+abbreviate, rename, or generalize `source_id`. Do not create generic identifiers
+such as `financial_api:<ticker>:<period>`. Preserve all locator fields that are
 present.
 
 When `source_ref.source_type` is `financial_api` or `derived_metric`, the
 `source_ref` object must include the exact `metric_name` from the supplied
 precomputed metric source. Do not omit it and do not create a new metric name.
+
+Separate a verifiable `fact` from its `interpretation` and downstream
+`implication`. Put the period or horizon in `time_scope` when producing claim
+records, and mark source support with `fact_check_status`.
+
+Schema literal values:
+
+- `source_type`: `financial_api`, `derived_metric`, `earnings_presentation`,
+  `filing`, `earnings_call`, `press_release`, `manual_upload`
+- `polarity` / `verdict_impact`: `positive`, `negative`, `neutral`, `risk`
+- `claim_type`: `fact`, `interpretation`, `forecast`, `risk`, `limitation`,
+  `counterpoint`
+- `fact_check_status`: `supported`, `partially_supported`, `contradicted`,
+  `unverified`, `not_checkable`
+- judge `treatment`: `decisive`, `supporting`, `counter_evidence`,
+  `discounted`, `not_used`
+- `materiality`: `low`, `medium`, `high`
 
 ## Positive And Counter Evidence
 
@@ -34,7 +68,8 @@ both supporting and opposing evidence.
 If no meaningful counter evidence is available in the provided context:
 
 - keep `counter_evidence` empty only if the schema allows it
-- explain the limitation in `missing_data`
+- use `missing_data` only when the role output contract includes `missing_data`
+- otherwise describe material gaps inside allowed fields and lower `confidence`
 - cap `confidence` at `0.60`
 
 ## Evidence Quality
@@ -63,7 +98,8 @@ However, every material analytical claim should be grounded by at least one of:
 
 1. a precomputed metric value,
 2. a direct source quote or disclosed value,
-3. a `missing_data` caveat explaining why the claim cannot be numerically verified.
+3. a schema-allowed limitation explaining why the claim cannot be numerically
+   verified.
 
 When using qualitative words such as strong, large, meaningful, improved,
 deteriorated, beat, missed, margin expansion, pressure, concentration,

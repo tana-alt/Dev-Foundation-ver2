@@ -85,19 +85,20 @@ Disallowed context:
 7. JSONのみを返してください。
 ```
 
-## Required Output Model
+## Required Output Contract
 
-```python
-GuidanceFinding:
-  agent_name: Literal["GuidanceAnalyst"]
-  stance: Literal["positive", "negative", "mixed", "neutral", "unclear"]
-  summary: str
-  key_evidence: list[EvidenceItem]
-  counter_evidence: list[EvidenceItem]
-  confidence: float
-  missing_data: list[str]
-  handoff_summary: str
-```
+Return JSON matching `GuidanceFinding` with these top-level fields:
+
+- `agent_name`: `GuidanceAnalyst`
+- `stance`
+- `summary`
+- `key_evidence`
+- `counter_evidence`
+- `confidence`
+- `missing_data`
+- `handoff_summary`
+
+`key_evidence` and `counter_evidence` contain `EvidenceItem` objects.
 
 Do not include extra top-level fields such as `guidance_vs_consensus`,
 `conservatism_level`, `assumption_quality`, `revision_risk`,

@@ -80,19 +80,20 @@ Disallowed context:
 6. JSONのみを返してください。
 ```
 
-## Required Output Model
+## Required Output Contract
 
-```python
-ManagementIntentFinding:
-  agent_name: Literal["ManagementIntentAnalyst"]
-  stance: Literal["positive", "negative", "mixed", "neutral", "unclear"]
-  summary: str
-  key_evidence: list[EvidenceItem]
-  counter_evidence: list[EvidenceItem]
-  confidence: float
-  missing_data: list[str]
-  handoff_summary: str
-```
+Return JSON matching `ManagementIntentFinding` with these top-level fields:
+
+- `agent_name`: `ManagementIntentAnalyst`
+- `stance`
+- `summary`
+- `key_evidence`
+- `counter_evidence`
+- `confidence`
+- `missing_data`
+- `handoff_summary`
+
+`key_evidence` and `counter_evidence` contain `EvidenceItem` objects.
 
 Do not include extra top-level fields such as `management_priorities`,
 `strategic_drivers`, `investment_actions`, `eps_implication`,

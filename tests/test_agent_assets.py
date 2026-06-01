@@ -14,6 +14,32 @@ from src.prompt_loader import (
     resolve_skill_target,
 )
 from src.workflow_agents import EarningsQualityAnalyst
+from src.workflow_models import (
+    BearCase,
+    BullCase,
+    CashFlowRiskFinding,
+    ClaimRecord,
+    ClaimType,
+    DecisionUse,
+    EarningsQualityFinding,
+    EvidenceItem,
+    EvidencePolarity,
+    FactCheckStatus,
+    GuidanceFinding,
+    JudgeDecision,
+    JudgeTreatment,
+    ManagementIntentFinding,
+    MissingDataItem,
+    ReportMatrix,
+    SourceRef,
+    SourceType,
+)
+
+
+def _section_between(text: str, start_marker: str, end_marker: str) -> str:
+    start = text.index(start_marker)
+    end = text.index(end_marker, start)
+    return text[start:end]
 
 
 def test_asset_validator_accepts_repo_assets():
@@ -80,6 +106,97 @@ def test_system_prompt_includes_shared_policy_and_one_agent_prompt():
     assert "# EarningsQualityAnalyst" in system
     assert "# CashFlowRiskAnalyst" not in system
     assert "src/prompts/index" not in system
+
+
+@pytest.mark.parametrize("public_role", sorted(AGENT_PROMPT_FILES))
+def test_runtime_prompts_omit_provider_facing_pseudo_python_models(public_role: str):
+    system = build_system_prompt(public_role, "fallback scope")
+
+    assert "```python" not in system
+    assert "Required Output Model" not in system
+
+
+def test_runtime_prompts_name_report_matrix_contract_terms():
+    system = build_system_prompt("EarningsQualityAnalyst", "fallback scope")
+    contract_models = (
+        ReportMatrix,
+        EvidenceItem,
+        ClaimRecord,
+        DecisionUse,
+        MissingDataItem,
+        SourceRef,
+    )
+
+    assert "`source_index`" in system
+    for model in contract_models:
+        assert f"`{model.__name__}`" in system
+        for field_name in model.model_fields:
+            assert f"`{field_name}`" in system
+
+
+def test_runtime_prompt_schema_literals_match_workflow_models():
+    system = build_system_prompt("JudgeAgent", "fallback scope")
+
+    for enum_type in (
+        SourceType,
+        EvidencePolarity,
+        ClaimType,
+        FactCheckStatus,
+        JudgeTreatment,
+    ):
+        for member in enum_type:
+            assert f"`{member.value}`" in system
+
+
+@pytest.mark.parametrize(
+    ("public_role", "output_model"),
+    (
+        ("EarningsQualityAnalyst", EarningsQualityFinding),
+        ("CashFlowRiskAnalyst", CashFlowRiskFinding),
+        ("ManagementIntentAnalyst", ManagementIntentFinding),
+        ("GuidanceAnalyst", GuidanceFinding),
+        ("BullAgent", BullCase),
+        ("BearAgent", BearCase),
+    ),
+)
+def test_runtime_prompt_agent_name_literals_match_workflow_models(
+    public_role: str,
+    output_model: type,
+):
+    expected_literal = output_model.model_fields["agent_name"].default
+    system = build_system_prompt(public_role, "fallback scope")
+
+    assert f"`agent_name`: `{expected_literal}`" in system
+
+
+def test_judge_prompt_output_contract_matches_judge_decision_fields():
+    system = build_system_prompt("JudgeAgent", "fallback scope")
+    output_contract = _section_between(
+        system,
+        "## Required Output Contract",
+        "## Validation Rules",
+    )
+
+    for field_name in JudgeDecision.model_fields:
+        assert f"`{field_name}`" in output_contract
+    assert "`missing_data`" not in output_contract
+
+
+def test_judge_prompt_does_not_instruct_forbidden_missing_data_field():
+    system = build_system_prompt("JudgeAgent", "fallback scope")
+    normalized_system = " ".join(system.split())
+    forbidden_directives = (
+        "record it in `missing_data`",
+        "explain the limitation in `missing_data`",
+        "put the limitation in `missing_data`",
+        "`missing_data` caveat",
+        "matching `missing_data` explanation",
+    )
+
+    for directive in forbidden_directives:
+        assert directive not in normalized_system
+    assert "only when the role output contract includes `missing_data`" in normalized_system
+    assert "describe material gaps inside allowed fields" in normalized_system
 
 
 def test_missing_skill_target_fails_before_llm_call(tmp_path: Path, monkeypatch):

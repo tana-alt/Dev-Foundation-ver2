@@ -10,6 +10,8 @@ Apply this policy to every LLM response.
   JSON object.
 - Follow the requested Pydantic shape exactly.
 - Use the exact `agent_name` literal required by the prompt.
+- Use `missing_data` only when the requested shape includes `missing_data`;
+  otherwise describe material gaps inside allowed fields.
 
 ## Shared Field Conventions
 
@@ -29,5 +31,5 @@ The workflow will reject outputs when:
 - `source_ref` is missing on evidence
 - prohibited investment-advice language appears as agent advice
 - the agent calculates metrics instead of using precomputed values
-- required positive or counter evidence is missing without a matching
-  `missing_data` explanation and confidence cap
+- required positive or counter evidence is missing without a schema-allowed
+  limitation and confidence cap

@@ -35,7 +35,7 @@ validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を 
 重要原則:
 - 新しい調査や計算はしません。
 - raw document は読みません。
-- Bull と Bear のどちらかを無条件に採用せず、根拠の強さ、反対根拠、missing_data を比較します。
+- Bull と Bear のどちらかを無条件に採用せず、根拠の強さ、反対根拠、入力側で示されたデータ不足を比較します。
 - EPS outlook と FCF outlook が逆方向の場合は neutral を強く検討します。
 - 重要データが欠けている場合は confidence を下げ、neutral に寄せます。
 - Markdown レポートは生成しません。
@@ -79,29 +79,31 @@ validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を 
 - JSONのみを返す
 ```
 
-## Required Output Model
+## Required Output Contract
 
-```python
-JudgeDecision:
-  verdict: Literal["good", "neutral", "bad"]
-  confidence: float
-  summary: str
-  rationale: str
-  positive_evidence: list[EvidenceItem]
-  negative_evidence: list[EvidenceItem]
-  eps_outlook: str
-  eps_outlook_reason: str
-  fcf_outlook: str
-  fcf_outlook_reason: str
-  purpose: Literal["earnings_review_not_investment_advice"]
-  is_investment_advice: Literal[false]
-```
+Return JSON matching `JudgeDecision` with these top-level fields:
 
-Do not include extra top-level fields such as `agent_name`, `label`,
-`key_disputes`, `missing_data_impact`, `non_advice_disclaimer`,
-`missing_data`, or `disclaimer`. If missing data affects the verdict, explain
-that limitation inside `summary`, `rationale`, `eps_outlook_reason`, or
-`fcf_outlook_reason`.
+- `verdict`
+- `confidence`
+- `summary`
+- `rationale`
+- `positive_evidence`
+- `negative_evidence`
+- `eps_outlook`
+- `eps_outlook_reason`
+- `fcf_outlook`
+- `fcf_outlook_reason`
+- `purpose`
+- `is_investment_advice`
+
+`verdict` must be `good`, `neutral`, or `bad`.
+`positive_evidence` and `negative_evidence` contain `EvidenceItem` objects.
+`purpose` must be `earnings_review_not_investment_advice`.
+`is_investment_advice` must be `false`.
+
+Do not include extra top-level fields beyond the fields listed above. If
+missing data affects the verdict, explain that limitation inside `summary`,
+`rationale`, `eps_outlook_reason`, or `fcf_outlook_reason`.
 
 ## Validation Rules
 
@@ -120,5 +122,7 @@ that limitation inside `summary`, `rationale`, `eps_outlook_reason`, or
 
 - Material claims must use numeric grounding when routed values or disclosed source values are available.
 - Do not list every metric mechanically; include the value that supports the specific claim.
-- If the necessary value is missing, put the limitation in `missing_data` rather than implying precision.
+- If the necessary value is missing, describe the limitation inside `summary`,
+  `rationale`, `eps_outlook_reason`, or `fcf_outlook_reason` and lower
+  `confidence` rather than implying precision.
 - External sources are out of scope unless they were explicitly routed as accepted interactive research.
