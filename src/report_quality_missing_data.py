@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from typing import Any
+
 IMPORTANT_MISSING_PATTERNS = (
     "guidance",
     "cash flow",
@@ -23,8 +26,34 @@ def _findings(brief) -> list:
     ]
 
 
-def collect_missing_data(brief) -> list[tuple[str, str, str]]:
+def collect_missing_data(
+    brief: Any,
+    *,
+    missing_data_items: Iterable[Any] | None = None,
+) -> list[tuple[str, str, str]]:
     rows: list[tuple[str, str, str]] = []
+    matrix_missing_data = (
+        missing_data_items
+        if missing_data_items is not None
+        else getattr(brief, "missing_data_items", []) or []
+    )
+    for item in matrix_missing_data:
+        materiality = str(getattr(item, "materiality", "") or "").lower()
+        blocks_verdict = bool(getattr(item, "blocks_verdict", False))
+        if blocks_verdict:
+            severity = "blocking_gap"
+        elif materiality in {"high", "medium"}:
+            severity = "material_caveat"
+        else:
+            severity = "non_blocking"
+
+        topic = str(getattr(item, "topic", "Missing data") or "Missing data")
+        reason = str(getattr(item, "reason", "") or "").strip()
+        requested = getattr(item, "requested_source_type", None)
+        requested_value = getattr(requested, "value", requested)
+        requested_text = f" Requested source: {requested_value}." if requested_value else ""
+        rows.append(("ReportMatrix", severity, f"{topic}: {reason}{requested_text}".strip()))
+
     for finding in _findings(brief):
         if finding is None:
             continue
@@ -40,8 +69,13 @@ def collect_missing_data(brief) -> list[tuple[str, str, str]]:
     return rows
 
 
-def missing_data_lines(brief, decision=None) -> list[str]:
-    rows = collect_missing_data(brief)
+def missing_data_lines(
+    brief: Any,
+    decision: Any = None,
+    *,
+    missing_data_items: Iterable[Any] | None = None,
+) -> list[str]:
+    rows = collect_missing_data(brief, missing_data_items=missing_data_items)
     if not rows:
         return ["- No material missing-data caveats were emitted by specialist agents."]
     lines = ["| Agent | Severity | Missing data / confidence limit |", "|---|---|---|"]
@@ -51,10 +85,18 @@ def missing_data_lines(brief, decision=None) -> list[str]:
     return lines
 
 
-def confidence_cap(brief, decision=None) -> tuple[float, list[str]]:
+def confidence_cap(
+    brief: Any,
+    decision: Any = None,
+    *,
+    missing_data_items: Iterable[Any] | None = None,
+) -> tuple[float, list[str]]:
     cap = 1.0
     reasons: list[str] = []
-    rows = collect_missing_data(brief)
+    rows = collect_missing_data(brief, missing_data_items=missing_data_items)
+    if any(severity == "blocking_gap" for _, severity, _ in rows):
+        cap = min(cap, 0.45)
+        reasons.append("blocking missing data")
     if any(severity == "material_caveat" for _, severity, _ in rows):
         cap = min(cap, 0.60)
         reasons.append("important missing data")
@@ -91,8 +133,13 @@ def confidence_cap(brief, decision=None) -> tuple[float, list[str]]:
     return cap, reasons
 
 
-def apply_confidence_caps(decision, brief):
-    cap, _ = confidence_cap(brief, decision)
+def apply_confidence_caps(
+    decision: Any,
+    brief: Any,
+    *,
+    missing_data_items: Iterable[Any] | None = None,
+):
+    cap, _ = confidence_cap(brief, decision, missing_data_items=missing_data_items)
     current = float(getattr(decision, "confidence", 0.0) or 0.0)
     if current <= cap:
         return decision

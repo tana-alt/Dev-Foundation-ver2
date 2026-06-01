@@ -16,7 +16,12 @@ TRIGGER_RE = re.compile(
     re.IGNORECASE,
 )
 NUMBER_RE = re.compile(
-    r"(?:\$|¥|€)?\s?\d+(?:\.\d+)?\s?(?:%|bps|million|billion|m|bn|x)?", re.IGNORECASE
+    r"(?:"
+    r"(?:\$|¥|€)\s?\d+(?:\.\d+)?(?:\s?(?:million|billion|m|bn))?"
+    r"|\d+(?:\.\d+)\s?(?:%|bps|million|billion|m|bn|x)?"
+    r"|\d+\s?(?:%|bps|million|billion|m|bn|x)\b"
+    r")",
+    re.IGNORECASE,
 )
 CAVEAT_TERMS = (
     "missing",

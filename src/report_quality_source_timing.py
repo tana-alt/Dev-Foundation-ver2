@@ -29,9 +29,23 @@ def _source_type_value(ref) -> str:
 def classify_source_timing(
     ref, *, event_date: date | None = None, published_date: date | None = None
 ) -> SourceTiming:
+    explicit_timing = getattr(ref, "timing", None)
+    if explicit_timing:
+        timing = (
+            explicit_timing
+            if isinstance(explicit_timing, SourceTiming)
+            else SourceTiming(str(getattr(explicit_timing, "value", explicit_timing)))
+        )
+        if timing != SourceTiming.UNKNOWN:
+            return timing
+
     source_type = _source_type_value(ref)
     if source_type in PRIMARY_SOURCE_TYPES:
         return SourceTiming.SAME_PERIOD_PRIMARY
+    event_date = event_date or getattr(ref, "related_event_date", None)
+    published_date = (
+        published_date or getattr(ref, "published_date", None) or getattr(ref, "as_of_date", None)
+    )
     if event_date is None or published_date is None:
         return SourceTiming.UNKNOWN
     delta_days = (published_date - event_date).days
@@ -42,5 +56,11 @@ def classify_source_timing(
     return SourceTiming.STALE_EXTERNAL
 
 
-def source_timing_label(ref) -> str:
-    return classify_source_timing(ref).value
+def source_timing_label(
+    ref, *, event_date: date | None = None, published_date: date | None = None
+) -> str:
+    return classify_source_timing(
+        ref,
+        event_date=event_date,
+        published_date=published_date,
+    ).value
