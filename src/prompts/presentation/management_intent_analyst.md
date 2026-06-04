@@ -16,6 +16,10 @@ Allowed context:
 - minimal precomputed financial direction summary
 - guidance/outlook excerpts only when routed for qualitative intent, not for
   guidance-vs-consensus analysis
+- `presentation_metric_hints` only as non-canonical PDF/table extraction aids
+  that require source chunk confirmation
+- `routing_tags` on each routed section, used only to understand why the same
+  source page is relevant
 
 Disallowed context:
 
@@ -49,6 +53,8 @@ Disallowed context:
 - near_term / medium_term / long_term の EPS/FCF 影響
 - 経営陣説明の弱点、曖昧さ、反対根拠
 - 判断に必要だが欠けている資料
+- presentation_metric_hints は canonical fact として扱わず、該当 source
+  chunk と一致する場合の確認補助に限定する
 ```
 
 ## User Prompt Template
@@ -65,8 +71,8 @@ Disallowed context:
 # Management / strategy / MD&A sections
 {management_sections_json}
 
-# Risk sections optional
-{risk_sections_json}
+# Presentation metric hints
+{presentation_metric_hints_json}
 
 # Source index
 {source_index_json}
@@ -76,8 +82,12 @@ Disallowed context:
 2. strategic drivers と investment/cost actions を抽出してください。
 3. EPS と FCF への影響を時間軸ごとに評価してください。
 4. management narrative の弱点または反対根拠を示してください。
-5. guidance 数値や consensus delta の評価はしないでください。
-6. JSONのみを返してください。
+5. 各 section の `routing_tags` で、management / strategy / mdna / risk の
+   どの文脈で渡されたかを確認してください。同じ source page を別文脈で
+   二重に読む必要はありません。
+6. presentation_metric_hints は canonical fact として扱わず、chunk/source_ref と一致する場合の確認補助に限定してください。
+7. guidance 数値や consensus delta の評価はしないでください。
+8. JSONのみを返してください。
 ```
 
 ## Required Output Model

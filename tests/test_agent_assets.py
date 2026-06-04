@@ -9,11 +9,13 @@ from src.llm import LLMProvider, LLMResponse
 from src.prompt_loader import (
     AGENT_PROMPT_FILES,
     AGENT_SKILL_FILES,
+    PROMPT_ROOT,
     SkillAssetError,
     build_system_prompt,
     resolve_skill_target,
 )
-from src.workflow_agents import EarningsQualityAnalyst
+from src.workflow_agents import EarningsQualityAnalyst, GuidanceAnalyst, ManagementIntentAnalyst
+from src.workflow_models import BearCase, BullCase, PresentationMetricHint, VerdictLabel
 
 
 def test_asset_validator_accepts_repo_assets():
@@ -77,9 +79,62 @@ def test_system_prompt_includes_shared_policy_and_one_agent_prompt():
     assert "# Global Agent Policy" in system
     assert "# Evidence Policy" in system
     assert "# Output Policy" in system
+    assert "human-readable narrative string in Japanese" in system
     assert "# EarningsQualityAnalyst" in system
     assert "# CashFlowRiskAnalyst" not in system
     assert "src/prompts/index" not in system
+
+
+def test_evidence_policy_required_fields_match_evidence_item_schema():
+    policy = Path("src/prompts/shared/evidence_policy.md").read_text(encoding="utf-8")
+
+    assert "- `summary`" in policy
+    assert "- `detail`" in policy
+    assert "- `impact_areas`" in policy
+    assert "- `source_ref`" in policy
+    assert "- `polarity`" in policy
+    assert "- `claim`" not in policy
+    assert "- `quote_or_value`" not in policy
+    assert "- `interpretation`" not in policy
+    assert "- `source_type`" not in policy
+
+
+def test_presentation_metric_hints_are_prompted_as_non_canonical_context():
+    global_policy = Path("src/prompts/shared/global_policy.md").read_text(encoding="utf-8")
+    evidence_policy = Path("src/prompts/shared/evidence_policy.md").read_text(encoding="utf-8")
+    guidance_prompt = (PROMPT_ROOT / AGENT_PROMPT_FILES["GuidanceAnalyst"]).read_text(
+        encoding="utf-8"
+    )
+    earnings_prompt = (PROMPT_ROOT / AGENT_PROMPT_FILES["EarningsQualityAnalyst"]).read_text(
+        encoding="utf-8"
+    )
+
+    assert "presentation_metric_hints" in global_policy
+    assert "canonical fact" in evidence_policy
+    assert "presentation_metric_hints" in guidance_prompt
+    assert "prior_sequential_period_actuals" in earnings_prompt
+    assert "presentation_metric_hints" in GuidanceAnalyst.spec.context_keys
+    assert "presentation_metric_hints" in ManagementIntentAnalyst.spec.context_keys
+    assert "accepted" not in PresentationMetricHint.model_fields["hint_status"].annotation.__args__
+
+
+def test_debate_prompt_agent_literals_match_schema():
+    expectations = {
+        "BullAgent": BullCase.model_fields["agent_name"].default,
+        "BearAgent": BearCase.model_fields["agent_name"].default,
+    }
+
+    for public_role, expected_literal in expectations.items():
+        prompt = (PROMPT_ROOT / AGENT_PROMPT_FILES[public_role]).read_text(encoding="utf-8")
+
+        assert f'agent_name: Literal["{expected_literal}"]' in prompt
+
+
+def test_judge_prompt_verdict_labels_match_schema():
+    prompt = (PROMPT_ROOT / AGENT_PROMPT_FILES["JudgeAgent"]).read_text(encoding="utf-8")
+
+    for label in VerdictLabel:
+        assert label.value in prompt
 
 
 def test_missing_skill_target_fails_before_llm_call(tmp_path: Path, monkeypatch):

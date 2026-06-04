@@ -15,7 +15,8 @@ Debate and judgment use three LLM agents:
 - `BullAgent`: strongest evidence-backed good case.
 - `BearAgent`: strongest evidence-backed bad or neutral case, including direct
   challenge to `BullCaseSummary`.
-- `JudgeAgent`: final structured `good | neutral | bad` verdict.
+- `JudgeAgent`: final structured `good | neutral | bad | insufficient_evidence`
+  verdict.
 
 Bull and Bear stay separate because opposing objectives reduce anchoring on one
 balanced but shallow answer. Judge stays separate because it should compare

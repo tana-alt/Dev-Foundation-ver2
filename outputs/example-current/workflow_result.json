@@ -1,0 +1,1176 @@
+{
+  "request_id": "current-local-presentation-sample",
+  "ticker": "NVDA",
+  "fiscal_period": "2025Q3",
+  "steps": [
+    {
+      "step": "data_ingestion",
+      "state": "completed",
+      "started_at": "2026-06-01T08:54:42.723211Z",
+      "finished_at": "2026-06-01T08:54:43.135231Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "financial_agents",
+      "state": "completed",
+      "started_at": "2026-06-01T08:54:43.135697Z",
+      "finished_at": "2026-06-01T08:54:43.169330Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "presentation_agents",
+      "state": "completed",
+      "started_at": "2026-06-01T08:54:43.169663Z",
+      "finished_at": "2026-06-01T08:54:43.176729Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "evidence_aggregation",
+      "state": "completed",
+      "started_at": "2026-06-01T08:54:43.177047Z",
+      "finished_at": "2026-06-01T08:54:43.177266Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "debate",
+      "state": "completed",
+      "started_at": "2026-06-01T08:54:43.177273Z",
+      "finished_at": "2026-06-01T08:54:43.189540Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "judge",
+      "state": "completed",
+      "started_at": "2026-06-01T08:54:43.189553Z",
+      "finished_at": "2026-06-01T08:54:43.195637Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "markdown_renderer",
+      "state": "completed",
+      "started_at": "2026-06-01T08:54:43.195744Z",
+      "finished_at": "2026-06-01T08:54:43.195914Z",
+      "message": null,
+      "error": null
+    }
+  ],
+  "analysis_brief": {
+    "ticker": "NVDA",
+    "fiscal_period": "2025Q3",
+    "earnings_quality_finding": {
+      "agent_name": "EarningsQualityAnalyst",
+      "stance": "mixed",
+      "summary": "EarningsQualityAnalyst found usable evidence with a counterpoint.",
+      "key_evidence": [
+        {
+          "evidence_id": "EarningsQualityAnalyst:positive",
+          "polarity": "positive",
+          "summary": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+          "detail": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+          "impact_areas": [
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "current-sample-presentation:section-1",
+            "source_type": "earnings_presentation",
+            "title": "Current sample earnings presentation",
+            "url": null,
+            "document_id": "current-sample-presentation",
+            "section_id": "current-sample-presentation:section-1",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": "free_cash_flow",
+          "value": 1.0,
+          "unit": "USD",
+          "confidence": 0.7
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "EarningsQualityAnalyst:negative",
+          "polarity": "negative",
+          "summary": "EarningsQualityAnalyst negative evidence keeps the outlook balanced.",
+          "detail": "EarningsQualityAnalyst negative evidence keeps the outlook balanced.",
+          "impact_areas": [
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "current-sample-presentation:section-1",
+            "source_type": "earnings_presentation",
+            "title": "Current sample earnings presentation",
+            "url": null,
+            "document_id": "current-sample-presentation",
+            "section_id": "current-sample-presentation:section-1",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": "eps_surprise_pct",
+          "value": 1.0,
+          "unit": "%",
+          "confidence": 0.7
+        }
+      ],
+      "confidence": 0.7,
+      "missing_data": [],
+      "handoff_summary": "EarningsQualityAnalyst handoff includes both supporting and opposing evidence."
+    },
+    "cash_flow_risk_finding": {
+      "agent_name": "CashFlowRiskAnalyst",
+      "stance": "mixed",
+      "summary": "CashFlowRiskAnalyst found usable evidence with a counterpoint.",
+      "key_evidence": [
+        {
+          "evidence_id": "CashFlowRiskAnalyst:positive",
+          "polarity": "positive",
+          "summary": "CashFlowRiskAnalyst positive evidence supports EPS or FCF improvement.",
+          "detail": "CashFlowRiskAnalyst positive evidence supports EPS or FCF improvement.",
+          "impact_areas": [
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "current-sample-presentation:section-1",
+            "source_type": "earnings_presentation",
+            "title": "Current sample earnings presentation",
+            "url": null,
+            "document_id": "current-sample-presentation",
+            "section_id": "current-sample-presentation:section-1",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": "free_cash_flow",
+          "value": 1.0,
+          "unit": "USD",
+          "confidence": 0.7
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "CashFlowRiskAnalyst:negative",
+          "polarity": "negative",
+          "summary": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+          "detail": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+          "impact_areas": [
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "current-sample-presentation:section-1",
+            "source_type": "earnings_presentation",
+            "title": "Current sample earnings presentation",
+            "url": null,
+            "document_id": "current-sample-presentation",
+            "section_id": "current-sample-presentation:section-1",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": "eps_surprise_pct",
+          "value": 1.0,
+          "unit": "%",
+          "confidence": 0.7
+        }
+      ],
+      "confidence": 0.7,
+      "missing_data": [],
+      "handoff_summary": "CashFlowRiskAnalyst handoff includes both supporting and opposing evidence."
+    },
+    "management_intent_finding": {
+      "agent_name": "ManagementIntentAnalyst",
+      "stance": "mixed",
+      "summary": "ManagementIntentAnalyst found usable evidence with a counterpoint.",
+      "key_evidence": [
+        {
+          "evidence_id": "ManagementIntentAnalyst:positive",
+          "polarity": "positive",
+          "summary": "ManagementIntentAnalyst positive evidence supports EPS or FCF improvement.",
+          "detail": "ManagementIntentAnalyst positive evidence supports EPS or FCF improvement.",
+          "impact_areas": [
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "current-sample-presentation:section-1",
+            "source_type": "earnings_presentation",
+            "title": "Current sample earnings presentation",
+            "url": null,
+            "document_id": "current-sample-presentation",
+            "section_id": "current-sample-presentation:section-1",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": "free_cash_flow",
+          "value": 1.0,
+          "unit": "USD",
+          "confidence": 0.7
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "ManagementIntentAnalyst:negative",
+          "polarity": "negative",
+          "summary": "ManagementIntentAnalyst negative evidence keeps the outlook balanced.",
+          "detail": "ManagementIntentAnalyst negative evidence keeps the outlook balanced.",
+          "impact_areas": [
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "current-sample-presentation:section-1",
+            "source_type": "earnings_presentation",
+            "title": "Current sample earnings presentation",
+            "url": null,
+            "document_id": "current-sample-presentation",
+            "section_id": "current-sample-presentation:section-1",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": "eps_surprise_pct",
+          "value": 1.0,
+          "unit": "%",
+          "confidence": 0.7
+        }
+      ],
+      "confidence": 0.7,
+      "missing_data": [],
+      "handoff_summary": "ManagementIntentAnalyst handoff includes both supporting and opposing evidence."
+    },
+    "guidance_finding": {
+      "agent_name": "GuidanceAnalyst",
+      "stance": "mixed",
+      "summary": "GuidanceAnalyst found usable evidence with a counterpoint.",
+      "key_evidence": [
+        {
+          "evidence_id": "GuidanceAnalyst:positive",
+          "polarity": "positive",
+          "summary": "GuidanceAnalyst positive evidence supports EPS or FCF improvement.",
+          "detail": "GuidanceAnalyst positive evidence supports EPS or FCF improvement.",
+          "impact_areas": [
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "current-sample-presentation:section-1",
+            "source_type": "earnings_presentation",
+            "title": "Current sample earnings presentation",
+            "url": null,
+            "document_id": "current-sample-presentation",
+            "section_id": "current-sample-presentation:section-1",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": "free_cash_flow",
+          "value": 1.0,
+          "unit": "USD",
+          "confidence": 0.7
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "GuidanceAnalyst:negative",
+          "polarity": "negative",
+          "summary": "GuidanceAnalyst negative evidence keeps the outlook balanced.",
+          "detail": "GuidanceAnalyst negative evidence keeps the outlook balanced.",
+          "impact_areas": [
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "current-sample-presentation:section-1",
+            "source_type": "earnings_presentation",
+            "title": "Current sample earnings presentation",
+            "url": null,
+            "document_id": "current-sample-presentation",
+            "section_id": "current-sample-presentation:section-1",
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null
+          },
+          "metric_name": "eps_surprise_pct",
+          "value": 1.0,
+          "unit": "%",
+          "confidence": 0.7
+        }
+      ],
+      "confidence": 0.7,
+      "missing_data": [],
+      "handoff_summary": "GuidanceAnalyst handoff includes both supporting and opposing evidence.",
+      "guidance_status": null
+    },
+    "financial_agent_results": [
+      {
+        "agent_role": "earnings_quality",
+        "team": "financial",
+        "status": {
+          "step": "financial_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "EarningsQualityAnalyst found usable evidence with a counterpoint.",
+        "conclusion": "EarningsQualityAnalyst handoff includes both supporting and opposing evidence.",
+        "key_evidence": [
+          {
+            "evidence_id": "EarningsQualityAnalyst:positive",
+            "polarity": "positive",
+            "summary": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+            "detail": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+            "impact_areas": [
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "current-sample-presentation:section-1",
+              "source_type": "earnings_presentation",
+              "title": "Current sample earnings presentation",
+              "url": null,
+              "document_id": "current-sample-presentation",
+              "section_id": "current-sample-presentation:section-1",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": "free_cash_flow",
+            "value": 1.0,
+            "unit": "USD",
+            "confidence": 0.7
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "EarningsQualityAnalyst:negative",
+            "polarity": "negative",
+            "summary": "EarningsQualityAnalyst negative evidence keeps the outlook balanced.",
+            "detail": "EarningsQualityAnalyst negative evidence keeps the outlook balanced.",
+            "impact_areas": [
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "current-sample-presentation:section-1",
+              "source_type": "earnings_presentation",
+              "title": "Current sample earnings presentation",
+              "url": null,
+              "document_id": "current-sample-presentation",
+              "section_id": "current-sample-presentation:section-1",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": "eps_surprise_pct",
+            "value": 1.0,
+            "unit": "%",
+            "confidence": 0.7
+          }
+        ],
+        "open_questions": [],
+        "confidence": 0.7
+      },
+      {
+        "agent_role": "cash_flow_risk",
+        "team": "financial",
+        "status": {
+          "step": "financial_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "CashFlowRiskAnalyst found usable evidence with a counterpoint.",
+        "conclusion": "CashFlowRiskAnalyst handoff includes both supporting and opposing evidence.",
+        "key_evidence": [
+          {
+            "evidence_id": "CashFlowRiskAnalyst:positive",
+            "polarity": "positive",
+            "summary": "CashFlowRiskAnalyst positive evidence supports EPS or FCF improvement.",
+            "detail": "CashFlowRiskAnalyst positive evidence supports EPS or FCF improvement.",
+            "impact_areas": [
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "current-sample-presentation:section-1",
+              "source_type": "earnings_presentation",
+              "title": "Current sample earnings presentation",
+              "url": null,
+              "document_id": "current-sample-presentation",
+              "section_id": "current-sample-presentation:section-1",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": "free_cash_flow",
+            "value": 1.0,
+            "unit": "USD",
+            "confidence": 0.7
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "CashFlowRiskAnalyst:negative",
+            "polarity": "negative",
+            "summary": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+            "detail": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+            "impact_areas": [
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "current-sample-presentation:section-1",
+              "source_type": "earnings_presentation",
+              "title": "Current sample earnings presentation",
+              "url": null,
+              "document_id": "current-sample-presentation",
+              "section_id": "current-sample-presentation:section-1",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": "eps_surprise_pct",
+            "value": 1.0,
+            "unit": "%",
+            "confidence": 0.7
+          }
+        ],
+        "open_questions": [],
+        "confidence": 0.7
+      }
+    ],
+    "presentation_agent_results": [
+      {
+        "agent_role": "management_intent",
+        "team": "presentation",
+        "status": {
+          "step": "presentation_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "ManagementIntentAnalyst found usable evidence with a counterpoint.",
+        "conclusion": "ManagementIntentAnalyst handoff includes both supporting and opposing evidence.",
+        "key_evidence": [
+          {
+            "evidence_id": "ManagementIntentAnalyst:positive",
+            "polarity": "positive",
+            "summary": "ManagementIntentAnalyst positive evidence supports EPS or FCF improvement.",
+            "detail": "ManagementIntentAnalyst positive evidence supports EPS or FCF improvement.",
+            "impact_areas": [
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "current-sample-presentation:section-1",
+              "source_type": "earnings_presentation",
+              "title": "Current sample earnings presentation",
+              "url": null,
+              "document_id": "current-sample-presentation",
+              "section_id": "current-sample-presentation:section-1",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": "free_cash_flow",
+            "value": 1.0,
+            "unit": "USD",
+            "confidence": 0.7
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "ManagementIntentAnalyst:negative",
+            "polarity": "negative",
+            "summary": "ManagementIntentAnalyst negative evidence keeps the outlook balanced.",
+            "detail": "ManagementIntentAnalyst negative evidence keeps the outlook balanced.",
+            "impact_areas": [
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "current-sample-presentation:section-1",
+              "source_type": "earnings_presentation",
+              "title": "Current sample earnings presentation",
+              "url": null,
+              "document_id": "current-sample-presentation",
+              "section_id": "current-sample-presentation:section-1",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": "eps_surprise_pct",
+            "value": 1.0,
+            "unit": "%",
+            "confidence": 0.7
+          }
+        ],
+        "open_questions": [],
+        "confidence": 0.7
+      },
+      {
+        "agent_role": "guidance",
+        "team": "presentation",
+        "status": {
+          "step": "presentation_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "GuidanceAnalyst found usable evidence with a counterpoint.",
+        "conclusion": "GuidanceAnalyst handoff includes both supporting and opposing evidence.",
+        "key_evidence": [
+          {
+            "evidence_id": "GuidanceAnalyst:positive",
+            "polarity": "positive",
+            "summary": "GuidanceAnalyst positive evidence supports EPS or FCF improvement.",
+            "detail": "GuidanceAnalyst positive evidence supports EPS or FCF improvement.",
+            "impact_areas": [
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "current-sample-presentation:section-1",
+              "source_type": "earnings_presentation",
+              "title": "Current sample earnings presentation",
+              "url": null,
+              "document_id": "current-sample-presentation",
+              "section_id": "current-sample-presentation:section-1",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": "free_cash_flow",
+            "value": 1.0,
+            "unit": "USD",
+            "confidence": 0.7
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "GuidanceAnalyst:negative",
+            "polarity": "negative",
+            "summary": "GuidanceAnalyst negative evidence keeps the outlook balanced.",
+            "detail": "GuidanceAnalyst negative evidence keeps the outlook balanced.",
+            "impact_areas": [
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "current-sample-presentation:section-1",
+              "source_type": "earnings_presentation",
+              "title": "Current sample earnings presentation",
+              "url": null,
+              "document_id": "current-sample-presentation",
+              "section_id": "current-sample-presentation:section-1",
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null
+            },
+            "metric_name": "eps_surprise_pct",
+            "value": 1.0,
+            "unit": "%",
+            "confidence": 0.7
+          }
+        ],
+        "open_questions": [],
+        "confidence": 0.7
+      }
+    ],
+    "positive_evidence_pool": [
+      {
+        "evidence_id": "EarningsQualityAnalyst:positive",
+        "polarity": "positive",
+        "summary": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+        "detail": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 1.0,
+        "unit": "USD",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "CashFlowRiskAnalyst:positive",
+        "polarity": "positive",
+        "summary": "CashFlowRiskAnalyst positive evidence supports EPS or FCF improvement.",
+        "detail": "CashFlowRiskAnalyst positive evidence supports EPS or FCF improvement.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 1.0,
+        "unit": "USD",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "ManagementIntentAnalyst:positive",
+        "polarity": "positive",
+        "summary": "ManagementIntentAnalyst positive evidence supports EPS or FCF improvement.",
+        "detail": "ManagementIntentAnalyst positive evidence supports EPS or FCF improvement.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 1.0,
+        "unit": "USD",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "GuidanceAnalyst:positive",
+        "polarity": "positive",
+        "summary": "GuidanceAnalyst positive evidence supports EPS or FCF improvement.",
+        "detail": "GuidanceAnalyst positive evidence supports EPS or FCF improvement.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 1.0,
+        "unit": "USD",
+        "confidence": 0.7
+      }
+    ],
+    "negative_evidence_pool": [
+      {
+        "evidence_id": "EarningsQualityAnalyst:negative",
+        "polarity": "negative",
+        "summary": "EarningsQualityAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "EarningsQualityAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "CashFlowRiskAnalyst:negative",
+        "polarity": "negative",
+        "summary": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "ManagementIntentAnalyst:negative",
+        "polarity": "negative",
+        "summary": "ManagementIntentAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "ManagementIntentAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "GuidanceAnalyst:negative",
+        "polarity": "negative",
+        "summary": "GuidanceAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "GuidanceAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      }
+    ],
+    "risk_evidence_pool": [
+      {
+        "evidence_id": "EarningsQualityAnalyst:negative",
+        "polarity": "negative",
+        "summary": "EarningsQualityAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "EarningsQualityAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "CashFlowRiskAnalyst:negative",
+        "polarity": "negative",
+        "summary": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "ManagementIntentAnalyst:negative",
+        "polarity": "negative",
+        "summary": "ManagementIntentAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "ManagementIntentAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      },
+      {
+        "evidence_id": "GuidanceAnalyst:negative",
+        "polarity": "negative",
+        "summary": "GuidanceAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "GuidanceAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      }
+    ],
+    "synthesis": "EarningsQualityAnalyst handoff includes both supporting and opposing evidence. CashFlowRiskAnalyst handoff includes both supporting and opposing evidence. ManagementIntentAnalyst handoff includes both supporting and opposing evidence. GuidanceAnalyst handoff includes both supporting and opposing evidence."
+  },
+  "bull_case": {
+    "agent_name": "bull_agent",
+    "thesis": "EPS quality, management execution, and guidance evidence support a good interpretation.",
+    "stance_strength": "moderate",
+    "strongest_positive_evidence": [
+      {
+        "evidence_id": "EarningsQualityAnalyst:positive",
+        "polarity": "positive",
+        "summary": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+        "detail": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 1.0,
+        "unit": "USD",
+        "confidence": 0.7
+      }
+    ],
+    "eps_bull_argument": "Precomputed EPS and margin evidence support future EPS.",
+    "fcf_bull_argument": "FCF can improve if investment intensity moderates.",
+    "conditions_needed": [
+      "Revenue growth and margin discipline continue."
+    ],
+    "weak_points": [
+      "Near-term FCF pressure remains a valid counterpoint."
+    ],
+    "finding_coverage": {
+      "earnings_quality": "supporting",
+      "cash_flow_risk": "opposing",
+      "management_intent": "supporting",
+      "guidance": "supporting"
+    },
+    "disputed_points_to_watch": [
+      "FCF conversion timing"
+    ],
+    "confidence": 0.68,
+    "missing_data": []
+  },
+  "bear_case": {
+    "agent_name": "bear_agent",
+    "thesis": "FCF pressure and execution risk keep the result from being one-sided.",
+    "stance_strength": "moderate",
+    "strongest_negative_evidence": [
+      {
+        "evidence_id": "CashFlowRiskAnalyst:negative",
+        "polarity": "negative",
+        "summary": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      }
+    ],
+    "eps_bear_argument": "Some EPS improvement may rely on conditions that need to persist.",
+    "fcf_bear_argument": "CapEx and working capital can delay FCF improvement.",
+    "failure_modes": [
+      "Demand slows or investment intensity remains elevated."
+    ],
+    "counter_to_bull_case": [
+      "EPS strength does not by itself prove cash conversion."
+    ],
+    "finding_coverage": {
+      "earnings_quality": "opposing",
+      "cash_flow_risk": "opposing",
+      "management_intent": "not_material",
+      "guidance": "opposing"
+    },
+    "unresolved_risks": [
+      "CapEx timing"
+    ],
+    "confidence": 0.66,
+    "missing_data": []
+  },
+  "debate_result": {
+    "bull_case": "EPS quality, management execution, and guidance evidence support a good interpretation.",
+    "bear_case": "FCF pressure and execution risk keep the result from being one-sided.",
+    "risk_case": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+    "evaluation": "Bull and Bear cases were generated from validated AnalysisBrief only.",
+    "strongest_positive_evidence": [
+      {
+        "evidence_id": "EarningsQualityAnalyst:positive",
+        "polarity": "positive",
+        "summary": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+        "detail": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 1.0,
+        "unit": "USD",
+        "confidence": 0.7
+      }
+    ],
+    "strongest_negative_evidence": [
+      {
+        "evidence_id": "CashFlowRiskAnalyst:negative",
+        "polarity": "negative",
+        "summary": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      }
+    ],
+    "unresolved_questions": [
+      "CapEx timing"
+    ]
+  },
+  "judge_decision": {
+    "verdict": "good",
+    "confidence": 0.65,
+    "summary": "EPS quality and FCF path look constructive with caveats.",
+    "rationale": "Positive EPS and margin evidence outweighed near-term FCF risks.",
+    "positive_evidence": [
+      {
+        "evidence_id": "EarningsQualityAnalyst:positive",
+        "polarity": "positive",
+        "summary": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+        "detail": "EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 1.0,
+        "unit": "USD",
+        "confidence": 0.7
+      }
+    ],
+    "negative_evidence": [
+      {
+        "evidence_id": "CashFlowRiskAnalyst:negative",
+        "polarity": "negative",
+        "summary": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "detail": "CashFlowRiskAnalyst negative evidence keeps the outlook balanced.",
+        "impact_areas": [
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "current-sample-presentation:section-1",
+          "source_type": "earnings_presentation",
+          "title": "Current sample earnings presentation",
+          "url": null,
+          "document_id": "current-sample-presentation",
+          "section_id": "current-sample-presentation:section-1",
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null
+        },
+        "metric_name": "eps_surprise_pct",
+        "value": 1.0,
+        "unit": "%",
+        "confidence": 0.7
+      }
+    ],
+    "eps_outlook": "EPS can improve if revenue growth and margin discipline continue.",
+    "eps_outlook_reason": "Revenue growth and margin discipline support EPS improvement, while counter evidence keeps the assessment conditional.",
+    "fcf_outlook": "FCF can improve after investment intensity moderates.",
+    "fcf_outlook_reason": "FCF can improve if investment intensity moderates, but near-term CapEx pressure remains a constraint.",
+    "purpose": "earnings_review_not_investment_advice",
+    "is_investment_advice": false
+  },
+  "markdown_report": "# Earnings Review: NVDA 2025Q3\n\n## Verdict\n\nGood\n\nConfidence: 0.65\n\n## Summary\n\nEPS quality and FCF path look constructive with caveats.\n\n## Evidence Matrix\n\n| # | Direction | Claim | Evidence value / quote | Interpretation | Source | Timing | Confidence |\n|---:|---|---|---|---|---|---|---:|\n| 1 | positive | EarningsQualityAnalyst positive evidence supports EPS or FCF improvement. | 1 USD (free_cash_flow) | EarningsQualityAnalyst positive evidence supports EPS or FCF improvement. | `current-sample-presentation:section-1` / current-sample-presentation:section-1 | same_period_primary | 0.70 |\n| 2 | negative | CashFlowRiskAnalyst negative evidence keeps the outlook balanced. | 1 % (eps_surprise_pct) | CashFlowRiskAnalyst negative evidence keeps the outlook balanced. | `current-sample-presentation:section-1` / current-sample-presentation:section-1 | same_period_primary | 0.70 |\n\n## Agent Analysis\n\n- **EarningsQualityAnalyst** (mixed, confidence 0.70): EarningsQualityAnalyst handoff includes both supporting and opposing evidence.\n- **CashFlowRiskAnalyst** (mixed, confidence 0.70): CashFlowRiskAnalyst handoff includes both supporting and opposing evidence.\n- **ManagementIntentAnalyst** (mixed, confidence 0.70): ManagementIntentAnalyst handoff includes both supporting and opposing evidence.\n- **GuidanceAnalyst** (mixed, confidence 0.70): GuidanceAnalyst handoff includes both supporting and opposing evidence.\n\n## Positive Evidence\n\n- EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.\n\n## Negative Evidence\n\n- CashFlowRiskAnalyst negative evidence keeps the outlook balanced.\n\n## EPS Outlook\n\nEPS can improve if revenue growth and margin discipline continue.\n\nReason: Revenue growth and margin discipline support EPS improvement, while counter evidence keeps the assessment conditional.\n\n## FCF Outlook\n\nFCF can improve after investment intensity moderates.\n\nReason: FCF can improve if investment intensity moderates, but near-term CapEx pressure remains a constraint.\n\n## Bull Case\n\nEPS quality, management execution, and guidance evidence support a good interpretation.\n\n## Bear Case\n\nFCF pressure and execution risk keep the result from being one-sided.\n\n## Analyst Brief\n\nEarningsQualityAnalyst handoff includes both supporting and opposing evidence. CashFlowRiskAnalyst handoff includes both supporting and opposing evidence. ManagementIntentAnalyst handoff includes both supporting and opposing evidence. GuidanceAnalyst handoff includes both supporting and opposing evidence.\n\n## Source Inventory\n\n| source_id | type | locator | title | timing | used for | url |\n|---|---|---|---|---|---|---|\n| `current-sample-presentation:section-1` | earnings_presentation | current-sample-presentation:section-1 | Current sample earnings presentation | same_period_primary | CashFlowRiskAnalyst: CashFlowRiskAnalyst negative evidence keeps the outlook balanced.; CashFlowRiskAnalyst: CashFlowRiskAnalyst positive evidence supports EPS or FCF improvement.; EarningsQualityAnalyst: EarningsQualityAnalyst negative evidence keeps the outlook balanced.; EarningsQualityAnalyst: EarningsQualityAnalyst positive evidence supports EPS or FCF improvement.; GuidanceAnalyst: GuidanceAnalyst negative evidence keeps the outlook balanced.; GuidanceAnalyst: GuidanceAnalyst positive evidence supports EPS or FCF improvement.; ManagementIntentAnalyst: ManagementIntentAnalyst negative evidence keeps the outlook balanced.; ManagementIntentAnalyst: ManagementIntentAnalyst positive evidence supports EPS or FCF improvement. | no URL |\n\n## Missing Data Caveats\n\n- No material missing-data caveats were emitted by specialist agents.\n\n## Sources\n\n### EarningsQualityAnalyst\n- `current-sample-presentation:section-1` (current-sample-presentation:section-1): Current sample earnings presentation — no URL in source_ref\n### CashFlowRiskAnalyst\n- `current-sample-presentation:section-1` (current-sample-presentation:section-1): Current sample earnings presentation — no URL in source_ref\n### ManagementIntentAnalyst\n- `current-sample-presentation:section-1` (current-sample-presentation:section-1): Current sample earnings presentation — no URL in source_ref\n### GuidanceAnalyst\n- `current-sample-presentation:section-1` (current-sample-presentation:section-1): Current sample earnings presentation — no URL in source_ref\n\n_This report is an earnings analysis artifact and is not investment advice._",
+  "purpose": "earnings_review_not_investment_advice",
+  "is_investment_advice": false,
+  "disclaimer": "This report is an earnings analysis artifact and is not investment advice."
+}

@@ -1,0 +1,19 @@
+{
+  "request_id": "current-yfinance-presentation-sample",
+  "ticker": "NVDA",
+  "fiscal_period": "2027Q1",
+  "target_earnings_date": "2026-05-20",
+  "target_period_end_date": "2026-04-30",
+  "prior_fiscal_period": "2026Q4",
+  "document_files": [
+    {
+      "path": "tests/fixtures/sample_presentation.txt",
+      "source_type": "earnings_presentation",
+      "document_id": "current-sample-presentation",
+      "title": "Current sample earnings presentation",
+      "fiscal_period": "2027Q1",
+      "period_role": "target_period_document"
+    }
+  ],
+  "include_markdown": true
+}

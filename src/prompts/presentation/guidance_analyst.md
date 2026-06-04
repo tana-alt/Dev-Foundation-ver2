@@ -12,7 +12,11 @@ Allowed context:
 - `RunSpec`
 - guidance sections for revenue, EPS, margin, CapEx, FCF, and segments
 - precomputed consensus deltas
-- guidance assumption excerpts
+- post-earnings guidance issued with the target-quarter materials
+- `consensus_for_guided_period` only when supplied by the workflow
+- `presentation_metric_hints` as PDF/table extraction aids that require
+  source chunk confirmation
+- guidance assumption excerpts, carried as `routing_tags` on routed sections
 - optional prior guidance track-record summary supplied by the workflow
 
 Disallowed context:
@@ -34,7 +38,8 @@ Disallowed context:
 
 重要原則:
 - あなたは計算をしません。guidance と consensus の差分は Python workflow で計算済みです。
-- evidence/source_ref として使える入力は guidance sections、consensus deltas、guidance assumptions、prior guidance track record のみです。
+- evidence/source_ref として使える入力は guidance sections、consensus deltas、guidance assumptions、prior guidance track record、および source chunk で確認した presentation_metric_hints だけです。
+- presentation_metric_hints は PDF/table 抽出の確認補助であり、canonical fact ではありません。必ず guidance sections の chunk/source_ref と照合してください。
 - guidance の現実性、保守性、楽観性、revision risk を評価します。
 - management intent の一般分析はしません。それは ManagementIntentAnalyst の責務です。
 - 最終の good / neutral / bad 判定はしません。
@@ -63,11 +68,11 @@ Disallowed context:
 # Guidance metrics and precomputed consensus deltas
 {guidance_metrics_json}
 
-# Guidance sections
-{guidance_sections_json}
+# Presentation metric hints
+{presentation_metric_hints_json}
 
-# Guidance assumptions
-{guidance_assumptions_sections_json}
+# Guidance sections and assumptions
+{guidance_sections_json}
 
 # Prior guidance track record optional
 {prior_guidance_track_record_json}
@@ -82,7 +87,14 @@ Disallowed context:
 4. EPS と FCF への影響を評価してください。
 5. revision risk と達成条件を示してください。
 6. key_evidence と counter_evidence を両方出してください。
-7. JSONのみを返してください。
+7. guided_period は対象四半期資料で会社が出した guidance としてのみ扱ってください。
+8. consensus_for_guided_period は guidance が期待を上回る/下回る/同程度かを評価する場合だけ使ってください。
+9. guided_period を consensus expectation として使わないでください。
+10. presentation_metric_hints は canonical fact として扱わず、chunk/source_ref と一致する場合の確認補助に限定してください。
+11. 各 section の `routing_tags` で guidance / guidance_assumption / risk の
+    どの文脈で渡されたかを確認してください。同じ source page を別文脈で
+    二重に読む必要はありません。
+12. JSONのみを返してください。
 ```
 
 ## Required Output Model

@@ -21,6 +21,26 @@ from .workflow_models import (
 from .workflow_validation import WorkflowValidationError, WorkflowValidationGate
 
 
+class ParallelAgentExecutionError(RuntimeError):
+    """Raised when one agent in a parallel lane fails."""
+
+    def __init__(self, *, agent_name: str, cause: Exception):
+        self.agent_name = agent_name
+        self.cause = cause
+        super().__init__(f"{agent_name} failed in parallel agent execution: {cause}")
+
+    def diagnostics(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "agent_name": self.agent_name,
+            "cause_type": type(self.cause).__name__,
+            "cause_message": str(self.cause),
+        }
+        if hasattr(self.cause, "diagnostics"):
+            payload.update(self.cause.diagnostics())
+            payload["agent_name"] = self.agent_name
+        return payload
+
+
 class AgentRuntime:
     """Run independent specialist agents against a shared routed context."""
 
@@ -29,10 +49,22 @@ class AgentRuntime:
 
     def run_parallel(self, agent_classes: tuple[type, ...], context: dict[str, Any]):
         with ThreadPoolExecutor(max_workers=len(agent_classes)) as executor:
-            futures = [
-                executor.submit(agent_class(self.llm).run, context) for agent_class in agent_classes
-            ]
-            return [future.result() for future in futures]
+            futures = {
+                executor.submit(agent_class(self.llm).run, context): agent_class
+                for agent_class in agent_classes
+            }
+            results = []
+            for future, agent_class in futures.items():
+                try:
+                    results.append(future.result())
+                except Exception as exc:
+                    spec = getattr(agent_class, "spec", None)
+                    public_role = getattr(spec, "public_role", agent_class.__name__)
+                    raise ParallelAgentExecutionError(
+                        agent_name=str(public_role),
+                        cause=exc,
+                    ) from exc
+            return results
 
 
 class DebateRunner:

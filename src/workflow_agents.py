@@ -16,12 +16,15 @@ import json
 from dataclasses import dataclass
 from typing import Any, Literal, Mapping
 
+import structlog
 from pydantic import BaseModel, field_validator
 
 from . import workflow_models as _workflow_models
 from .llm import LLMProvider
 from .prompt_loader import build_system_prompt, resolve_skill_target
 from .structured import parse_model
+
+logger = structlog.get_logger(__name__)
 
 
 class WorkflowAgentError(RuntimeError):
@@ -34,6 +37,52 @@ class AgentRoleMismatch(WorkflowAgentError):
 
 class AgentOutputValidationError(WorkflowAgentError):
     """Raised when the LLM output cannot be parsed into the output contract."""
+
+
+class AgentProviderCallError(WorkflowAgentError):
+    """Raised when an agent cannot obtain a usable provider response."""
+
+    def __init__(
+        self,
+        *,
+        agent_name: str,
+        attempt: int,
+        max_attempts: int,
+        stage: str,
+        cause: Exception,
+    ):
+        self.agent_name = agent_name
+        self.attempt = attempt
+        self.max_attempts = max_attempts
+        self.stage = stage
+        self.cause = cause
+        self.provider = getattr(cause, "provider", None)
+        self.model = getattr(cause, "model", None)
+        message = f"{agent_name} provider call failed at {stage} (attempt {attempt}/{max_attempts})"
+        if self.provider or self.model:
+            message += f" provider={self.provider or 'unknown'} model={self.model or 'unknown'}"
+        message += f": {type(cause).__name__}: {cause}"
+        super().__init__(message)
+
+    def diagnostics(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "agent_name": self.agent_name,
+            "attempt": self.attempt,
+            "max_attempts": self.max_attempts,
+            "stage": self.stage,
+            "cause_type": type(self.cause).__name__,
+            "cause_message": str(self.cause),
+        }
+        if self.provider:
+            payload["provider"] = self.provider
+        if self.model:
+            payload["model"] = self.model
+        if hasattr(self.cause, "diagnostics"):
+            payload.update(self.cause.diagnostics())
+            payload["agent_name"] = self.agent_name
+            payload["attempt"] = self.attempt
+            payload["max_attempts"] = self.max_attempts
+        return payload
 
 
 REQUIRED_FINDING_COVERAGE_KEYS = {
@@ -211,15 +260,50 @@ class WorkflowAgent:
         user_prompt = self._build_user_prompt(routed_context)
 
         last_error: Exception | None = None
-        for attempt in range(self.max_retries + 1):
-            prompt = user_prompt if attempt == 0 else self._repair_prompt(user_prompt, last_error)
-            response = self.llm.complete(
-                system=self.spec.system_prompt,
-                user=prompt,
-                max_tokens=self.spec.max_tokens,
-                temperature=self.spec.temperature,
+        max_attempts = self.max_retries + 1
+        for attempt_index in range(max_attempts):
+            attempt = attempt_index + 1
+            prompt = (
+                user_prompt if attempt_index == 0 else self._repair_prompt(user_prompt, last_error)
             )
+            complete_structured = getattr(self.llm, "complete_structured", None)
+            try:
+                if callable(complete_structured):
+                    response = complete_structured(
+                        system=self.spec.system_prompt,
+                        user=prompt,
+                        output_model=self.spec.output_model,
+                        max_tokens=self.spec.max_tokens,
+                        temperature=self.spec.temperature,
+                    )
+                else:
+                    response = self.llm.complete(
+                        system=self.spec.system_prompt,
+                        user=prompt,
+                        max_tokens=self.spec.max_tokens,
+                        temperature=self.spec.temperature,
+                    )
+            except Exception as exc:
+                stage = getattr(exc, "stage", None) or (
+                    "structured_call" if callable(complete_structured) else "text_call"
+                )
+                raise AgentProviderCallError(
+                    agent_name=self.spec.public_role,
+                    attempt=attempt,
+                    max_attempts=max_attempts,
+                    stage=str(stage),
+                    cause=exc,
+                ) from exc
             text = getattr(response, "text", response)
+            metadata = getattr(response, "metadata", {}) or {}
+            if metadata.get("structured_fallback_used"):
+                logger.warning(
+                    "llm_structured_fallback_used",
+                    agent_name=self.spec.public_role,
+                    attempt=attempt,
+                    max_attempts=max_attempts,
+                    **metadata,
+                )
             try:
                 parsed = parse_model(self.spec.output_model, str(text))
                 self._validate_role(parsed)
@@ -360,10 +444,7 @@ class ManagementIntentAnalyst(WorkflowAgent):
             "run_spec",
             "financial_snapshot_minimal",
             "management_sections",
-            "management_intent_sections",
-            "strategy_sections",
-            "mdna_sections",
-            "risk_sections",
+            "presentation_metric_hints",
             "source_index",
             "analysis_config",
         ),
@@ -386,8 +467,8 @@ class GuidanceAnalyst(WorkflowAgent):
             "guidance_metrics",
             "guidance_consensus_deltas",
             "consensus_deltas",
+            "presentation_metric_hints",
             "guidance_sections",
-            "guidance_assumptions_sections",
             "prior_guidance_track_record",
             "management_intent_handoff",
             "source_index",

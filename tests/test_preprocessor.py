@@ -36,6 +36,10 @@ def test_build_financial_metrics_computes_eps_surprise():
 
     assert metrics.ticker == "NVDA"
     assert round(metrics.eps_surprise_pct or 0, 2) == 8.0
+    metric_store = {(entry.metric_name, entry.period_role): entry for entry in metrics.metric_store}
+    assert metric_store[("eps", "reported_period_actuals")].value == 0.81
+    assert metric_store[("eps_consensus", "consensus_for_reported_period")].value == 0.75
+    assert all(entry.source_name for entry in metrics.metric_store)
 
 
 def test_fetch_consensus_uses_yfinance_revenue_alias(monkeypatch):
@@ -43,12 +47,18 @@ def test_fetch_consensus_uses_yfinance_revenue_alias(monkeypatch):
 
     class FakeTicker:
         earnings_dates = pd.DataFrame(
-            [{"Reported EPS": 0.81, "EPS Estimate": 0.75, "Surprise(%)": 8.0}]
+            [{"Reported EPS": 0.81, "EPS Estimate": 0.75, "Surprise(%)": 8.0}],
+            index=pd.to_datetime(["2025-11-19"]),
         )
-        quarterly_financials = pd.DataFrame([[123_000.0]], index=["Operating Revenue"])
+        quarterly_financials = pd.DataFrame(
+            [[123_000.0]],
+            index=["Operating Revenue"],
+            columns=pd.to_datetime(["2025-10-31"]),
+        )
         quarterly_cashflow = pd.DataFrame(
             [[20_000.0], [-5_000.0], [99_000.0]],
             index=["OperatingCashFlow", "Capital Expenditure", "Free Cash Flow"],
+            columns=pd.to_datetime(["2025-10-31"]),
         )
 
         def __init__(self, ticker):
@@ -56,12 +66,172 @@ def test_fetch_consensus_uses_yfinance_revenue_alias(monkeypatch):
 
     monkeypatch.setattr("src.preprocessor.yf.Ticker", FakeTicker)
 
-    metrics = fetch_consensus("nvda", "2025Q3")
+    metrics = fetch_consensus(
+        "nvda",
+        "2025Q3",
+        target_earnings_date="2025-11-19",
+        target_period_end_date="2025-10-31",
+    )
 
     assert metrics.revenue == 123_000.0
     assert metrics.operating_cash_flow == 20_000.0
     assert metrics.capex == -5_000.0
     assert metrics.free_cash_flow == 15_000.0
+
+
+class _FakeTickerBase:
+    quarterly_financials = pd.DataFrame()
+    quarterly_cashflow = pd.DataFrame()
+
+    def __init__(self, ticker: str):
+        self.ticker = ticker
+
+
+def test_fetch_consensus_selects_target_earnings_date_not_future_first_row(monkeypatch):
+    from src.preprocessor import fetch_consensus
+
+    class FakeTicker(_FakeTickerBase):
+        earnings_dates = pd.DataFrame(
+            [
+                {"Reported EPS": None, "EPS Estimate": 0.95, "Surprise(%)": None},
+                {"Reported EPS": 0.81, "EPS Estimate": 0.75, "Surprise(%)": 8.0},
+                {"Reported EPS": 0.73, "EPS Estimate": 0.70, "Surprise(%)": 4.29},
+            ],
+            index=pd.to_datetime(["2026-02-18", "2025-11-19", "2025-08-27"]),
+        )
+
+    monkeypatch.setattr("src.preprocessor.yf.Ticker", FakeTicker)
+
+    metrics = fetch_consensus(
+        "nvda",
+        "2025Q3",
+        target_earnings_date="2025-11-19",
+    )
+
+    assert metrics.eps == 0.81
+    assert metrics.eps_consensus == 0.75
+    assert metrics.eps_surprise_pct == 8.0
+    assert metrics.source_row_date.isoformat() == "2025-11-19"
+    assert "reported_period_actuals" in metrics.temporal_snapshots
+    assert metrics.temporal_snapshots["pre_earnings_consensus"]["metrics"]["eps_consensus"] == 0.75
+    roles = {entry.period_role for entry in metrics.metric_store}
+    assert "reported_period_actuals" in roles
+    assert "consensus_for_reported_period" in roles
+    assert "pre_earnings_consensus" not in roles
+
+
+def test_fetch_consensus_missing_target_row_returns_missing_eps_not_future_values(monkeypatch):
+    from src.preprocessor import fetch_consensus
+
+    class FakeTicker(_FakeTickerBase):
+        earnings_dates = pd.DataFrame(
+            [{"Reported EPS": None, "EPS Estimate": 0.95, "Surprise(%)": None}],
+            index=pd.to_datetime(["2026-02-18"]),
+        )
+
+    monkeypatch.setattr("src.preprocessor.yf.Ticker", FakeTicker)
+
+    metrics = fetch_consensus(
+        "nvda",
+        "2025Q3",
+        target_earnings_date="2025-11-19",
+    )
+
+    assert metrics.eps is None
+    assert metrics.eps_consensus is None
+    assert metrics.eps_surprise_pct is None
+    assert metrics.source_row_date is None
+    assert metrics.warnings
+
+
+def test_fetch_consensus_respects_financial_data_cutoff_before_earnings(monkeypatch):
+    from src.preprocessor import fetch_consensus
+
+    class FakeTicker(_FakeTickerBase):
+        earnings_dates = pd.DataFrame(
+            [{"Reported EPS": 0.81, "EPS Estimate": 0.75, "Surprise(%)": 8.0}],
+            index=pd.to_datetime(["2025-11-19"]),
+        )
+        quarterly_financials = pd.DataFrame(
+            [[35_000.0]],
+            index=["Operating Revenue"],
+            columns=pd.to_datetime(["2025-10-31"]),
+        )
+
+    monkeypatch.setattr("src.preprocessor.yf.Ticker", FakeTicker)
+
+    metrics = fetch_consensus(
+        "nvda",
+        "2025Q3",
+        target_earnings_date="2025-11-19",
+        target_period_end_date="2025-10-31",
+        financial_data_as_of="2025-11-18",
+    )
+
+    assert metrics.eps is None
+    assert metrics.revenue is None
+    assert metrics.warnings
+
+
+def test_fetch_consensus_selects_target_and_prior_pnl_columns_by_period_end(monkeypatch):
+    from src.preprocessor import fetch_consensus
+
+    class FakeTicker(_FakeTickerBase):
+        earnings_dates = pd.DataFrame(
+            [{"Reported EPS": 0.81, "EPS Estimate": 0.75, "Surprise(%)": 8.0}],
+            index=pd.to_datetime(["2025-11-19"]),
+        )
+        quarterly_financials = pd.DataFrame(
+            [[35_000.0, 30_000.0]],
+            index=["Operating Revenue"],
+            columns=pd.to_datetime(["2025-10-31", "2025-07-31"]),
+        )
+        quarterly_cashflow = pd.DataFrame(
+            [[15_000.0, 12_000.0], [-3_000.0, -2_000.0], [12_000.0, 10_000.0]],
+            index=["OperatingCashFlow", "Capital Expenditure", "Free Cash Flow"],
+            columns=pd.to_datetime(["2025-10-31", "2025-07-31"]),
+        )
+
+    monkeypatch.setattr("src.preprocessor.yf.Ticker", FakeTicker)
+
+    metrics = fetch_consensus(
+        "nvda",
+        "2025Q3",
+        target_earnings_date="2025-11-19",
+        target_period_end_date="2025-10-31",
+        prior_fiscal_period="2025Q2",
+    )
+
+    assert metrics.revenue == 35_000.0
+    assert metrics.operating_cash_flow == 15_000.0
+    assert metrics.capex == -3_000.0
+    assert metrics.free_cash_flow == 12_000.0
+    assert metrics.source_table_column_date.isoformat() == "2025-10-31"
+    prior = metrics.temporal_snapshots["prior_sequential_period_actuals"]
+    assert prior["bucket"] == "prior_sequential_period_actuals"
+    assert prior["fiscal_period"] == "2025Q2"
+    assert prior["source_table_column_date"] == "2025-07-31"
+    assert prior["metrics"]["revenue"] == 30_000.0
+    roles = {entry.period_role for entry in metrics.metric_store}
+    assert "prior_sequential_period_actuals" in roles
+    assert "prior_year_period" not in {entry.period_role for entry in metrics.metric_store}
+
+
+def test_fetch_consensus_rejects_non_sequential_prior_fiscal_period(monkeypatch):
+    from src.preprocessor import fetch_consensus
+
+    class FakeTicker(_FakeTickerBase):
+        earnings_dates = pd.DataFrame()
+
+    monkeypatch.setattr("src.preprocessor.yf.Ticker", FakeTicker)
+
+    with pytest.raises(ValueError, match="prior_fiscal_period"):
+        fetch_consensus(
+            "nvda",
+            "2025Q1",
+            target_earnings_date="2025-05-20",
+            prior_fiscal_period="2024Q3",
+        )
 
 
 def test_segment_filing_extracts_semantic_sections():

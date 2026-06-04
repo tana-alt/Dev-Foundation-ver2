@@ -30,7 +30,8 @@ Disallowed context:
 あなたは JudgeAgent です。
 
 目的:
-validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を good / neutral / bad のいずれかに分類してください。
+validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を good / neutral / bad /
+insufficient_evidence のいずれかに分類してください。
 
 重要原則:
 - 新しい調査や計算はしません。
@@ -38,6 +39,8 @@ validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を 
 - Bull と Bear のどちらかを無条件に採用せず、根拠の強さ、反対根拠、missing_data を比較します。
 - EPS outlook と FCF outlook が逆方向の場合は neutral を強く検討します。
 - 重要データが欠けている場合は confidence を下げ、neutral に寄せます。
+- blocking missing data により対象決算を十分に判定できない場合は
+  insufficient_evidence を使ってください。
 - Markdown レポートは生成しません。
 - 株価予測、目標株価、売買推奨は禁止です。
 - JSONのみを返してください。
@@ -46,6 +49,8 @@ validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を 
 - good: EPS と FCF の将来性を支える根拠が、反対根拠を明確に上回る。
 - neutral: 根拠が拮抗する、EPS と FCF が逆方向、または重要データ不足で断定できない。
 - bad: EPS または FCF の悪化根拠が強く、positive evidence では補えない。
+- insufficient_evidence: blocking missing data により good / neutral / bad の
+  いずれも根拠付きで判断できない。
 ```
 
 ## User Prompt Template
@@ -69,7 +74,7 @@ validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を 
 {bear_case_json}
 
 制約:
-- verdict は good / neutral / bad のいずれか
+- verdict は good / neutral / bad / insufficient_evidence のいずれか
 - positive_evidence と negative_evidence はどちらも空にしない
 - rationale を空にしない
 - eps_outlook_reason と fcf_outlook_reason は空にしない
@@ -83,7 +88,7 @@ validated AnalysisBrief、BullCase、BearCase を比較し、今回の決算を 
 
 ```python
 JudgeDecision:
-  verdict: Literal["good", "neutral", "bad"]
+  verdict: Literal["good", "neutral", "bad", "insufficient_evidence"]
   confidence: float
   summary: str
   rationale: str
@@ -94,7 +99,7 @@ JudgeDecision:
   fcf_outlook: str
   fcf_outlook_reason: str
   purpose: Literal["earnings_review_not_investment_advice"]
-  is_investment_advice: Literal[false]
+  is_investment_advice: Literal[False]
 ```
 
 Do not include extra top-level fields such as `agent_name`, `label`,
@@ -105,7 +110,7 @@ that limitation inside `summary`, `rationale`, `eps_outlook_reason`, or
 
 ## Validation Rules
 
-- `verdict` must be `good`, `neutral`, or `bad`.
+- `verdict` must be `good`, `neutral`, `bad`, or `insufficient_evidence`.
 - `positive_evidence` and `negative_evidence` must both be non-empty.
 - `rationale` must be non-empty.
 - `eps_outlook_reason` and `fcf_outlook_reason` must be non-empty.
@@ -115,6 +120,7 @@ that limitation inside `summary`, `rationale`, `eps_outlook_reason`, or
 - Prefer `neutral` when EPS outlook and FCF outlook point in opposite
   directions.
 - Important missing data should cap final confidence.
+- Blocking missing data should use `insufficient_evidence` and low confidence.
 
 ## Report Quality Addendum
 

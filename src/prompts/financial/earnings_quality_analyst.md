@@ -15,6 +15,9 @@ Allowed context:
 - precomputed EPS actual, consensus, surprise, and growth metrics
 - precomputed revenue, gross margin, operating margin, expense ratio, tax rate,
   share count, and segment metrics
+- canonical temporal metric buckets: `reported_period_actuals`,
+  `consensus_for_reported_period`, `prior_sequential_period_actuals`, and
+  `prior_year_period` when supplied
 - EPS, revenue, margin, operating expense, segment, tax, share-count, and
   one-time-item sections
 - materiality thresholds from `analysis_config`
@@ -89,7 +92,15 @@ EPS の質を判断するには revenue、margin、operating expense、segment m
 5. P&L から見た FCF への示唆を限定的に評価してください。
 6. key_evidence と counter_evidence を両方出してください。
 7. 根拠が足りない場合は missing_data に明記してください。
-8. JSONのみを返してください。
+8. reported_period_actuals は対象四半期の実績として使ってください。
+9. prior_sequential_period_actuals は対象期の直前四半期との比較・trend のみに使い、対象四半期の証拠として扱わないでください。
+10. prior_year_period は前年同四半期が明示されている場合の比較・trend のみに使い、対象四半期の証拠として扱わないでください。
+11. consensus_for_reported_period は対象決算期の beat/miss/surprise のみに使ってください。
+12. EPS actual または consensus が欠損している場合、EPS surprise を既知の事実として語らないでください。
+13. revenue_consensus が明示されていない場合、revenue beat/miss を語らないでください。
+14. P&L は取得できた実績値の四半期変化に限定し、margin/leverage 等が欠損している場合は missing_data に入れてください。
+15. latest_snapshot は evidence として使わないでください。
+16. JSONのみを返してください。
 ```
 
 ## Required Output Model
@@ -127,3 +138,6 @@ Do not include extra top-level fields such as `eps_surprise_assessment`,
 - Do not list every metric mechanically; include the value that supports the specific claim.
 - If the necessary value is missing, put the limitation in `missing_data` rather than implying precision.
 - External sources are out of scope unless they were explicitly routed as accepted interactive research.
+- Do not discuss revenue beat/miss unless `revenue_consensus` is explicitly present.
+- If only revenue actuals are available for P&L, limit analysis to revenue trend
+  and put missing margin/leverage data in `missing_data`.

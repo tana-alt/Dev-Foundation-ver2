@@ -1,0 +1,4088 @@
+{
+  "request_id": "final-ja-zs-20260603",
+  "ticker": "ZS",
+  "fiscal_period": "2026Q3",
+  "steps": [
+    {
+      "step": "data_ingestion",
+      "state": "completed",
+      "started_at": "2026-06-02T20:05:48.608354Z",
+      "finished_at": "2026-06-02T20:05:50.747898Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "financial_agents",
+      "state": "completed",
+      "started_at": "2026-06-02T20:05:50.761154Z",
+      "finished_at": "2026-06-02T20:06:08.778269Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "presentation_agents",
+      "state": "completed",
+      "started_at": "2026-06-02T20:06:08.780390Z",
+      "finished_at": "2026-06-02T20:06:28.006585Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "evidence_aggregation",
+      "state": "completed",
+      "started_at": "2026-06-02T20:06:28.008871Z",
+      "finished_at": "2026-06-02T20:06:28.009543Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "debate",
+      "state": "completed",
+      "started_at": "2026-06-02T20:06:28.009552Z",
+      "finished_at": "2026-06-02T20:06:56.242505Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "judge",
+      "state": "completed",
+      "started_at": "2026-06-02T20:06:56.242551Z",
+      "finished_at": "2026-06-02T20:07:12.497724Z",
+      "message": null,
+      "error": null
+    },
+    {
+      "step": "markdown_renderer",
+      "state": "completed",
+      "started_at": "2026-06-02T20:07:12.498456Z",
+      "finished_at": "2026-06-02T20:07:12.499385Z",
+      "message": null,
+      "error": null
+    }
+  ],
+  "analysis_brief": {
+    "ticker": "ZS",
+    "fiscal_period": "2026Q3",
+    "earnings_quality_finding": {
+      "agent_name": "EarningsQualityAnalyst",
+      "stance": "mixed",
+      "summary": "今四半期はEPS面ではコンセンサスを上回り、売上もコンセンサス超えでヘッドラインは良好です。一方で、提供されたP&L情報は売上と非GAAP粗利/営業利益の定性的な改善確認にとどまり、GAAP営業損失が続いているため、EPSの上振れがどれだけ継続的な営業レバレッジに支えられているかは限定的にしか確認できません。FCFはプラスですが、詳細なFCFドライバー分解は不足しています。",
+      "key_evidence": [
+        {
+          "evidence_id": "kev1",
+          "polarity": "positive",
+          "summary": "EPSはコンセンサスを上回った",
+          "detail": "reported_period_actualsのEPSは0.84で、consensus_for_reported_periodの0.8を上回っています。ヘッドラインEPSは良好です。",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:eps",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "eps",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "eps",
+          "value": 0.84,
+          "unit": "USD/share",
+          "confidence": 0.94
+        },
+        {
+          "evidence_id": "kev2",
+          "polarity": "positive",
+          "summary": "売上もコンセンサスを上回った",
+          "detail": "reported_period_actualsのrevenueは700.0Mで、consensus_for_reported_periodの690.0Mを上回っています。売上面のヘッドラインは良好です。",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:revenue",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "revenue",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "revenue",
+          "value": 700000000.0,
+          "unit": "USD",
+          "confidence": 0.94
+        },
+        {
+          "evidence_id": "kev3",
+          "polarity": "positive",
+          "summary": "非GAAP粗利率と営業利益率は高水準を維持",
+          "detail": "開示資料ではQ3 26の非GAAP粗利率が81%、非GAAP営業利益率が23%と示され、前年同四半期比で粗利率は横ばい、営業利益率は22%から23%へ改善しています。利益率の質は比較的良好です。",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+            "page": 27,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.67
+        },
+        {
+          "evidence_id": "kev4",
+          "polarity": "positive",
+          "summary": "営業利益は前年同四半期比で増加",
+          "detail": "資料ではnon-GAAP income from operationsがQ3 26で195.849M、Q3 25で146.653Mと示されており、営業利益の拡大が確認できます。営業レバレッジは一定程度プラスです。",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+            "page": 27,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.64
+        },
+        {
+          "evidence_id": "kev5",
+          "polarity": "positive",
+          "summary": "FCFはプラスで、営業キャッシュも確保",
+          "detail": "reported_period_actualsではoperating_cash_flowが100.0M、free_cash_flowが80.0M、capexが20.0Mです。P&L面から見ても、利益だけでなく現金創出はプラスです。",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "free_cash_flow",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "free_cash_flow",
+          "value": 80000000.0,
+          "unit": "USD",
+          "confidence": 0.9
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "cev1",
+          "polarity": "negative",
+          "summary": "EPSの上振れ幅は大きくはない",
+          "detail": "EPSは0.84対0.8で、surpriseは小幅です。したがって、強い業績加速というよりは、控えめな上振れと見るのが妥当です。",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:eps",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "eps",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "eps",
+          "value": 0.84,
+          "unit": "USD/share",
+          "confidence": 0.91
+        },
+        {
+          "evidence_id": "cev2",
+          "polarity": "negative",
+          "summary": "GAAP営業損失が続いている",
+          "detail": "AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+            "page": 27,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.78
+        },
+        {
+          "evidence_id": "cev3",
+          "polarity": "negative",
+          "summary": "売上以外の収益性ドライバーの詳細が不足",
+          "detail": "粗利率、営業費用、税率、株式報酬、特別項目の四半期変化を対象四半期のcanonical metricで確認できません。EPS改善の持続性を分解して検証するには情報不足です。",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p25:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p25:section-1",
+            "page": 25,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.55
+        },
+        {
+          "evidence_id": "cev4",
+          "polarity": "risk",
+          "summary": "FCFの質を分解する情報が限定的",
+          "detail": "FCFとOCFはプラスですが、working capital、capexの持続性、再投資強度などの詳細は routed context で不足しており、FCF改善の持続性は限定的にしか判断できません。",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "free_cash_flow",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "free_cash_flow",
+          "value": 80000000.0,
+          "unit": "USD",
+          "confidence": 0.66
+        }
+      ],
+      "confidence": 0.66,
+      "missing_data": [
+        "prior_sequential_period_actuals がなく、直前四半期との margin / operating leverage / revenue trend 比較ができません。",
+        "prior_year_period がなく、前年同四半期比較による収益性の継続性を確認できません。",
+        "segment_metrics が空で、segment mix が EPS/利益率に与えた影響を評価できません。",
+        "tax rate、share count、stock-based compensation、one-time item の canonical 指標がなく、EPS beat の質を十分に分解できません。",
+        "gross margin / operating margin の canonical metric は不足しており、開示資料ベースの定性的確認にとどまります。",
+        "revenue_consensus はあるが、同等に使える margin/expense の precomputed 指標が不足しているため、売上品質と収益性の因果は限定的にしか示せません。"
+      ],
+      "handoff_summary": "ヘッドラインではEPSと売上がコンセンサス超えで、非GAAP利益率も高水準維持、営業利益も前年同四半期比で拡大しています。一方、GAAP営業損失は残り、税率・株式報酬・一時項目・セグメントの分解が不足しているため、EPS上振れの持続性評価は中程度の確信に留めるべきです。FCFはプラスですが、FCFの持続性を裏付ける詳細なキャッシュドライバーは不足しています。"
+    },
+    "cash_flow_risk_finding": {
+      "agent_name": "CashFlowRiskAnalyst",
+      "stance": "neutral",
+      "summary": "当四半期のCFOとFCFは金額ベースでは健全で、営業キャッシュフロー1億ドル、FCF 8,000万ドル、CapEx 2,000万ドルと、投資負担は相対的に軽い水準だった。一方で、開示されたのは単一四半期のみで、前期比・前年同期比のCFO/FCFトレンド、working capital要因、流動性・負債・満期構成の定量評価が不足しているため、将来FCFの改善方向は方向感はやや前向きだが確度は限定的。会社側はQ3のFCFマージンが16.0%、年初来29%、Q4はFCFマージン約22.8%〜23.3%を示しており、短期のFCF維持には追い風だが、Q4以降は高いCapExが見込まれ、FCF改善の持続性にはコスト上昇リスクがある。",
+      "key_evidence": [
+        {
+          "evidence_id": "cfra_key_1",
+          "polarity": "positive",
+          "summary": "Q3の営業キャッシュフローとFCFはプラスで、FCFの水準は良好",
+          "detail": "報告値では営業キャッシュフローが1億ドル、FCFが8,000万ドル。単一四半期としてはキャッシュ創出が黒字で、FCFがCFOを大きく下回る投資負担ではない。",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:operating_cash_flow",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "operating_cash_flow",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "operating_cash_flow",
+          "value": 100000000.0,
+          "unit": "USD",
+          "confidence": 0.79
+        },
+        {
+          "evidence_id": "cfra_key_2",
+          "polarity": "positive",
+          "summary": "CapExは2,000万ドルで、当四半期のFCFを大きく圧迫していない",
+          "detail": "報告値のCapExは2,000万ドルで、FCF 8,000万ドルに対する投資負担は管理可能な範囲に見える。現時点の数値だけを見ると、FCFは過度な設備投資に押し下げられてはいない。",
+          "impact_areas": [
+            "fcf",
+            "balance_sheet"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:capex",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "capex",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "capex",
+          "value": 20000000.0,
+          "unit": "USD",
+          "confidence": 0.76
+        },
+        {
+          "evidence_id": "cfra_key_3",
+          "polarity": "positive",
+          "summary": "会社はQ3のFCFマージン16.0%と年初来29%を開示",
+          "detail": "経営陣の説明では、Q3のFCFマージンは16.0%、年初来では29%とされ、四半期ベースでも年初来ベースでもFCF創出が維持されている。これはcash conversionが崩れていないことを示す補助証拠。",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "page": 18,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "free_cash_flow_margin",
+          "value": 16.0,
+          "unit": "%",
+          "confidence": 0.68
+        },
+        {
+          "evidence_id": "cfra_key_4",
+          "polarity": "positive",
+          "summary": "Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む",
+          "detail": "会社はQ4 26のFCFマージンを約22.8%〜23.3%と示しており、短期的にはFCFの改善余地があることを示唆する。ガイダンスは将来FCFの方向感としては前向き。",
+          "impact_areas": [
+            "guidance",
+            "fcf"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "page": 19,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "free_cash_flow_margin_guidance",
+          "value": 23.05,
+          "unit": "%",
+          "confidence": 0.67
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "cfra_bear_1",
+          "polarity": "risk",
+          "summary": "Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し",
+          "detail": "会社はデータセンター設備やBranchアプライアンスの投資を前倒しし、Q4のCapExが高くなり、通期2026年のCapEx比率は従来想定のmid single-digitsからhigh single-digitsへ上がると説明した。さらに2027年は2026年比で最大200bpの上昇を見込むとしており、FCF改善の継続には逆風。",
+          "impact_areas": [
+            "fcf",
+            "guidance",
+            "balance_sheet"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "page": 18,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "capex_outlook",
+          "value": null,
+          "unit": null,
+          "confidence": 0.8
+        },
+        {
+          "evidence_id": "cfra_bear_2",
+          "polarity": "risk",
+          "summary": "FCFマージン低下の要因として回収タイミングが挙げられている",
+          "detail": "会社はQ3のFCFマージン16.0%が前年18.0%から低下した理由を『cash collectionsのタイミング』と説明しており、FCFの変動にworking capital/回収要因が含まれる可能性を示す。ただし、working capitalの定量値は開示されていない。",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "page": 18,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "free_cash_flow_margin_note",
+          "value": null,
+          "unit": null,
+          "confidence": 0.72
+        },
+        {
+          "evidence_id": "cfra_bear_3",
+          "polarity": "risk",
+          "summary": "流動性・負債の定量評価に必要な詳細が不足",
+          "detail": "会社は現金3.5十億ドルと負債17億ドルを開示したが、満期プロファイル、手元流動性の詳細、借換え余地、制約条件はこの入力だけでは確認できない。よって、資金調達制約が将来FCFに与える影響は限定的にしか判断できない。",
+          "impact_areas": [
+            "balance_sheet",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "page": 18,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "cash_and_debt_snapshot",
+          "value": null,
+          "unit": null,
+          "confidence": 0.58
+        }
+      ],
+      "confidence": 0.58,
+      "missing_data": [
+        "前期比・前年同期比のCFO/FCFトレンドが入力にないため、trendの方向を厳密に確認できない。",
+        "working capitalの定量指標がないため、FCF変動が一時要因か構造要因かを分解できない。",
+        "流動性の詳細、満期構成、借換え条件、財務制約の定量情報がないため、financing riskを十分に評価できない。",
+        "guidanceのFCFはQ4のみで、通期ベースの詳細なFCFガイダンス数値はこの入力だけでは限定的。"
+      ],
+      "handoff_summary": "CFO/FCFは当四半期ベースではプラスで、CapExも現時点では管理可能だが、将来FCFの改善はQ4に前倒しされるCapEx増加と回収タイミング要因で不確実性が残る。バランスシート面では現金と負債の水準は示される一方、満期・流動性詳細がなく、資金調達制約の強さは判定保留。EPSへの示唆は、キャッシュ創出は現時点で大きな制約を示さないが、CapEx増加が続く場合はFCFを通じた制約が強まりうる、という限定的な見方が妥当。"
+    },
+    "management_intent_finding": {
+      "agent_name": "ManagementIntentAnalyst",
+      "stance": "mixed",
+      "summary": "経営陣は、成長の軸を「Zero Trust Everywhere」「AI Protect」「Data Security Everywhere」に置き、営業面ではアカウント拡大、Z-Flex、GSI/クラウドマーケットプレイス連携を通じて売上とARRの拡大を優先している。一方で、収益性維持も重視しており、Q3は売上25%増、営業利益23%マージン、FCFマージン16%を示したが、Q4に向けてはデータセンター/ブランチ機器の調達コスト上昇に対応するためcapexを前倒しする方針で、短期FCFには逆風がある。中期では、広い導入面積、マルチモジュール化、長期契約化がEPS/FCFの改善余地を支える一方、AI関連投資、買収統合、販売リーダー交代、コスト上昇は不確実性として残る。",
+      "key_evidence": [
+        {
+          "evidence_id": "ke1",
+          "polarity": "positive",
+          "summary": "成長の中核をZero Trust、AI Protect、Data Securityに置く",
+          "detail": "グロGlossary/戦略ページで、AI-SecurityとData Security Everywhereを三つの成長ピラーとして定義し、AI資産管理、AIガードレール、AI Red Teaming、データセキュリティ各モジュールを拡張対象として示している。これは、単一製品ではなくプラットフォーム拡張を通じた成長を重視している意図を示す。",
+          "impact_areas": [
+            "overall",
+            "eps"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p32:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p32:section-1",
+            "page": 32,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.63
+        },
+        {
+          "evidence_id": "ke2",
+          "polarity": "positive",
+          "summary": "Z-Flexとアカウント拡大で顧客浸透を深める意図",
+          "detail": "Q3の説明では、Z-Flexがマルチイヤー契約下でモジュール追加や交換を容易にし、アップセル、販売サイクル短縮、前方可視性の向上に寄与すると説明している。さらにQ3のZ-Flex TCVは480百万ドル超、過去12か月で10億ドル超とされ、顧客の長期コミットとプラットフォーム採用拡大を狙う営業戦略が明確。",
+          "impact_areas": [
+            "eps",
+            "guidance",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p16:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p16:section-1",
+            "page": 16,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.64
+        },
+        {
+          "evidence_id": "ke3",
+          "polarity": "positive",
+          "summary": "Q3は成長と収益性を両立",
+          "detail": "CFOはQ3に売上850百万ドル（前年比25%増）、非GAAP営業利益196百万ドル、非GAAP営業利益率23.0%を示し、「disciplineを伴う投資」と述べている。これは、成長投資を続けつつも利益率を維持・改善する意図を示す。",
+          "impact_areas": [
+            "eps",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p14:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p14:section-1",
+            "page": 14,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.62
+        },
+        {
+          "evidence_id": "ke4",
+          "polarity": "positive",
+          "summary": "FCFは当期も一定水準を維持し、資本効率はまだ機能",
+          "detail": "Q3の説明では、営業キャッシュフロー198百万ドル、capex42百万ドル、FCFマージン16.0%とされ、年初来FCFマージンは29%と説明されている。短期的には堅調なキャッシュ創出能力があり、投資を行ってもFCFを確保する姿勢がうかがえる。",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "page": 18,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.61
+        },
+        {
+          "evidence_id": "ke5",
+          "polarity": "positive",
+          "summary": "AI/新製品とパートナー網を成長レバーとして拡大",
+          "detail": "Symmetry Systemsの取得意向、Anthropic/OpenAIとの提携、GSIとの共同施策、クラウドマーケットプレイスのTCV増加を通じ、AI関連需要と販売チャネルの拡張を取りにいく姿勢が示されている。これは中期の売上機会拡大と製品差別化に資する。",
+          "impact_areas": [
+            "eps",
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p6:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p6:section-1",
+            "page": 6,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.58
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "ce1",
+          "polarity": "risk",
+          "summary": "Q4にcapexが前倒しされ短期FCFを圧迫",
+          "detail": "経営陣はデータセンター/ブランチ機器の価格上昇と供給状況に対応するため、想定していたFY27分の投資をQ4へ前倒しすると説明している。その結果、Q4 capexは高シングルディジットの売上比率へ上昇し、FY26全体のcapex比率も従来想定より高くなる。短期FCFには逆風。",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "page": 18,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.65
+        },
+        {
+          "evidence_id": "ce2",
+          "polarity": "risk",
+          "summary": "販売リーダー交代で移行期の不確実性がある",
+          "detail": "Q4/FY26見通しの説明で、期末に営業リーダー2名が退社し、1名は後任確定済み、もう1名は採用最終段階だが、ガイダンスは移行期を踏まえて慎重にしていると述べている。営業実行力や案件進行に一時的な摩擦が生じる可能性がある。",
+          "impact_areas": [
+            "eps",
+            "guidance",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "page": 19,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.63
+        },
+        {
+          "evidence_id": "ce3",
+          "polarity": "risk",
+          "summary": "FCFマージンは前年より低下している",
+          "detail": "Q3のFCFマージンは16.0%で、前年の18.0%から低下したと説明されている。経営陣は回収タイミング要因と述べるが、投資前倒しや運転資本変動が短期FCFの変動要因であることを示す。",
+          "impact_areas": [
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "page": 18,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.6
+        },
+        {
+          "evidence_id": "ce4",
+          "polarity": "risk",
+          "summary": "成長の一部は買収と高投資テーマに依存",
+          "detail": "AI機能拡張やSymmetry/SPLX関連の説明は成長期待を高める一方、買収統合や新領域投入は実行リスクと費用増加を伴う。資料では強い需要が示されるが、投資回収や定着はまだ定性的で、EPS/FCF改善の確度は中期テーマ。",
+          "impact_areas": [
+            "eps",
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p35:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p35:section-1",
+            "page": 35,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.54
+        }
+      ],
+      "confidence": 0.64,
+      "missing_data": [
+        "guidance-vs-consensus の評価は要求範囲外のため行っていない。",
+        "投資額、採用計画、R&D計画の定量値が不足しており、EPS/FCF への影響は定性的評価にとどまる。",
+        "買収統合費用や更新率、解約率など、長期収益化を裏づける補助指標が不足している。"
+      ],
+      "handoff_summary": "経営陣は、Zero Trust/AI/データセキュリティを軸に、Z-Flex、GSI、クラウドマーケットプレイス、モジュール拡張でプラットフォーム浸透を深める意図が強い。Q3は成長と利益率が両立しており、営業利益率とFCFは一定の強さを示すが、Q4のcapex前倒しと営業体制の交代が短期FCF/EPSのノイズ要因。中期では、AI関連と顧客拡大がEPS/FCF改善余地を持つ一方、買収統合・供給コスト上昇・実行リスクが反対根拠。"
+    },
+    "guidance_finding": {
+      "agent_name": "GuidanceAnalyst",
+      "stance": "neutral",
+      "summary": "本入力では会社の将来 guidance は明示的に確認できず、guidance vs consensus の定量評価は困難です。一方、対象四半期の実績は売上700M USDがコンセンサス690M USDを上回り、EPS 0.84もコンセンサス0.80を上回っており、少なくとも当四半期の実績面は良好です。将来見通しについては、ガイダンス文脈として読めるのはQ4/FY26の売上・EPS・FCF margin・capexに関する記述ですが、guidance_for_guided_period に対応する consensus が未提供のため、保守的か強気かの厳密な判定はできません。内容面では、Q4ガイダンスに対して『sales leaders departed』『prudent approach』『高いcapex』など下方リスク要因が明示されており、EPS/FCFの達成条件は営業移行の安定化とcapex増加の吸収です。",
+      "key_evidence": [
+        {
+          "evidence_id": "guidance_k1",
+          "polarity": "positive",
+          "summary": "Q3実績は売上がコンセンサス超え",
+          "detail": "reported_period_actuals の revenue は700,000,000 USD、consensus_for_reported_period の revenue_consensus は690,000,000 USDで、当四半期の売上実績は期待を上回っています。",
+          "impact_areas": [
+            "overall",
+            "guidance"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:revenue",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "revenue",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "revenue",
+          "value": 700000000.0,
+          "unit": "USD",
+          "confidence": 0.95
+        },
+        {
+          "evidence_id": "guidance_k2",
+          "polarity": "positive",
+          "summary": "Q3実績EPSはコンセンサス超え",
+          "detail": "reported_period_actuals の eps は0.84、consensus_for_reported_period の eps_consensus は0.80で、当四半期EPSは期待を上回っています。",
+          "impact_areas": [
+            "overall",
+            "eps"
+          ],
+          "source_ref": {
+            "source_id": "financial_api:ZS:2026Q3:eps",
+            "source_type": "financial_api",
+            "title": "Financial metrics input",
+            "url": null,
+            "document_id": null,
+            "section_id": null,
+            "page": null,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": "eps",
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "reported_period_actuals",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": "eps",
+          "value": 0.84,
+          "unit": "USD/share",
+          "confidence": 0.95
+        },
+        {
+          "evidence_id": "guidance_k3",
+          "polarity": "neutral",
+          "summary": "Q4/FY26のガイダンス値が資料内に記載",
+          "detail": "Q4 and FY26 Guidance の表で、Q4 Revenue $875M-$878M、EPS $1.08-$1.09、FY26 Revenue $3.3295B-$3.3325B、FY26 EPS $4.10-$4.11、FCF margin ~22.8%-23.3% が示されています。これは将来見通しの存在を示しますが、consensus_for_guided_period が未提供のため、期待対比の良否は未判定です。",
+          "impact_areas": [
+            "guidance",
+            "eps",
+            "fcf",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "page": 19,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.9
+        },
+        {
+          "evidence_id": "guidance_k4",
+          "polarity": "risk",
+          "summary": "ガイダンスには遷移リスクとcapex上振れ要因が明示",
+          "detail": "資料では『two sales leaders departed』『prudent approach to our guidance during the transition』とされ、さらに高いmemory/storage/processor価格によりQ4でcapexが増え、FY26 capexが売上比でhigh single-digitsに上がると記載されています。これはEPSとFCFの達成に対する下方リスク要因です。",
+          "impact_areas": [
+            "eps",
+            "fcf",
+            "guidance"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+            "page": 18,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.92
+        }
+      ],
+      "counter_evidence": [
+        {
+          "evidence_id": "guidance_c1",
+          "polarity": "risk",
+          "summary": "guided_period の consensus がなく上振れ/下振れ判定ができない",
+          "detail": "consensus_for_guided_period が null であり、会社ガイダンスが市場予想比で保守的か強気かを定量比較できません。したがって revision risk や conservatism の評価は限定的です。",
+          "impact_areas": [
+            "guidance",
+            "overall"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "page": 19,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.88
+        },
+        {
+          "evidence_id": "guidance_c2",
+          "polarity": "neutral",
+          "summary": "guidance の対象期間が明示されるが数値比較用の前提は不足",
+          "detail": "資料にはQ4 26 Guidance と FY26 Guidance が記載されていますが、guidance_for_guided_period に対応する precomputed consensus がないため、予想比の評価はできません。数値の存在だけでは保守性の証明になりません。",
+          "impact_areas": [
+            "guidance"
+          ],
+          "source_ref": {
+            "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "source_type": "earnings_presentation",
+            "title": "ZS 2026 Q3 Shareholder Letter",
+            "url": null,
+            "document_id": "zs-2026q3-shareholder-letter",
+            "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+            "page": 19,
+            "line_start": null,
+            "line_end": null,
+            "metric_name": null,
+            "as_of_date": null,
+            "fiscal_period": "2026Q3",
+            "period_role": "target_period_document",
+            "published_date": null,
+            "data_cutoff_date": null
+          },
+          "metric_name": null,
+          "value": null,
+          "unit": null,
+          "confidence": 0.86
+        }
+      ],
+      "confidence": 0.58,
+      "missing_data": [
+        "consensus_for_guided_period が null で、Q4/FY26 guidance の市場予想との差分を確認できません。",
+        "guided_period に対応する precomputed guidance delta がないため、conservative / balanced / aggressive の厳密判定はできません。",
+        "guidance の定量的 revision risk を評価するための prior guidance track record は提供されていません。",
+        "presentation_metric_hints は存在しますが、canonical fact としては guidance section の確認補助に限られ、追加の定量裏取りには使えません。"
+      ],
+      "handoff_summary": "対象四半期の実績は売上・EPSともにコンセンサス超えで良好。一方、将来 guidance はQ4/FY26で提示されているが、guided_period の consensus がなく予想比評価は未確定。資料上は営業体制の移行とcapex上振れが主な下方リスクで、EPS/FCF は売上維持と投資増の吸収が達成条件。guidance の強気/保守性は現時点では unclear で、revision risk は『transitionとcapex増加次第』という定性的評価にとどまる。",
+      "guidance_status": "found"
+    },
+    "financial_agent_results": [
+      {
+        "agent_role": "earnings_quality",
+        "team": "financial",
+        "status": {
+          "step": "financial_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "今四半期はEPS面ではコンセンサスを上回り、売上もコンセンサス超えでヘッドラインは良好です。一方で、提供されたP&L情報は売上と非GAAP粗利/営業利益の定性的な改善確認にとどまり、GAAP営業損失が続いているため、EPSの上振れがどれだけ継続的な営業レバレッジに支えられているかは限定的にしか確認できません。FCFはプラスですが、詳細なFCFドライバー分解は不足しています。",
+        "conclusion": "ヘッドラインではEPSと売上がコンセンサス超えで、非GAAP利益率も高水準維持、営業利益も前年同四半期比で拡大しています。一方、GAAP営業損失は残り、税率・株式報酬・一時項目・セグメントの分解が不足しているため、EPS上振れの持続性評価は中程度の確信に留めるべきです。FCFはプラスですが、FCFの持続性を裏付ける詳細なキャッシュドライバーは不足しています。",
+        "key_evidence": [
+          {
+            "evidence_id": "kev1",
+            "polarity": "positive",
+            "summary": "EPSはコンセンサスを上回った",
+            "detail": "reported_period_actualsのEPSは0.84で、consensus_for_reported_periodの0.8を上回っています。ヘッドラインEPSは良好です。",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:eps",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "eps",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "eps",
+            "value": 0.84,
+            "unit": "USD/share",
+            "confidence": 0.94
+          },
+          {
+            "evidence_id": "kev2",
+            "polarity": "positive",
+            "summary": "売上もコンセンサスを上回った",
+            "detail": "reported_period_actualsのrevenueは700.0Mで、consensus_for_reported_periodの690.0Mを上回っています。売上面のヘッドラインは良好です。",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:revenue",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "revenue",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "revenue",
+            "value": 700000000.0,
+            "unit": "USD",
+            "confidence": 0.94
+          },
+          {
+            "evidence_id": "kev3",
+            "polarity": "positive",
+            "summary": "非GAAP粗利率と営業利益率は高水準を維持",
+            "detail": "開示資料ではQ3 26の非GAAP粗利率が81%、非GAAP営業利益率が23%と示され、前年同四半期比で粗利率は横ばい、営業利益率は22%から23%へ改善しています。利益率の質は比較的良好です。",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+              "page": 27,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.67
+          },
+          {
+            "evidence_id": "kev4",
+            "polarity": "positive",
+            "summary": "営業利益は前年同四半期比で増加",
+            "detail": "資料ではnon-GAAP income from operationsがQ3 26で195.849M、Q3 25で146.653Mと示されており、営業利益の拡大が確認できます。営業レバレッジは一定程度プラスです。",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+              "page": 27,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.64
+          },
+          {
+            "evidence_id": "kev5",
+            "polarity": "positive",
+            "summary": "FCFはプラスで、営業キャッシュも確保",
+            "detail": "reported_period_actualsではoperating_cash_flowが100.0M、free_cash_flowが80.0M、capexが20.0Mです。P&L面から見ても、利益だけでなく現金創出はプラスです。",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "free_cash_flow",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "free_cash_flow",
+            "value": 80000000.0,
+            "unit": "USD",
+            "confidence": 0.9
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "cev1",
+            "polarity": "negative",
+            "summary": "EPSの上振れ幅は大きくはない",
+            "detail": "EPSは0.84対0.8で、surpriseは小幅です。したがって、強い業績加速というよりは、控えめな上振れと見るのが妥当です。",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:eps",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "eps",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "eps",
+            "value": 0.84,
+            "unit": "USD/share",
+            "confidence": 0.91
+          },
+          {
+            "evidence_id": "cev2",
+            "polarity": "negative",
+            "summary": "GAAP営業損失が続いている",
+            "detail": "AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+              "page": 27,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.78
+          },
+          {
+            "evidence_id": "cev3",
+            "polarity": "negative",
+            "summary": "売上以外の収益性ドライバーの詳細が不足",
+            "detail": "粗利率、営業費用、税率、株式報酬、特別項目の四半期変化を対象四半期のcanonical metricで確認できません。EPS改善の持続性を分解して検証するには情報不足です。",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p25:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p25:section-1",
+              "page": 25,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.55
+          },
+          {
+            "evidence_id": "cev4",
+            "polarity": "risk",
+            "summary": "FCFの質を分解する情報が限定的",
+            "detail": "FCFとOCFはプラスですが、working capital、capexの持続性、再投資強度などの詳細は routed context で不足しており、FCF改善の持続性は限定的にしか判断できません。",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "free_cash_flow",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "free_cash_flow",
+            "value": 80000000.0,
+            "unit": "USD",
+            "confidence": 0.66
+          }
+        ],
+        "open_questions": [
+          "prior_sequential_period_actuals がなく、直前四半期との margin / operating leverage / revenue trend 比較ができません。",
+          "prior_year_period がなく、前年同四半期比較による収益性の継続性を確認できません。",
+          "segment_metrics が空で、segment mix が EPS/利益率に与えた影響を評価できません。",
+          "tax rate、share count、stock-based compensation、one-time item の canonical 指標がなく、EPS beat の質を十分に分解できません。",
+          "gross margin / operating margin の canonical metric は不足しており、開示資料ベースの定性的確認にとどまります。",
+          "revenue_consensus はあるが、同等に使える margin/expense の precomputed 指標が不足しているため、売上品質と収益性の因果は限定的にしか示せません。"
+        ],
+        "confidence": 0.66
+      },
+      {
+        "agent_role": "cash_flow_risk",
+        "team": "financial",
+        "status": {
+          "step": "financial_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "当四半期のCFOとFCFは金額ベースでは健全で、営業キャッシュフロー1億ドル、FCF 8,000万ドル、CapEx 2,000万ドルと、投資負担は相対的に軽い水準だった。一方で、開示されたのは単一四半期のみで、前期比・前年同期比のCFO/FCFトレンド、working capital要因、流動性・負債・満期構成の定量評価が不足しているため、将来FCFの改善方向は方向感はやや前向きだが確度は限定的。会社側はQ3のFCFマージンが16.0%、年初来29%、Q4はFCFマージン約22.8%〜23.3%を示しており、短期のFCF維持には追い風だが、Q4以降は高いCapExが見込まれ、FCF改善の持続性",
+        "conclusion": "CFO/FCFは当四半期ベースではプラスで、CapExも現時点では管理可能だが、将来FCFの改善はQ4に前倒しされるCapEx増加と回収タイミング要因で不確実性が残る。バランスシート面では現金と負債の水準は示される一方、満期・流動性詳細がなく、資金調達制約の強さは判定保留。EPSへの示唆は、キャッシュ創出は現時点で大きな制約を示さないが、CapEx増加が続く場合はFCFを通じた制約が強まりうる、という限定的な見方が妥当。",
+        "key_evidence": [
+          {
+            "evidence_id": "cfra_key_1",
+            "polarity": "positive",
+            "summary": "Q3の営業キャッシュフローとFCFはプラスで、FCFの水準は良好",
+            "detail": "報告値では営業キャッシュフローが1億ドル、FCFが8,000万ドル。単一四半期としてはキャッシュ創出が黒字で、FCFがCFOを大きく下回る投資負担ではない。",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:operating_cash_flow",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "operating_cash_flow",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "operating_cash_flow",
+            "value": 100000000.0,
+            "unit": "USD",
+            "confidence": 0.79
+          },
+          {
+            "evidence_id": "cfra_key_2",
+            "polarity": "positive",
+            "summary": "CapExは2,000万ドルで、当四半期のFCFを大きく圧迫していない",
+            "detail": "報告値のCapExは2,000万ドルで、FCF 8,000万ドルに対する投資負担は管理可能な範囲に見える。現時点の数値だけを見ると、FCFは過度な設備投資に押し下げられてはいない。",
+            "impact_areas": [
+              "fcf",
+              "balance_sheet"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:capex",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "capex",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "capex",
+            "value": 20000000.0,
+            "unit": "USD",
+            "confidence": 0.76
+          },
+          {
+            "evidence_id": "cfra_key_3",
+            "polarity": "positive",
+            "summary": "会社はQ3のFCFマージン16.0%と年初来29%を開示",
+            "detail": "経営陣の説明では、Q3のFCFマージンは16.0%、年初来では29%とされ、四半期ベースでも年初来ベースでもFCF創出が維持されている。これはcash conversionが崩れていないことを示す補助証拠。",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "page": 18,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "free_cash_flow_margin",
+            "value": 16.0,
+            "unit": "%",
+            "confidence": 0.68
+          },
+          {
+            "evidence_id": "cfra_key_4",
+            "polarity": "positive",
+            "summary": "Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む",
+            "detail": "会社はQ4 26のFCFマージンを約22.8%〜23.3%と示しており、短期的にはFCFの改善余地があることを示唆する。ガイダンスは将来FCFの方向感としては前向き。",
+            "impact_areas": [
+              "guidance",
+              "fcf"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "page": 19,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "free_cash_flow_margin_guidance",
+            "value": 23.05,
+            "unit": "%",
+            "confidence": 0.67
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "cfra_bear_1",
+            "polarity": "risk",
+            "summary": "Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し",
+            "detail": "会社はデータセンター設備やBranchアプライアンスの投資を前倒しし、Q4のCapExが高くなり、通期2026年のCapEx比率は従来想定のmid single-digitsからhigh single-digitsへ上がると説明した。さらに2027年は2026年比で最大200bpの上昇を見込むとしており、FCF改善の継続には逆風。",
+            "impact_areas": [
+              "fcf",
+              "guidance",
+              "balance_sheet"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "page": 18,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "capex_outlook",
+            "value": null,
+            "unit": null,
+            "confidence": 0.8
+          },
+          {
+            "evidence_id": "cfra_bear_2",
+            "polarity": "risk",
+            "summary": "FCFマージン低下の要因として回収タイミングが挙げられている",
+            "detail": "会社はQ3のFCFマージン16.0%が前年18.0%から低下した理由を『cash collectionsのタイミング』と説明しており、FCFの変動にworking capital/回収要因が含まれる可能性を示す。ただし、working capitalの定量値は開示されていない。",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "page": 18,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "free_cash_flow_margin_note",
+            "value": null,
+            "unit": null,
+            "confidence": 0.72
+          },
+          {
+            "evidence_id": "cfra_bear_3",
+            "polarity": "risk",
+            "summary": "流動性・負債の定量評価に必要な詳細が不足",
+            "detail": "会社は現金3.5十億ドルと負債17億ドルを開示したが、満期プロファイル、手元流動性の詳細、借換え余地、制約条件はこの入力だけでは確認できない。よって、資金調達制約が将来FCFに与える影響は限定的にしか判断できない。",
+            "impact_areas": [
+              "balance_sheet",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "page": 18,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "cash_and_debt_snapshot",
+            "value": null,
+            "unit": null,
+            "confidence": 0.58
+          }
+        ],
+        "open_questions": [
+          "前期比・前年同期比のCFO/FCFトレンドが入力にないため、trendの方向を厳密に確認できない。",
+          "working capitalの定量指標がないため、FCF変動が一時要因か構造要因かを分解できない。",
+          "流動性の詳細、満期構成、借換え条件、財務制約の定量情報がないため、financing riskを十分に評価できない。",
+          "guidanceのFCFはQ4のみで、通期ベースの詳細なFCFガイダンス数値はこの入力だけでは限定的。"
+        ],
+        "confidence": 0.58
+      }
+    ],
+    "presentation_agent_results": [
+      {
+        "agent_role": "management_intent",
+        "team": "presentation",
+        "status": {
+          "step": "presentation_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "経営陣は、成長の軸を「Zero Trust Everywhere」「AI Protect」「Data Security Everywhere」に置き、営業面ではアカウント拡大、Z-Flex、GSI/クラウドマーケットプレイス連携を通じて売上とARRの拡大を優先している。一方で、収益性維持も重視しており、Q3は売上25%増、営業利益23%マージン、FCFマージン16%を示したが、Q4に向けてはデータセンター/ブランチ機器の調達コスト上昇に対応するためcapexを前倒しする方針で、短期FCFには逆風がある。中期では、広い導入面積、マルチモジュール化、長期契約化がEPS/FCFの改善余地を支える一方",
+        "conclusion": "経営陣は、Zero Trust/AI/データセキュリティを軸に、Z-Flex、GSI、クラウドマーケットプレイス、モジュール拡張でプラットフォーム浸透を深める意図が強い。Q3は成長と利益率が両立しており、営業利益率とFCFは一定の強さを示すが、Q4のcapex前倒しと営業体制の交代が短期FCF/EPSのノイズ要因。中期では、AI関連と顧客拡大がEPS/FCF改善余地を持つ一方、買収統合・供給コスト上昇・実行リスクが反対根拠。",
+        "key_evidence": [
+          {
+            "evidence_id": "ke1",
+            "polarity": "positive",
+            "summary": "成長の中核をZero Trust、AI Protect、Data Securityに置く",
+            "detail": "グロGlossary/戦略ページで、AI-SecurityとData Security Everywhereを三つの成長ピラーとして定義し、AI資産管理、AIガードレール、AI Red Teaming、データセキュリティ各モジュールを拡張対象として示している。これは、単一製品ではなくプラットフォーム拡張を通じた成長を重視している意図を示す。",
+            "impact_areas": [
+              "overall",
+              "eps"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p32:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p32:section-1",
+              "page": 32,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.63
+          },
+          {
+            "evidence_id": "ke2",
+            "polarity": "positive",
+            "summary": "Z-Flexとアカウント拡大で顧客浸透を深める意図",
+            "detail": "Q3の説明では、Z-Flexがマルチイヤー契約下でモジュール追加や交換を容易にし、アップセル、販売サイクル短縮、前方可視性の向上に寄与すると説明している。さらにQ3のZ-Flex TCVは480百万ドル超、過去12か月で10億ドル超とされ、顧客の長期コミットとプラットフォーム採用拡大を狙う営業戦略が明確。",
+            "impact_areas": [
+              "eps",
+              "guidance",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p16:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p16:section-1",
+              "page": 16,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.64
+          },
+          {
+            "evidence_id": "ke3",
+            "polarity": "positive",
+            "summary": "Q3は成長と収益性を両立",
+            "detail": "CFOはQ3に売上850百万ドル（前年比25%増）、非GAAP営業利益196百万ドル、非GAAP営業利益率23.0%を示し、「disciplineを伴う投資」と述べている。これは、成長投資を続けつつも利益率を維持・改善する意図を示す。",
+            "impact_areas": [
+              "eps",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p14:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p14:section-1",
+              "page": 14,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.62
+          },
+          {
+            "evidence_id": "ke4",
+            "polarity": "positive",
+            "summary": "FCFは当期も一定水準を維持し、資本効率はまだ機能",
+            "detail": "Q3の説明では、営業キャッシュフロー198百万ドル、capex42百万ドル、FCFマージン16.0%とされ、年初来FCFマージンは29%と説明されている。短期的には堅調なキャッシュ創出能力があり、投資を行ってもFCFを確保する姿勢がうかがえる。",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "page": 18,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.61
+          },
+          {
+            "evidence_id": "ke5",
+            "polarity": "positive",
+            "summary": "AI/新製品とパートナー網を成長レバーとして拡大",
+            "detail": "Symmetry Systemsの取得意向、Anthropic/OpenAIとの提携、GSIとの共同施策、クラウドマーケットプレイスのTCV増加を通じ、AI関連需要と販売チャネルの拡張を取りにいく姿勢が示されている。これは中期の売上機会拡大と製品差別化に資する。",
+            "impact_areas": [
+              "eps",
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p6:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p6:section-1",
+              "page": 6,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.58
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "ce1",
+            "polarity": "risk",
+            "summary": "Q4にcapexが前倒しされ短期FCFを圧迫",
+            "detail": "経営陣はデータセンター/ブランチ機器の価格上昇と供給状況に対応するため、想定していたFY27分の投資をQ4へ前倒しすると説明している。その結果、Q4 capexは高シングルディジットの売上比率へ上昇し、FY26全体のcapex比率も従来想定より高くなる。短期FCFには逆風。",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "page": 18,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.65
+          },
+          {
+            "evidence_id": "ce2",
+            "polarity": "risk",
+            "summary": "販売リーダー交代で移行期の不確実性がある",
+            "detail": "Q4/FY26見通しの説明で、期末に営業リーダー2名が退社し、1名は後任確定済み、もう1名は採用最終段階だが、ガイダンスは移行期を踏まえて慎重にしていると述べている。営業実行力や案件進行に一時的な摩擦が生じる可能性がある。",
+            "impact_areas": [
+              "eps",
+              "guidance",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "page": 19,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.63
+          },
+          {
+            "evidence_id": "ce3",
+            "polarity": "risk",
+            "summary": "FCFマージンは前年より低下している",
+            "detail": "Q3のFCFマージンは16.0%で、前年の18.0%から低下したと説明されている。経営陣は回収タイミング要因と述べるが、投資前倒しや運転資本変動が短期FCFの変動要因であることを示す。",
+            "impact_areas": [
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "page": 18,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.6
+          },
+          {
+            "evidence_id": "ce4",
+            "polarity": "risk",
+            "summary": "成長の一部は買収と高投資テーマに依存",
+            "detail": "AI機能拡張やSymmetry/SPLX関連の説明は成長期待を高める一方、買収統合や新領域投入は実行リスクと費用増加を伴う。資料では強い需要が示されるが、投資回収や定着はまだ定性的で、EPS/FCF改善の確度は中期テーマ。",
+            "impact_areas": [
+              "eps",
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p35:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p35:section-1",
+              "page": 35,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.54
+          }
+        ],
+        "open_questions": [
+          "guidance-vs-consensus の評価は要求範囲外のため行っていない。",
+          "投資額、採用計画、R&D計画の定量値が不足しており、EPS/FCF への影響は定性的評価にとどまる。",
+          "買収統合費用や更新率、解約率など、長期収益化を裏づける補助指標が不足している。"
+        ],
+        "confidence": 0.64
+      },
+      {
+        "agent_role": "guidance",
+        "team": "presentation",
+        "status": {
+          "step": "presentation_agents",
+          "state": "completed",
+          "started_at": null,
+          "finished_at": null,
+          "message": null,
+          "error": null
+        },
+        "headline": "本入力では会社の将来 guidance は明示的に確認できず、guidance vs consensus の定量評価は困難です。一方、対象四半期の実績は売上700M USDがコンセンサス690M USDを上回り、EPS 0.84もコンセンサス0.80を上回っており、少なくとも当四半期の実績面は良好です。将来見通しについては、ガイダンス文脈として読めるのはQ4/FY26の売上・EPS・FCF margin・capexに関する記述ですが、guidance_for_guided_period に対応する consensus が未提供のため、保守的か強気かの厳密な判定はできません。内容面では、Q4ガイ",
+        "conclusion": "対象四半期の実績は売上・EPSともにコンセンサス超えで良好。一方、将来 guidance はQ4/FY26で提示されているが、guided_period の consensus がなく予想比評価は未確定。資料上は営業体制の移行とcapex上振れが主な下方リスクで、EPS/FCF は売上維持と投資増の吸収が達成条件。guidance の強気/保守性は現時点では unclear で、revision risk は『transitionとcapex増加次第』という定性的評価にとどまる。",
+        "key_evidence": [
+          {
+            "evidence_id": "guidance_k1",
+            "polarity": "positive",
+            "summary": "Q3実績は売上がコンセンサス超え",
+            "detail": "reported_period_actuals の revenue は700,000,000 USD、consensus_for_reported_period の revenue_consensus は690,000,000 USDで、当四半期の売上実績は期待を上回っています。",
+            "impact_areas": [
+              "overall",
+              "guidance"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:revenue",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "revenue",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "revenue",
+            "value": 700000000.0,
+            "unit": "USD",
+            "confidence": 0.95
+          },
+          {
+            "evidence_id": "guidance_k2",
+            "polarity": "positive",
+            "summary": "Q3実績EPSはコンセンサス超え",
+            "detail": "reported_period_actuals の eps は0.84、consensus_for_reported_period の eps_consensus は0.80で、当四半期EPSは期待を上回っています。",
+            "impact_areas": [
+              "overall",
+              "eps"
+            ],
+            "source_ref": {
+              "source_id": "financial_api:ZS:2026Q3:eps",
+              "source_type": "financial_api",
+              "title": "Financial metrics input",
+              "url": null,
+              "document_id": null,
+              "section_id": null,
+              "page": null,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": "eps",
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "reported_period_actuals",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": "eps",
+            "value": 0.84,
+            "unit": "USD/share",
+            "confidence": 0.95
+          },
+          {
+            "evidence_id": "guidance_k3",
+            "polarity": "neutral",
+            "summary": "Q4/FY26のガイダンス値が資料内に記載",
+            "detail": "Q4 and FY26 Guidance の表で、Q4 Revenue $875M-$878M、EPS $1.08-$1.09、FY26 Revenue $3.3295B-$3.3325B、FY26 EPS $4.10-$4.11、FCF margin ~22.8%-23.3% が示されています。これは将来見通しの存在を示しますが、consensus_for_guided_period が未提供のため、期待対比の良否は未判定です。",
+            "impact_areas": [
+              "guidance",
+              "eps",
+              "fcf",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "page": 19,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.9
+          },
+          {
+            "evidence_id": "guidance_k4",
+            "polarity": "risk",
+            "summary": "ガイダンスには遷移リスクとcapex上振れ要因が明示",
+            "detail": "資料では『two sales leaders departed』『prudent approach to our guidance during the transition』とされ、さらに高いmemory/storage/processor価格によりQ4でcapexが増え、FY26 capexが売上比でhigh single-digitsに上がると記載されています。これはEPSとFCFの達成に対する下方リスク要因です。",
+            "impact_areas": [
+              "eps",
+              "fcf",
+              "guidance"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+              "page": 18,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.92
+          }
+        ],
+        "counter_evidence": [
+          {
+            "evidence_id": "guidance_c1",
+            "polarity": "risk",
+            "summary": "guided_period の consensus がなく上振れ/下振れ判定ができない",
+            "detail": "consensus_for_guided_period が null であり、会社ガイダンスが市場予想比で保守的か強気かを定量比較できません。したがって revision risk や conservatism の評価は限定的です。",
+            "impact_areas": [
+              "guidance",
+              "overall"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "page": 19,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.88
+          },
+          {
+            "evidence_id": "guidance_c2",
+            "polarity": "neutral",
+            "summary": "guidance の対象期間が明示されるが数値比較用の前提は不足",
+            "detail": "資料にはQ4 26 Guidance と FY26 Guidance が記載されていますが、guidance_for_guided_period に対応する precomputed consensus がないため、予想比の評価はできません。数値の存在だけでは保守性の証明になりません。",
+            "impact_areas": [
+              "guidance"
+            ],
+            "source_ref": {
+              "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "source_type": "earnings_presentation",
+              "title": "ZS 2026 Q3 Shareholder Letter",
+              "url": null,
+              "document_id": "zs-2026q3-shareholder-letter",
+              "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+              "page": 19,
+              "line_start": null,
+              "line_end": null,
+              "metric_name": null,
+              "as_of_date": null,
+              "fiscal_period": "2026Q3",
+              "period_role": "target_period_document",
+              "published_date": null,
+              "data_cutoff_date": null
+            },
+            "metric_name": null,
+            "value": null,
+            "unit": null,
+            "confidence": 0.86
+          }
+        ],
+        "open_questions": [
+          "consensus_for_guided_period が null で、Q4/FY26 guidance の市場予想との差分を確認できません。",
+          "guided_period に対応する precomputed guidance delta がないため、conservative / balanced / aggressive の厳密判定はできません。",
+          "guidance の定量的 revision risk を評価するための prior guidance track record は提供されていません。",
+          "presentation_metric_hints は存在しますが、canonical fact としては guidance section の確認補助に限られ、追加の定量裏取りには使えません。"
+        ],
+        "confidence": 0.58
+      }
+    ],
+    "positive_evidence_pool": [
+      {
+        "evidence_id": "kev1",
+        "polarity": "positive",
+        "summary": "EPSはコンセンサスを上回った",
+        "detail": "reported_period_actualsのEPSは0.84で、consensus_for_reported_periodの0.8を上回っています。ヘッドラインEPSは良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:eps",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "eps",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "eps",
+        "value": 0.84,
+        "unit": "USD/share",
+        "confidence": 0.94
+      },
+      {
+        "evidence_id": "kev2",
+        "polarity": "positive",
+        "summary": "売上もコンセンサスを上回った",
+        "detail": "reported_period_actualsのrevenueは700.0Mで、consensus_for_reported_periodの690.0Mを上回っています。売上面のヘッドラインは良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:revenue",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "revenue",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "revenue",
+        "value": 700000000.0,
+        "unit": "USD",
+        "confidence": 0.94
+      },
+      {
+        "evidence_id": "kev3",
+        "polarity": "positive",
+        "summary": "非GAAP粗利率と営業利益率は高水準を維持",
+        "detail": "開示資料ではQ3 26の非GAAP粗利率が81%、非GAAP営業利益率が23%と示され、前年同四半期比で粗利率は横ばい、営業利益率は22%から23%へ改善しています。利益率の質は比較的良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.67
+      },
+      {
+        "evidence_id": "kev4",
+        "polarity": "positive",
+        "summary": "営業利益は前年同四半期比で増加",
+        "detail": "資料ではnon-GAAP income from operationsがQ3 26で195.849M、Q3 25で146.653Mと示されており、営業利益の拡大が確認できます。営業レバレッジは一定程度プラスです。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.64
+      },
+      {
+        "evidence_id": "kev5",
+        "polarity": "positive",
+        "summary": "FCFはプラスで、営業キャッシュも確保",
+        "detail": "reported_period_actualsではoperating_cash_flowが100.0M、free_cash_flowが80.0M、capexが20.0Mです。P&L面から見ても、利益だけでなく現金創出はプラスです。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "free_cash_flow",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 80000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "cfra_key_1",
+        "polarity": "positive",
+        "summary": "Q3の営業キャッシュフローとFCFはプラスで、FCFの水準は良好",
+        "detail": "報告値では営業キャッシュフローが1億ドル、FCFが8,000万ドル。単一四半期としてはキャッシュ創出が黒字で、FCFがCFOを大きく下回る投資負担ではない。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:operating_cash_flow",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "operating_cash_flow",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "operating_cash_flow",
+        "value": 100000000.0,
+        "unit": "USD",
+        "confidence": 0.79
+      },
+      {
+        "evidence_id": "cfra_key_2",
+        "polarity": "positive",
+        "summary": "CapExは2,000万ドルで、当四半期のFCFを大きく圧迫していない",
+        "detail": "報告値のCapExは2,000万ドルで、FCF 8,000万ドルに対する投資負担は管理可能な範囲に見える。現時点の数値だけを見ると、FCFは過度な設備投資に押し下げられてはいない。",
+        "impact_areas": [
+          "fcf",
+          "balance_sheet"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:capex",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "capex",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "capex",
+        "value": 20000000.0,
+        "unit": "USD",
+        "confidence": 0.76
+      },
+      {
+        "evidence_id": "cfra_key_3",
+        "polarity": "positive",
+        "summary": "会社はQ3のFCFマージン16.0%と年初来29%を開示",
+        "detail": "経営陣の説明では、Q3のFCFマージンは16.0%、年初来では29%とされ、四半期ベースでも年初来ベースでもFCF創出が維持されている。これはcash conversionが崩れていないことを示す補助証拠。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow_margin",
+        "value": 16.0,
+        "unit": "%",
+        "confidence": 0.68
+      },
+      {
+        "evidence_id": "cfra_key_4",
+        "polarity": "positive",
+        "summary": "Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む",
+        "detail": "会社はQ4 26のFCFマージンを約22.8%〜23.3%と示しており、短期的にはFCFの改善余地があることを示唆する。ガイダンスは将来FCFの方向感としては前向き。",
+        "impact_areas": [
+          "guidance",
+          "fcf"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow_margin_guidance",
+        "value": 23.05,
+        "unit": "%",
+        "confidence": 0.67
+      },
+      {
+        "evidence_id": "ke1",
+        "polarity": "positive",
+        "summary": "成長の中核をZero Trust、AI Protect、Data Securityに置く",
+        "detail": "グロGlossary/戦略ページで、AI-SecurityとData Security Everywhereを三つの成長ピラーとして定義し、AI資産管理、AIガードレール、AI Red Teaming、データセキュリティ各モジュールを拡張対象として示している。これは、単一製品ではなくプラットフォーム拡張を通じた成長を重視している意図を示す。",
+        "impact_areas": [
+          "overall",
+          "eps"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p32:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p32:section-1",
+          "page": 32,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.63
+      },
+      {
+        "evidence_id": "ke2",
+        "polarity": "positive",
+        "summary": "Z-Flexとアカウント拡大で顧客浸透を深める意図",
+        "detail": "Q3の説明では、Z-Flexがマルチイヤー契約下でモジュール追加や交換を容易にし、アップセル、販売サイクル短縮、前方可視性の向上に寄与すると説明している。さらにQ3のZ-Flex TCVは480百万ドル超、過去12か月で10億ドル超とされ、顧客の長期コミットとプラットフォーム採用拡大を狙う営業戦略が明確。",
+        "impact_areas": [
+          "eps",
+          "guidance",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p16:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p16:section-1",
+          "page": 16,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.64
+      },
+      {
+        "evidence_id": "ke3",
+        "polarity": "positive",
+        "summary": "Q3は成長と収益性を両立",
+        "detail": "CFOはQ3に売上850百万ドル（前年比25%増）、非GAAP営業利益196百万ドル、非GAAP営業利益率23.0%を示し、「disciplineを伴う投資」と述べている。これは、成長投資を続けつつも利益率を維持・改善する意図を示す。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p14:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p14:section-1",
+          "page": 14,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.62
+      },
+      {
+        "evidence_id": "ke4",
+        "polarity": "positive",
+        "summary": "FCFは当期も一定水準を維持し、資本効率はまだ機能",
+        "detail": "Q3の説明では、営業キャッシュフロー198百万ドル、capex42百万ドル、FCFマージン16.0%とされ、年初来FCFマージンは29%と説明されている。短期的には堅調なキャッシュ創出能力があり、投資を行ってもFCFを確保する姿勢がうかがえる。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.61
+      },
+      {
+        "evidence_id": "ke5",
+        "polarity": "positive",
+        "summary": "AI/新製品とパートナー網を成長レバーとして拡大",
+        "detail": "Symmetry Systemsの取得意向、Anthropic/OpenAIとの提携、GSIとの共同施策、クラウドマーケットプレイスのTCV増加を通じ、AI関連需要と販売チャネルの拡張を取りにいく姿勢が示されている。これは中期の売上機会拡大と製品差別化に資する。",
+        "impact_areas": [
+          "eps",
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p6:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p6:section-1",
+          "page": 6,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.58
+      },
+      {
+        "evidence_id": "guidance_k1",
+        "polarity": "positive",
+        "summary": "Q3実績は売上がコンセンサス超え",
+        "detail": "reported_period_actuals の revenue は700,000,000 USD、consensus_for_reported_period の revenue_consensus は690,000,000 USDで、当四半期の売上実績は期待を上回っています。",
+        "impact_areas": [
+          "overall",
+          "guidance"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:revenue",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "revenue",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "revenue",
+        "value": 700000000.0,
+        "unit": "USD",
+        "confidence": 0.95
+      },
+      {
+        "evidence_id": "guidance_k2",
+        "polarity": "positive",
+        "summary": "Q3実績EPSはコンセンサス超え",
+        "detail": "reported_period_actuals の eps は0.84、consensus_for_reported_period の eps_consensus は0.80で、当四半期EPSは期待を上回っています。",
+        "impact_areas": [
+          "overall",
+          "eps"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:eps",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "eps",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "eps",
+        "value": 0.84,
+        "unit": "USD/share",
+        "confidence": 0.95
+      },
+      {
+        "evidence_id": "guidance_k3",
+        "polarity": "neutral",
+        "summary": "Q4/FY26のガイダンス値が資料内に記載",
+        "detail": "Q4 and FY26 Guidance の表で、Q4 Revenue $875M-$878M、EPS $1.08-$1.09、FY26 Revenue $3.3295B-$3.3325B、FY26 EPS $4.10-$4.11、FCF margin ~22.8%-23.3% が示されています。これは将来見通しの存在を示しますが、consensus_for_guided_period が未提供のため、期待対比の良否は未判定です。",
+        "impact_areas": [
+          "guidance",
+          "eps",
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "guidance_k4",
+        "polarity": "risk",
+        "summary": "ガイダンスには遷移リスクとcapex上振れ要因が明示",
+        "detail": "資料では『two sales leaders departed』『prudent approach to our guidance during the transition』とされ、さらに高いmemory/storage/processor価格によりQ4でcapexが増え、FY26 capexが売上比でhigh single-digitsに上がると記載されています。これはEPSとFCFの達成に対する下方リスク要因です。",
+        "impact_areas": [
+          "eps",
+          "fcf",
+          "guidance"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.92
+      }
+    ],
+    "negative_evidence_pool": [
+      {
+        "evidence_id": "cev1",
+        "polarity": "negative",
+        "summary": "EPSの上振れ幅は大きくはない",
+        "detail": "EPSは0.84対0.8で、surpriseは小幅です。したがって、強い業績加速というよりは、控えめな上振れと見るのが妥当です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:eps",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "eps",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "eps",
+        "value": 0.84,
+        "unit": "USD/share",
+        "confidence": 0.91
+      },
+      {
+        "evidence_id": "cev2",
+        "polarity": "negative",
+        "summary": "GAAP営業損失が続いている",
+        "detail": "AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.78
+      },
+      {
+        "evidence_id": "cev3",
+        "polarity": "negative",
+        "summary": "売上以外の収益性ドライバーの詳細が不足",
+        "detail": "粗利率、営業費用、税率、株式報酬、特別項目の四半期変化を対象四半期のcanonical metricで確認できません。EPS改善の持続性を分解して検証するには情報不足です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p25:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p25:section-1",
+          "page": 25,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.55
+      },
+      {
+        "evidence_id": "cev4",
+        "polarity": "risk",
+        "summary": "FCFの質を分解する情報が限定的",
+        "detail": "FCFとOCFはプラスですが、working capital、capexの持続性、再投資強度などの詳細は routed context で不足しており、FCF改善の持続性は限定的にしか判断できません。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "free_cash_flow",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 80000000.0,
+        "unit": "USD",
+        "confidence": 0.66
+      },
+      {
+        "evidence_id": "cfra_bear_1",
+        "polarity": "risk",
+        "summary": "Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し",
+        "detail": "会社はデータセンター設備やBranchアプライアンスの投資を前倒しし、Q4のCapExが高くなり、通期2026年のCapEx比率は従来想定のmid single-digitsからhigh single-digitsへ上がると説明した。さらに2027年は2026年比で最大200bpの上昇を見込むとしており、FCF改善の継続には逆風。",
+        "impact_areas": [
+          "fcf",
+          "guidance",
+          "balance_sheet"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "capex_outlook",
+        "value": null,
+        "unit": null,
+        "confidence": 0.8
+      },
+      {
+        "evidence_id": "cfra_bear_2",
+        "polarity": "risk",
+        "summary": "FCFマージン低下の要因として回収タイミングが挙げられている",
+        "detail": "会社はQ3のFCFマージン16.0%が前年18.0%から低下した理由を『cash collectionsのタイミング』と説明しており、FCFの変動にworking capital/回収要因が含まれる可能性を示す。ただし、working capitalの定量値は開示されていない。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow_margin_note",
+        "value": null,
+        "unit": null,
+        "confidence": 0.72
+      },
+      {
+        "evidence_id": "cfra_bear_3",
+        "polarity": "risk",
+        "summary": "流動性・負債の定量評価に必要な詳細が不足",
+        "detail": "会社は現金3.5十億ドルと負債17億ドルを開示したが、満期プロファイル、手元流動性の詳細、借換え余地、制約条件はこの入力だけでは確認できない。よって、資金調達制約が将来FCFに与える影響は限定的にしか判断できない。",
+        "impact_areas": [
+          "balance_sheet",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "cash_and_debt_snapshot",
+        "value": null,
+        "unit": null,
+        "confidence": 0.58
+      },
+      {
+        "evidence_id": "ce1",
+        "polarity": "risk",
+        "summary": "Q4にcapexが前倒しされ短期FCFを圧迫",
+        "detail": "経営陣はデータセンター/ブランチ機器の価格上昇と供給状況に対応するため、想定していたFY27分の投資をQ4へ前倒しすると説明している。その結果、Q4 capexは高シングルディジットの売上比率へ上昇し、FY26全体のcapex比率も従来想定より高くなる。短期FCFには逆風。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.65
+      },
+      {
+        "evidence_id": "ce2",
+        "polarity": "risk",
+        "summary": "販売リーダー交代で移行期の不確実性がある",
+        "detail": "Q4/FY26見通しの説明で、期末に営業リーダー2名が退社し、1名は後任確定済み、もう1名は採用最終段階だが、ガイダンスは移行期を踏まえて慎重にしていると述べている。営業実行力や案件進行に一時的な摩擦が生じる可能性がある。",
+        "impact_areas": [
+          "eps",
+          "guidance",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.63
+      },
+      {
+        "evidence_id": "ce3",
+        "polarity": "risk",
+        "summary": "FCFマージンは前年より低下している",
+        "detail": "Q3のFCFマージンは16.0%で、前年の18.0%から低下したと説明されている。経営陣は回収タイミング要因と述べるが、投資前倒しや運転資本変動が短期FCFの変動要因であることを示す。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.6
+      },
+      {
+        "evidence_id": "ce4",
+        "polarity": "risk",
+        "summary": "成長の一部は買収と高投資テーマに依存",
+        "detail": "AI機能拡張やSymmetry/SPLX関連の説明は成長期待を高める一方、買収統合や新領域投入は実行リスクと費用増加を伴う。資料では強い需要が示されるが、投資回収や定着はまだ定性的で、EPS/FCF改善の確度は中期テーマ。",
+        "impact_areas": [
+          "eps",
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p35:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p35:section-1",
+          "page": 35,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.54
+      },
+      {
+        "evidence_id": "guidance_c1",
+        "polarity": "risk",
+        "summary": "guided_period の consensus がなく上振れ/下振れ判定ができない",
+        "detail": "consensus_for_guided_period が null であり、会社ガイダンスが市場予想比で保守的か強気かを定量比較できません。したがって revision risk や conservatism の評価は限定的です。",
+        "impact_areas": [
+          "guidance",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.88
+      },
+      {
+        "evidence_id": "guidance_c2",
+        "polarity": "neutral",
+        "summary": "guidance の対象期間が明示されるが数値比較用の前提は不足",
+        "detail": "資料にはQ4 26 Guidance と FY26 Guidance が記載されていますが、guidance_for_guided_period に対応する precomputed consensus がないため、予想比の評価はできません。数値の存在だけでは保守性の証明になりません。",
+        "impact_areas": [
+          "guidance"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.86
+      }
+    ],
+    "risk_evidence_pool": [
+      {
+        "evidence_id": "cev1",
+        "polarity": "negative",
+        "summary": "EPSの上振れ幅は大きくはない",
+        "detail": "EPSは0.84対0.8で、surpriseは小幅です。したがって、強い業績加速というよりは、控えめな上振れと見るのが妥当です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:eps",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "eps",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "eps",
+        "value": 0.84,
+        "unit": "USD/share",
+        "confidence": 0.91
+      },
+      {
+        "evidence_id": "cev2",
+        "polarity": "negative",
+        "summary": "GAAP営業損失が続いている",
+        "detail": "AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.78
+      },
+      {
+        "evidence_id": "cev3",
+        "polarity": "negative",
+        "summary": "売上以外の収益性ドライバーの詳細が不足",
+        "detail": "粗利率、営業費用、税率、株式報酬、特別項目の四半期変化を対象四半期のcanonical metricで確認できません。EPS改善の持続性を分解して検証するには情報不足です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p25:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p25:section-1",
+          "page": 25,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.55
+      }
+    ],
+    "synthesis": "ヘッドラインではEPSと売上がコンセンサス超えで、非GAAP利益率も高水準維持、営業利益も前年同四半期比で拡大しています。一方、GAAP営業損失は残り、税率・株式報酬・一時項目・セグメントの分解が不足しているため、EPS上振れの持続性評価は中程度の確信に留めるべきです。FCFはプラスですが、FCFの持続性を裏付ける詳細なキャッシュドライバーは不足しています。 CFO/FCFは当四半期ベースではプラスで、CapExも現時点では管理可能だが、将来FCFの改善はQ4に前倒しされるCapEx増加と回収タイミング要因で不確実性が残る。バランスシート面では現金と負債の水準は示される一方、満期・流動性詳細がなく、資金調達制約の強さは判定保留。EPSへの示唆は、キャッシュ創出は現時点で大きな制約を示さないが、CapEx増加が続く場合はFCFを通じた制約が強まりうる、という限定的な見方が妥当。 経営陣は、Zero Trust/AI/データセキュリティを軸に、Z-Flex、GSI、クラウドマーケットプレイス、モジュール拡張でプラットフォーム浸透を深める意図が強い。Q3は成長と利益率が両立しており、営業利益率とFCFは一定の強さを示すが、Q4のcapex前倒しと営業体制の交代が短期FCF/EPSのノイズ要因。中期では、AI関連と顧客拡大がEPS/FCF改善余地を持つ一方、買収統合・供給コスト上昇・実行リスクが反対根拠。 対象四半期の実績は売上・EPSともにコンセンサス超えで良好。一方、将来 guidance はQ4/FY26で提示されているが、guided_period の consensus がなく予想比評価は未確定。資料上は営業体制の移行とcapex上振れが主な下方リスクで、EPS/FCF は売上維持と投資増の吸収が達成条件。guidance の強気/保守性は現時点では unclear で、revision risk は『transitionとcapex増加次第』という定性的評価にとどまる。"
+  },
+  "bull_case": {
+    "agent_name": "bull_agent",
+    "thesis": "今回の決算は、売上とEPSがコンセンサスを上回り、非GAAP利益率も高水準を維持し、当四半期のFCFもプラスである点から、ヘッドラインとしてはgood と評価しやすい。加えて、経営陣はZero Trust/AI/データセキュリティを軸にプラットフォーム拡張を進める意図を示しており、中期のEPS・FCF改善余地を示唆している。一方で、GAAP営業損失の継続、FCFの質を分解する情報不足、Q4以降のCapEx上振れと営業体制移行リスクは残るため、強さは中程度にとどめる。",
+    "stance_strength": "moderate",
+    "strongest_positive_evidence": [
+      {
+        "evidence_id": "kev1",
+        "polarity": "positive",
+        "summary": "EPSはコンセンサスを上回った",
+        "detail": "reported_period_actualsのEPSは0.84で、consensus_for_reported_periodの0.8を上回っています。ヘッドラインEPSは良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:eps",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "eps",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "eps",
+        "value": 0.84,
+        "unit": "USD/share",
+        "confidence": 0.94
+      },
+      {
+        "evidence_id": "kev2",
+        "polarity": "positive",
+        "summary": "売上もコンセンサスを上回った",
+        "detail": "reported_period_actualsのrevenueは700.0Mで、consensus_for_reported_periodの690.0Mを上回っています。売上面のヘッドラインは良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:revenue",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "revenue",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "revenue",
+        "value": 700000000.0,
+        "unit": "USD",
+        "confidence": 0.94
+      },
+      {
+        "evidence_id": "kev3",
+        "polarity": "positive",
+        "summary": "非GAAP粗利率と営業利益率は高水準を維持",
+        "detail": "開示資料ではQ3 26の非GAAP粗利率が81%、非GAAP営業利益率が23%と示され、前年同四半期比で粗利率は横ばい、営業利益率は22%から23%へ改善しています。利益率の質は比較的良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.67
+      },
+      {
+        "evidence_id": "kev5",
+        "polarity": "positive",
+        "summary": "FCFはプラスで、営業キャッシュも確保",
+        "detail": "reported_period_actualsではoperating_cash_flowが100.0M、free_cash_flowが80.0M、capexが20.0Mです。P&L面から見ても、利益だけでなく現金創出はプラスです。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "free_cash_flow",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 80000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "cfra_key_4",
+        "polarity": "positive",
+        "summary": "Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む",
+        "detail": "会社はQ4 26のFCFマージンを約22.8%〜23.3%と示しており、短期的にはFCFの改善余地があることを示唆する。ガイダンスは将来FCFの方向感としては前向き。",
+        "impact_areas": [
+          "guidance",
+          "fcf"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow_margin_guidance",
+        "value": 23.05,
+        "unit": "%",
+        "confidence": 0.67
+      }
+    ],
+    "eps_bull_argument": "EPSは0.84でコンセンサス0.80を上回っており、売上も700Mでコンセンサス690Mを上回った。さらに非GAAP粗利率81%、非GAAP営業利益率23%と、利益率は高水準を維持しているため、当四半期のEPS超過は単なる偶発ではなく、営業レバレッジに一定程度支えられた可能性が高い。ただし、GAAP営業損失が残るため、EPSの質はまだ完全には確認できない。",
+    "fcf_bull_argument": "当四半期の営業キャッシュフローは100M、FCFは80M、CapExは20Mで、FCFはプラスかつ投資負担も現時点では管理可能である。加えて、会社はQ4のFCFマージンを約22.8%〜23.3%と示しており、短期的にはFCF改善余地がある。もっとも、working capitalやCapEx持続性の詳細が不足しているため、改善の持続性は限定的にしか確認できない。",
+    "conditions_needed": [
+      "Q4以降も売上成長が維持され、営業利益率の改善が続くこと",
+      "CapEx増加がFCFを過度に圧迫しないこと",
+      "営業リーダー交代による実行面の摩擦が短期で収束すること",
+      "GAAPベースの赤字要因をさらに縮小できること"
+    ],
+    "weak_points": [
+      "GAAP営業損失が残っており、利益の質はまだ完全に良化していない",
+      "EPSの上振れ幅は大きくなく、強い業績加速とまでは言いにくい",
+      "FCFはプラスだが、working capitalやCapEx持続性の定量分解が不足している",
+      "Q4以降はCapEx前倒しが示されており、短期FCFには逆風がある",
+      "guided_period の consensus がなく、ガイダンスの強弱を市場予想比で判定できない"
+    ],
+    "finding_coverage": {
+      "earnings_quality": "supporting",
+      "cash_flow_risk": "opposing",
+      "management_intent": "supporting",
+      "guidance": "supporting"
+    },
+    "disputed_points_to_watch": [
+      "EPSの超過が継続的な営業レバレッジに支えられているか",
+      "Q4のCapEx前倒しがFCFをどの程度圧迫するか",
+      "販売リーダー交代が案件進行や実行力に与える影響",
+      "FCFマージン改善が一時要因か構造要因か"
+    ],
+    "confidence": 0.57,
+    "missing_data": [
+      "prior_sequential_period_actuals がなく、直前四半期との比較でEPS/収益性のトレンドを確認できない",
+      "prior_year_period がなく、前年同四半期比での収益性継続性を厳密に確認できない",
+      "working capital の定量指標がなく、FCF変動の要因分解ができない",
+      "guided_period の consensus がなく、ガイダンスの強気/保守性を定量比較できない",
+      "流動性や満期構成の詳細がなく、財務制約の強さを評価しきれない"
+    ]
+  },
+  "bear_case": {
+    "agent_name": "bear_agent",
+    "thesis": "今回の決算はヘッドラインでは売上・EPSともにコンセンサス超えで一見良好だが、GAAP営業損失が残り、EPSの上振れ幅は小さく、FCFも当四半期は黒字でも持続性の裏取りが弱い。さらに、Q4以降のCapEx前倒しと営業体制移行が示されており、短期の利益・キャッシュ創出は維持できても、次四半期以降の改善確度は限定的とみるのが妥当で、総合評価はneutral寄りだが下方リスクが残る。",
+    "stance_strength": "moderate",
+    "strongest_negative_evidence": [
+      {
+        "evidence_id": "cfra_bear_1",
+        "polarity": "risk",
+        "summary": "Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し",
+        "detail": "会社はデータセンター設備やBranchアプライアンスの投資を前倒しし、Q4のCapExが高くなり、通期2026年のCapEx比率は従来想定のmid single-digitsからhigh single-digitsへ上がると説明した。さらに2027年は2026年比で最大200bpの上昇を見込むとしており、FCF改善の継続には逆風。",
+        "impact_areas": [
+          "fcf",
+          "guidance",
+          "balance_sheet"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "capex_outlook",
+        "value": null,
+        "unit": null,
+        "confidence": 0.8
+      },
+      {
+        "evidence_id": "cev2",
+        "polarity": "negative",
+        "summary": "GAAP営業損失が続いている",
+        "detail": "AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.78
+      },
+      {
+        "evidence_id": "ce2",
+        "polarity": "risk",
+        "summary": "販売リーダー交代で移行期の不確実性がある",
+        "detail": "Q4/FY26見通しの説明で、期末に営業リーダー2名が退社し、1名は後任確定済み、もう1名は採用最終段階だが、ガイダンスは移行期を踏まえて慎重にしていると述べている。営業実行力や案件進行に一時的な摩擦が生じる可能性がある。",
+        "impact_areas": [
+          "eps",
+          "guidance",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.63
+      }
+    ],
+    "eps_bear_argument": "EPSは0.84でコンセンサス0.80を上回ったものの、上振れ幅は小さく、強い業績加速を示す水準ではない。さらにGAAP営業損失が残っており、非GAAPベースの改善がそのまま持続的な利益改善に結びつくかは未確認である。粗利率・営業費用・税率・株式報酬などの分解情報も不足しているため、EPS beatの質を裏付ける材料が弱い。したがって、EPS面はgoodというより『無難な上振れ』で、次四半期以降の伸びを断定するには材料不足だ。",
+    "fcf_bear_argument": "当四半期のFCFは8,000万ドルで黒字だが、CapEx前倒しと回収タイミング要因が示されており、FCFの持続性には不確実性が残る。Q4以降はCapEx比率の上昇が明示され、会社自身も短期FCFに逆風を認めているため、今回のプラスFCFを構造的改善とみなすのは早い。加えて、working capitalの定量値、満期構成、流動性詳細が不足しているため、将来FCF改善の確度は限定的で、cash conversion の安定性はまだ十分に証明されていない。",
+    "failure_modes": [
+      "EPSのヘッドライン超えを強い本質改善と誤認する",
+      "非GAAP利益率の高さをGAAP損失の継続より重く見る",
+      "当四半期のプラスFCFを持続的なFCF改善と見なす",
+      "Q4以降のCapEx上昇を一過性として軽視する",
+      "営業リーダー交代による短期の実行リスクを過小評価する"
+    ],
+    "counter_to_bull_case": [
+      "Bullは売上とEPSのコンセンサス超えを強調するが、EPS上振れは小幅で、GAAP営業損失が残る以上、利益の質はまだ完全ではない。",
+      "BullはFCFプラスを好材料とみるが、CapEx前倒しと回収タイミング要因があるため、持続性の証拠としては弱い。",
+      "BullはQ4ガイダンスのFCF marginを前向き材料とするが、guided_periodのconsensusがなく、市場予想比の良し悪しは判定できない。",
+      "Bullは経営陣のプラットフォーム拡張意図を成長ドライバーとして挙げるが、買収統合・新領域投資・営業移行は実行リスクとコスト増を伴う。",
+      "Bullは短期の営業利益率改善を重視するが、CapEx上昇が続けばFCFへの下押しが先に出る可能性がある。"
+    ],
+    "finding_coverage": {
+      "earnings_quality": "supporting",
+      "cash_flow_risk": "supporting",
+      "management_intent": "supporting",
+      "guidance": "supporting"
+    },
+    "unresolved_risks": [
+      "Q4以降のCapEx上昇がFCFにどの程度残るか",
+      "営業リーダー交代が受注・実行に与える影響",
+      "GAAP損失が続く中で非GAAP改善が継続するか",
+      "working capital要因が一時的か構造成分か",
+      "guidanceが市場予想に対して保守的かどうかは未判定"
+    ],
+    "confidence": 0.6,
+    "missing_data": [
+      "前期比・前年同期比のCFO/FCFトレンドが入力にないため、持続性を厳密に確認できない。",
+      "working capitalの定量指標がないため、FCF変動の要因分解ができない。",
+      "guided_period の consensus がなく、ガイダンスの市場予想比を定量比較できない。",
+      "流動性の詳細、満期構成、借換え条件、財務制約の定量情報が不足している。"
+    ]
+  },
+  "debate_result": {
+    "bull_case": "今回の決算は、売上とEPSがコンセンサスを上回り、非GAAP利益率も高水準を維持し、当四半期のFCFもプラスである点から、ヘッドラインとしてはgood と評価しやすい。加えて、経営陣はZero Trust/AI/データセキュリティを軸にプラットフォーム拡張を進める意図を示しており、中期のEPS・FCF改善余地を示唆している。一方で、GAAP営業損失の継続、FCFの質を分解する情報不足、Q4以降のCapEx上振れと営業体制移行リスクは残るため、強さは中程度にとどめる。",
+    "bear_case": "今回の決算はヘッドラインでは売上・EPSともにコンセンサス超えで一見良好だが、GAAP営業損失が残り、EPSの上振れ幅は小さく、FCFも当四半期は黒字でも持続性の裏取りが弱い。さらに、Q4以降のCapEx前倒しと営業体制移行が示されており、短期の利益・キャッシュ創出は維持できても、次四半期以降の改善確度は限定的とみるのが妥当で、総合評価はneutral寄りだが下方リスクが残る。",
+    "risk_case": "Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し; GAAP営業損失が続いている; 販売リーダー交代で移行期の不確実性がある",
+    "evaluation": "Bull and Bear cases were generated from validated AnalysisBrief only.",
+    "strongest_positive_evidence": [
+      {
+        "evidence_id": "kev1",
+        "polarity": "positive",
+        "summary": "EPSはコンセンサスを上回った",
+        "detail": "reported_period_actualsのEPSは0.84で、consensus_for_reported_periodの0.8を上回っています。ヘッドラインEPSは良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:eps",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "eps",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "eps",
+        "value": 0.84,
+        "unit": "USD/share",
+        "confidence": 0.94
+      },
+      {
+        "evidence_id": "kev2",
+        "polarity": "positive",
+        "summary": "売上もコンセンサスを上回った",
+        "detail": "reported_period_actualsのrevenueは700.0Mで、consensus_for_reported_periodの690.0Mを上回っています。売上面のヘッドラインは良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:revenue",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "revenue",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "revenue",
+        "value": 700000000.0,
+        "unit": "USD",
+        "confidence": 0.94
+      },
+      {
+        "evidence_id": "kev3",
+        "polarity": "positive",
+        "summary": "非GAAP粗利率と営業利益率は高水準を維持",
+        "detail": "開示資料ではQ3 26の非GAAP粗利率が81%、非GAAP営業利益率が23%と示され、前年同四半期比で粗利率は横ばい、営業利益率は22%から23%へ改善しています。利益率の質は比較的良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.67
+      },
+      {
+        "evidence_id": "kev5",
+        "polarity": "positive",
+        "summary": "FCFはプラスで、営業キャッシュも確保",
+        "detail": "reported_period_actualsではoperating_cash_flowが100.0M、free_cash_flowが80.0M、capexが20.0Mです。P&L面から見ても、利益だけでなく現金創出はプラスです。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "free_cash_flow",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 80000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "cfra_key_4",
+        "polarity": "positive",
+        "summary": "Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む",
+        "detail": "会社はQ4 26のFCFマージンを約22.8%〜23.3%と示しており、短期的にはFCFの改善余地があることを示唆する。ガイダンスは将来FCFの方向感としては前向き。",
+        "impact_areas": [
+          "guidance",
+          "fcf"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow_margin_guidance",
+        "value": 23.05,
+        "unit": "%",
+        "confidence": 0.67
+      }
+    ],
+    "strongest_negative_evidence": [
+      {
+        "evidence_id": "cfra_bear_1",
+        "polarity": "risk",
+        "summary": "Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し",
+        "detail": "会社はデータセンター設備やBranchアプライアンスの投資を前倒しし、Q4のCapExが高くなり、通期2026年のCapEx比率は従来想定のmid single-digitsからhigh single-digitsへ上がると説明した。さらに2027年は2026年比で最大200bpの上昇を見込むとしており、FCF改善の継続には逆風。",
+        "impact_areas": [
+          "fcf",
+          "guidance",
+          "balance_sheet"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "capex_outlook",
+        "value": null,
+        "unit": null,
+        "confidence": 0.8
+      },
+      {
+        "evidence_id": "cev2",
+        "polarity": "negative",
+        "summary": "GAAP営業損失が続いている",
+        "detail": "AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.78
+      },
+      {
+        "evidence_id": "ce2",
+        "polarity": "risk",
+        "summary": "販売リーダー交代で移行期の不確実性がある",
+        "detail": "Q4/FY26見通しの説明で、期末に営業リーダー2名が退社し、1名は後任確定済み、もう1名は採用最終段階だが、ガイダンスは移行期を踏まえて慎重にしていると述べている。営業実行力や案件進行に一時的な摩擦が生じる可能性がある。",
+        "impact_areas": [
+          "eps",
+          "guidance",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.63
+      }
+    ],
+    "unresolved_questions": [
+      "Q4以降のCapEx上昇がFCFにどの程度残るか",
+      "営業リーダー交代が受注・実行に与える影響",
+      "GAAP損失が続く中で非GAAP改善が継続するか",
+      "working capital要因が一時的か構造成分か",
+      "guidanceが市場予想に対して保守的かどうかは未判定"
+    ]
+  },
+  "judge_decision": {
+    "verdict": "neutral",
+    "confidence": 0.73,
+    "summary": "当四半期の売上・EPSはコンセンサスを上回り、非GAAP利益率とFCFもプラスでヘッドラインは良好です。一方で、EPSの上振れ幅は大きくなく、GAAP営業損失が残り、FCFはCapEx前倒しと回収タイミング要因で持続性の裏取りが弱いです。さらに、Q4/FY26ガイダンスは存在するものの、guided_period の consensus がなく市場予想比の良否を定量判定できないため、総合判断は neutral が妥当です。",
+    "rationale": "Bull側は、EPS 0.84がコンセンサス0.80を上回り、売上700Mもコンセンサス690Mを上回った点、非GAAP営業利益率23%とFCF 80Mのプラスが当四半期の質を支える点を示しています。Bear側は、EPSの上振れは小幅で、GAAP営業損失が残ること、FCFは当期プラスでもQ4以降のCapEx上昇と回収タイミング要因で持続性が不確実なこと、営業リーダー交代が短期の実行リスクになりうることを指摘しています。両者を比べると、当四半期の実績は良好ですが、将来EPSとFCFの改善を強く断定するには不足があり、EPSとFCFのシグナルも方向としては前向きでも確度は中程度にとどまります。",
+    "positive_evidence": [
+      {
+        "evidence_id": "kev1",
+        "polarity": "positive",
+        "summary": "EPSはコンセンサスを上回った",
+        "detail": "reported_period_actualsのEPSは0.84で、consensus_for_reported_periodの0.8を上回っています。ヘッドラインEPSは良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:eps",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "eps",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "eps",
+        "value": 0.84,
+        "unit": "USD/share",
+        "confidence": 0.94
+      },
+      {
+        "evidence_id": "kev2",
+        "polarity": "positive",
+        "summary": "売上もコンセンサスを上回った",
+        "detail": "reported_period_actualsのrevenueは700.0Mで、consensus_for_reported_periodの690.0Mを上回っています。売上面のヘッドラインは良好です。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:revenue",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "revenue",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "revenue",
+        "value": 700000000.0,
+        "unit": "USD",
+        "confidence": 0.94
+      },
+      {
+        "evidence_id": "kev5",
+        "polarity": "positive",
+        "summary": "FCFはプラスで、営業キャッシュも確保",
+        "detail": "reported_period_actualsではoperating_cash_flowが100.0M、free_cash_flowが80.0M、capexが20.0Mです。P&L面から見ても、利益だけでなく現金創出はプラスです。",
+        "impact_areas": [
+          "fcf",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "financial_api:ZS:2026Q3:free_cash_flow",
+          "source_type": "financial_api",
+          "title": "Financial metrics input",
+          "url": null,
+          "document_id": null,
+          "section_id": null,
+          "page": null,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": "free_cash_flow",
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "reported_period_actuals",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow",
+        "value": 80000000.0,
+        "unit": "USD",
+        "confidence": 0.9
+      },
+      {
+        "evidence_id": "cfra_key_4",
+        "polarity": "positive",
+        "summary": "Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む",
+        "detail": "会社はQ4 26のFCFマージンを約22.8%〜23.3%と示しており、短期的にはFCFの改善余地があることを示唆する。ガイダンスは将来FCFの方向感としては前向き。",
+        "impact_areas": [
+          "guidance",
+          "fcf"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "free_cash_flow_margin_guidance",
+        "value": 23.05,
+        "unit": "%",
+        "confidence": 0.67
+      }
+    ],
+    "negative_evidence": [
+      {
+        "evidence_id": "cfra_bear_1",
+        "polarity": "risk",
+        "summary": "Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し",
+        "detail": "会社はデータセンター設備やBranchアプライアンスの投資を前倒しし、Q4のCapExが高くなり、通期2026年のCapEx比率は従来想定のmid single-digitsからhigh single-digitsへ上がると説明した。さらに2027年は2026年比で最大200bpの上昇を見込むとしており、FCF改善の継続には逆風。",
+        "impact_areas": [
+          "fcf",
+          "guidance",
+          "balance_sheet"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p18:section-1",
+          "page": 18,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": "capex_outlook",
+        "value": null,
+        "unit": null,
+        "confidence": 0.8
+      },
+      {
+        "evidence_id": "cev2",
+        "polarity": "negative",
+        "summary": "GAAP営業損失が続いている",
+        "detail": "AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。",
+        "impact_areas": [
+          "eps",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p27:section-1",
+          "page": 27,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.78
+      },
+      {
+        "evidence_id": "ce2",
+        "polarity": "risk",
+        "summary": "販売リーダー交代で移行期の不確実性がある",
+        "detail": "Q4/FY26見通しの説明で、期末に営業リーダー2名が退社し、1名は後任確定済み、もう1名は採用最終段階だが、ガイダンスは移行期を踏まえて慎重にしていると述べている。営業実行力や案件進行に一時的な摩擦が生じる可能性がある。",
+        "impact_areas": [
+          "eps",
+          "guidance",
+          "overall"
+        ],
+        "source_ref": {
+          "source_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "source_type": "earnings_presentation",
+          "title": "ZS 2026 Q3 Shareholder Letter",
+          "url": null,
+          "document_id": "zs-2026q3-shareholder-letter",
+          "section_id": "zs-2026q3-shareholder-letter:p19:section-1",
+          "page": 19,
+          "line_start": null,
+          "line_end": null,
+          "metric_name": null,
+          "as_of_date": null,
+          "fiscal_period": "2026Q3",
+          "period_role": "target_period_document",
+          "published_date": null,
+          "data_cutoff_date": null
+        },
+        "metric_name": null,
+        "value": null,
+        "unit": null,
+        "confidence": 0.63
+      }
+    ],
+    "eps_outlook": "やや前向きだが確度は中程度",
+    "eps_outlook_reason": "EPSは当四半期にコンセンサス超えで、非GAAP利益率と営業利益の拡大も支えています。ただし、上振れ幅は小幅で、GAAP営業損失が残り、税率・株式報酬・一時項目などの分解情報が不足しているため、次四半期以降の継続的改善を強く断定するには材料不足です。",
+    "fcf_outlook": "やや前向きだが不確実性が残る",
+    "fcf_outlook_reason": "当四半期のFCFはプラスで、Q4ガイダンスでもFCFマージン改善が示されています。一方で、CapEx前倒し、回収タイミング要因、working capitalの定量不足があり、FCF改善の持続性はまだ十分に裏づけられていません。",
+    "purpose": "earnings_review_not_investment_advice",
+    "is_investment_advice": false
+  },
+  "markdown_report": "# Earnings Review: ZS 2026Q3\n\n## Verdict\n\nNeutral\n\nConfidence: 0.73\n\n## Summary\n\n当四半期の売上・EPSはコンセンサスを上回り、非GAAP利益率とFCFもプラスでヘッドラインは良好です。一方で、EPSの上振れ幅は大きくなく、GAAP営業損失が残り、FCFはCapEx前倒しと回収タイミング要因で持続性の裏取りが弱いです。さらに、Q4/FY26ガイダンスは存在するものの、guided_period の consensus がなく市場予想比の良否を定量判定できないため、総合判断は neutral が妥当です。\n\n## Evidence Matrix\n\n| # | Direction | Claim | Evidence value / quote | Interpretation | Source | Timing | Confidence |\n|---:|---|---|---|---|---|---|---:|\n| 1 | positive | EPSはコンセンサスを上回った | 0.84 USD/share (eps) | reported_period_actualsのEPSは0.84で、consensus_for_reported_periodの0.8を上回っています。ヘッドラインEPSは良好です。 | `financial_api:ZS:2026Q3:eps` / eps | same_period_primary | 0.94 |\n| 2 | positive | 売上もコンセンサスを上回った | 700,000,000 USD (revenue) | reported_period_actualsのrevenueは700.0Mで、consensus_for_reported_periodの690.0Mを上回っています。売上面のヘッドラインは良好です。 | `financial_api:ZS:2026Q3:revenue` / revenue | same_period_primary | 0.94 |\n| 3 | positive | FCFはプラスで、営業キャッシュも確保 | 80,000,000 USD (free_cash_flow) | reported_period_actualsではoperating_cash_flowが100.0M、free_cash_flowが80.0M、capexが20.0Mです。P&L面から見ても、利益だけでなく現金創出はプラスです。 | `financial_api:ZS:2026Q3:free_cash_flow` / free_cash_flow | same_period_primary | 0.90 |\n| 4 | positive | Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む | 23.05 % (free_cash_flow_margin_guidance) | 会社はQ4 26のFCFマージンを約22.8%〜23.3%と示しており、短期的にはFCFの改善余地があることを示唆する。ガイダンスは将来FCFの方向感としては前向き。 | `zs-2026q3-shareholder-letter:p19:section-1` / zs-2026q3-shareholder-letter:p19:section-1 | same_period_primary | 0.67 |\n| 5 | risk | Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し | 会社はデータセンター設備やBranchアプライアンスの投資を前倒しし、Q4のCapExが高くなり、通期2026年のCapEx比率は従来想定のmid single-digitsからhigh single-digitsへ上がると説明した。さらに2027年は2026年比で最大200bpの上昇を見込むとしており、FCF改善の継続には逆風。 | 会社はデータセンター設備やBranchアプライアンスの投資を前倒しし、Q4のCapExが高くなり、通期2026年のCapEx比率は従来想定のmid single-digitsからhigh single-digitsへ上がると説明した。さらに2027年は2026年比で最大200bpの上昇を見込むとしており、FCF改善の継続には逆風。 | `zs-2026q3-shareholder-letter:p18:section-1` / zs-2026q3-shareholder-letter:p18:section-1 | same_period_primary | 0.80 |\n| 6 | negative | GAAP営業損失が続いている | AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。 | AppendixではGAAP loss from operationsがQ3 26で-29.640Mとなっており、会計ベースでは依然として赤字です。非GAAP利益率は強い一方、GAAPベースの利益質にはなお課題があります。 | `zs-2026q3-shareholder-letter:p27:section-1` / zs-2026q3-shareholder-letter:p27:section-1 | same_period_primary | 0.78 |\n| 7 | risk | 販売リーダー交代で移行期の不確実性がある | Q4/FY26見通しの説明で、期末に営業リーダー2名が退社し、1名は後任確定済み、もう1名は採用最終段階だが、ガイダンスは移行期を踏まえて慎重にしていると述べている。営業実行力や案件進行に一時的な摩擦が生じる可能性がある。 | Q4/FY26見通しの説明で、期末に営業リーダー2名が退社し、1名は後任確定済み、もう1名は採用最終段階だが、ガイダンスは移行期を踏まえて慎重にしていると述べている。営業実行力や案件進行に一時的な摩擦が生じる可能性がある。 | `zs-2026q3-shareholder-letter:p19:section-1` / zs-2026q3-shareholder-letter:p19:section-1 | same_period_primary | 0.63 |\n\n## Agent Analysis\n\n- **EarningsQualityAnalyst** (mixed, confidence 0.66): ヘッドラインではEPSと売上がコンセンサス超えで、非GAAP利益率も高水準維持、営業利益も前年同四半期比で拡大しています。一方、GAAP営業損失は残り、税率・株式報酬・一時項目・セグメントの分解が不足しているため、EPS上振れの持続性評価は中程度の確信に留めるべきです。FCFはプラスですが、FCFの持続性を裏付ける詳細なキャッシュドライバーは不足しています。\n- **CashFlowRiskAnalyst** (neutral, confidence 0.58): CFO/FCFは当四半期ベースではプラスで、CapExも現時点では管理可能だが、将来FCFの改善はQ4に前倒しされるCapEx増加と回収タイミング要因で不確実性が残る。バランスシート面では現金と負債の水準は示される一方、満期・流動性詳細がなく、資金調達制約の強さは判定保留。EPSへの示唆は、キャッシュ創出は現時点で大きな制約を示さないが、CapEx増加が続く場合はFCFを通じた制約が強まりうる、という限定的な見方が妥当。\n- **ManagementIntentAnalyst** (mixed, confidence 0.64): 経営陣は、Zero Trust/AI/データセキュリティを軸に、Z-Flex、GSI、クラウドマーケットプレイス、モジュール拡張でプラットフォーム浸透を深める意図が強い。Q3は成長と利益率が両立しており、営業利益率とFCFは一定の強さを示すが、Q4のcapex前倒しと営業体制の交代が短期FCF/EPSのノイズ要因。中期では、AI関連と顧客拡大がEPS/FCF改善余地を持つ一方、買収統合・供給コスト上昇・実行リスクが反対根拠。\n- **GuidanceAnalyst** (neutral, confidence 0.58): 対象四半期の実績は売上・EPSともにコンセンサス超えで良好。一方、将来 guidance はQ4/FY26で提示されているが、guided_period の consensus がなく予想比評価は未確定。資料上は営業体制の移行とcapex上振れが主な下方リスクで、EPS/FCF は売上維持と投資増の吸収が達成条件。guidance の強気/保守性は現時点では unclear で、revision risk は『transitionとcapex増加次第』という定性的評価にとどまる。\n\n## Positive Evidence\n\n- EPSはコンセンサスを上回った\n- 売上もコンセンサスを上回った\n- FCFはプラスで、営業キャッシュも確保\n- Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む\n\n## Negative Evidence\n\n- Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し\n- GAAP営業損失が続いている\n- 販売リーダー交代で移行期の不確実性がある\n\n## EPS Outlook\n\nやや前向きだが確度は中程度\n\nReason: EPSは当四半期にコンセンサス超えで、非GAAP利益率と営業利益の拡大も支えています。ただし、上振れ幅は小幅で、GAAP営業損失が残り、税率・株式報酬・一時項目などの分解情報が不足しているため、次四半期以降の継続的改善を強く断定するには材料不足です。\n\n## FCF Outlook\n\nやや前向きだが不確実性が残る\n\nReason: 当四半期のFCFはプラスで、Q4ガイダンスでもFCFマージン改善が示されています。一方で、CapEx前倒し、回収タイミング要因、working capitalの定量不足があり、FCF改善の持続性はまだ十分に裏づけられていません。\n\n## Bull Case\n\n今回の決算は、売上とEPSがコンセンサスを上回り、非GAAP利益率も高水準を維持し、当四半期のFCFもプラスである点から、ヘッドラインとしてはgood と評価しやすい。加えて、経営陣はZero Trust/AI/データセキュリティを軸にプラットフォーム拡張を進める意図を示しており、中期のEPS・FCF改善余地を示唆している。一方で、GAAP営業損失の継続、FCFの質を分解する情報不足、Q4以降のCapEx上振れと営業体制移行リスクは残るため、強さは中程度にとどめる。\n\n## Bear Case\n\n今回の決算はヘッドラインでは売上・EPSともにコンセンサス超えで一見良好だが、GAAP営業損失が残り、EPSの上振れ幅は小さく、FCFも当四半期は黒字でも持続性の裏取りが弱い。さらに、Q4以降のCapEx前倒しと営業体制移行が示されており、短期の利益・キャッシュ創出は維持できても、次四半期以降の改善確度は限定的とみるのが妥当で、総合評価はneutral寄りだが下方リスクが残る。\n\n## Analyst Brief\n\nヘッドラインではEPSと売上がコンセンサス超えで、非GAAP利益率も高水準維持、営業利益も前年同四半期比で拡大しています。一方、GAAP営業損失は残り、税率・株式報酬・一時項目・セグメントの分解が不足しているため、EPS上振れの持続性評価は中程度の確信に留めるべきです。FCFはプラスですが、FCFの持続性を裏付ける詳細なキャッシュドライバーは不足しています。 CFO/FCFは当四半期ベースではプラスで、CapExも現時点では管理可能だが、将来FCFの改善はQ4に前倒しされるCapEx増加と回収タイミング要因で不確実性が残る。バランスシート面では現金と負債の水準は示される一方、満期・流動性詳細がなく、資金調達制約の強さは判定保留。EPSへの示唆は、キャッシュ創出は現時点で大きな制約を示さないが、CapEx増加が続く場合はFCFを通じた制約が強まりうる、という限定的な見方が妥当。 経営陣は、Zero Trust/AI/データセキュリティを軸に、Z-Flex、GSI、クラウドマーケットプレイス、モジュール拡張でプラットフォーム浸透を深める意図が強い。Q3は成長と利益率が両立しており、営業利益率とFCFは一定の強さを示すが、Q4のcapex前倒しと営業体制の交代が短期FCF/EPSのノイズ要因。中期では、AI関連と顧客拡大がEPS/FCF改善余地を持つ一方、買収統合・供給コスト上昇・実行リスクが反対根拠。 対象四半期の実績は売上・EPSともにコンセンサス超えで良好。一方、将来 guidance はQ4/FY26で提示されているが、guided_period の consensus がなく予想比評価は未確定。資料上は営業体制の移行とcapex上振れが主な下方リスクで、EPS/FCF は売上維持と投資増の吸収が達成条件。guidance の強気/保守性は現時点では unclear で、revision risk は『transitionとcapex増加次第』という定性的評価にとどまる。\n\n## Source Inventory\n\n| source_id | type | locator | title | period_role | timing | used for | source/location |\n|---|---|---|---|---|---|---|---|\n| `financial_api:ZS:2026Q3:eps` | financial_api | eps | Financial metrics input | reported_period_actuals | same_period_primary | EarningsQualityAnalyst: EPSの上振れ幅は大きくはない; EarningsQualityAnalyst: EPSはコンセンサスを上回った; GuidanceAnalyst: Q3実績EPSはコンセンサス超え | Financial metrics input |\n| `financial_api:ZS:2026Q3:revenue` | financial_api | revenue | Financial metrics input | reported_period_actuals | same_period_primary | EarningsQualityAnalyst: 売上もコンセンサスを上回った; GuidanceAnalyst: Q3実績は売上がコンセンサス超え | Financial metrics input |\n| `zs-2026q3-shareholder-letter:p27:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p27:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | EarningsQualityAnalyst: GAAP営業損失が続いている; EarningsQualityAnalyst: 営業利益は前年同四半期比で増加; EarningsQualityAnalyst: 非GAAP粗利率と営業利益率は高水準を維持 | zs-2026q3-shareholder-letter:p27:section-1 |\n| `financial_api:ZS:2026Q3:free_cash_flow` | financial_api | free_cash_flow | Financial metrics input | reported_period_actuals | same_period_primary | EarningsQualityAnalyst: FCFの質を分解する情報が限定的; EarningsQualityAnalyst: FCFはプラスで、営業キャッシュも確保 | Financial metrics input |\n| `zs-2026q3-shareholder-letter:p25:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p25:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | EarningsQualityAnalyst: 売上以外の収益性ドライバーの詳細が不足 | zs-2026q3-shareholder-letter:p25:section-1 |\n| `financial_api:ZS:2026Q3:operating_cash_flow` | financial_api | operating_cash_flow | Financial metrics input | reported_period_actuals | same_period_primary | CashFlowRiskAnalyst: Q3の営業キャッシュフローとFCFはプラスで、FCFの水準は良好 | Financial metrics input |\n| `financial_api:ZS:2026Q3:capex` | financial_api | capex | Financial metrics input | reported_period_actuals | same_period_primary | CashFlowRiskAnalyst: CapExは2,000万ドルで、当四半期のFCFを大きく圧迫していない | Financial metrics input |\n| `zs-2026q3-shareholder-letter:p18:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p18:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | CashFlowRiskAnalyst: FCFマージン低下の要因として回収タイミングが挙げられている; CashFlowRiskAnalyst: Q4にCapExが前倒しされ、2026年のCapEx比率は上昇見通し; CashFlowRiskAnalyst: 会社はQ3のFCFマージン16.0%と年初来29%を開示; CashFlowRiskAnalyst: 流動性・負債の定量評価に必要な詳細が不足; GuidanceAnalyst: ガイダンスには遷移リスクとcapex上振れ要因が明示; ManagementIntentAnalyst: FCFは当期も一定水準を維持し、資本効率はまだ機能; ManagementIntentAnalyst: FCFマージンは前年より低下している; ManagementIntentAnalyst: Q4にcapexが前倒しされ短期FCFを圧迫 | zs-2026q3-shareholder-letter:p18:section-1 |\n| `zs-2026q3-shareholder-letter:p19:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p19:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | CashFlowRiskAnalyst: Q4ガイダンスではFCFマージン約22.8%〜23.3%を見込む; GuidanceAnalyst: Q4/FY26のガイダンス値が資料内に記載; GuidanceAnalyst: guidance の対象期間が明示されるが数値比較用の前提は不足; GuidanceAnalyst: guided_period の consensus がなく上振れ/下振れ判定ができない; ManagementIntentAnalyst: 販売リーダー交代で移行期の不確実性がある | zs-2026q3-shareholder-letter:p19:section-1 |\n| `zs-2026q3-shareholder-letter:p32:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p32:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | ManagementIntentAnalyst: 成長の中核をZero Trust、AI Protect、Data Securityに置く | zs-2026q3-shareholder-letter:p32:section-1 |\n| `zs-2026q3-shareholder-letter:p16:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p16:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | ManagementIntentAnalyst: Z-Flexとアカウント拡大で顧客浸透を深める意図 | zs-2026q3-shareholder-letter:p16:section-1 |\n| `zs-2026q3-shareholder-letter:p14:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p14:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | ManagementIntentAnalyst: Q3は成長と収益性を両立 | zs-2026q3-shareholder-letter:p14:section-1 |\n| `zs-2026q3-shareholder-letter:p6:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p6:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | ManagementIntentAnalyst: AI/新製品とパートナー網を成長レバーとして拡大 | zs-2026q3-shareholder-letter:p6:section-1 |\n| `zs-2026q3-shareholder-letter:p35:section-1` | earnings_presentation | zs-2026q3-shareholder-letter:p35:section-1 | ZS 2026 Q3 Shareholder Letter | target_period_document | same_period_primary | ManagementIntentAnalyst: 成長の一部は買収と高投資テーマに依存 | zs-2026q3-shareholder-letter:p35:section-1 |\n\n## Metric Store\n\n| metric | value | unit | fiscal_period | period_role | source | source_ref |\n|---|---:|---|---|---|---|---|\n| eps | 0.84 | USD/share | 2026Q3 | reported_period_actuals | Financial metrics input (financial_api) | `financial_api:ZS:2026Q3:eps` |\n| eps_consensus | 0.8 | USD/share | 2026Q3 | consensus_for_reported_period | Financial metrics input (financial_api) | `financial_api:ZS:2026Q3:eps_consensus` |\n| revenue | 7e+08 | USD | 2026Q3 | reported_period_actuals | Financial metrics input (financial_api) | `financial_api:ZS:2026Q3:revenue` |\n| revenue_consensus | 6.9e+08 | USD | 2026Q3 | consensus_for_reported_period | Financial metrics input (financial_api) | `financial_api:ZS:2026Q3:revenue_consensus` |\n| operating_cash_flow | 1e+08 | USD | 2026Q3 | reported_period_actuals | Financial metrics input (financial_api) | `financial_api:ZS:2026Q3:operating_cash_flow` |\n| free_cash_flow | 8e+07 | USD | 2026Q3 | reported_period_actuals | Financial metrics input (financial_api) | `financial_api:ZS:2026Q3:free_cash_flow` |\n| capex | 2e+07 | USD | 2026Q3 | reported_period_actuals | Financial metrics input (financial_api) | `financial_api:ZS:2026Q3:capex` |\n\n## Presentation Metric Hints\n\n- Non-canonical PDF/table extraction candidates; `ambiguous` rows are not promoted or used as facts.\n\n| metric | raw_text | raw_value | value | unit | fiscal_period | period_role | status | source | source_ref |\n|---|---|---:|---:|---|---|---|---|---|---|\n| revenue_guidance | revenue 2 | 2 | 2 |  |  |  | ambiguous | ZS 2026 Q3 Shareholder Letter (earnings_presentation) | `zs-2026q3-shareholder-letter:p14:section-1` |\n| eps_guidance | EPS $1.00 | 1.00 | 1 | USD/share |  |  | ambiguous | ZS 2026 Q3 Shareholder Letter (earnings_presentation) | `zs-2026q3-shareholder-letter:p14:section-1` |\n| revenue_guidance | revenue of approximately $137 million | 137 | 137 | USD million |  |  | parsed | ZS 2026 Q3 Shareholder Letter (earnings_presentation) | `zs-2026q3-shareholder-letter:p19:section-1` |\n\n## Missing Data Caveats\n\n| Agent | Severity | Missing data / confidence limit |\n|---|---|---|\n| EarningsQualityAnalyst | non_blocking | prior_sequential_period_actuals がなく、直前四半期との margin / operating leverage / revenue trend 比較ができません。 |\n| EarningsQualityAnalyst | non_blocking | prior_year_period がなく、前年同四半期比較による収益性の継続性を確認できません。 |\n| EarningsQualityAnalyst | non_blocking | segment_metrics が空で、segment mix が EPS/利益率に与えた影響を評価できません。 |\n| EarningsQualityAnalyst | non_blocking | tax rate、share count、stock-based compensation、one-time item の canonical 指標がなく、EPS beat の質を十分に分解できません。 |\n| EarningsQualityAnalyst | non_blocking | gross margin / operating margin の canonical metric は不足しており、開示資料ベースの定性的確認にとどまります。 |\n| EarningsQualityAnalyst | material_caveat | revenue_consensus はあるが、同等に使える margin/expense の precomputed 指標が不足しているため、売上品質と収益性の因果は限定的にしか示せません。 |\n| CashFlowRiskAnalyst | material_caveat | 前期比・前年同期比のCFO/FCFトレンドが入力にないため、trendの方向を厳密に確認できない。 |\n| CashFlowRiskAnalyst | material_caveat | working capitalの定量指標がないため、FCF変動が一時要因か構造要因かを分解できない。 |\n| CashFlowRiskAnalyst | non_blocking | 流動性の詳細、満期構成、借換え条件、財務制約の定量情報がないため、financing riskを十分に評価できない。 |\n| CashFlowRiskAnalyst | material_caveat | guidanceのFCFはQ4のみで、通期ベースの詳細なFCFガイダンス数値はこの入力だけでは限定的。 |\n| ManagementIntentAnalyst | material_caveat | guidance-vs-consensus の評価は要求範囲外のため行っていない。 |\n| ManagementIntentAnalyst | material_caveat | 投資額、採用計画、R&D計画の定量値が不足しており、EPS/FCF への影響は定性的評価にとどまる。 |\n| ManagementIntentAnalyst | non_blocking | 買収統合費用や更新率、解約率など、長期収益化を裏づける補助指標が不足している。 |\n| GuidanceAnalyst | material_caveat | guided_period に対応する precomputed guidance delta がないため、conservative / balanced / aggressive の厳密判定はできません。 |\n| GuidanceAnalyst | material_caveat | presentation_metric_hints は存在しますが、canonical fact としては guidance section の確認補助に限られ、追加の定量裏取りには使えません。 |\n\n## Sources\n\n### EarningsQualityAnalyst\n- `financial_api:ZS:2026Q3:eps` (eps): Financial metrics input — Financial metrics input\n- `financial_api:ZS:2026Q3:revenue` (revenue): Financial metrics input — Financial metrics input\n- `zs-2026q3-shareholder-letter:p27:section-1` (zs-2026q3-shareholder-letter:p27:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p27:section-1\n- `financial_api:ZS:2026Q3:free_cash_flow` (free_cash_flow): Financial metrics input — Financial metrics input\n- `zs-2026q3-shareholder-letter:p25:section-1` (zs-2026q3-shareholder-letter:p25:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p25:section-1\n### CashFlowRiskAnalyst\n- `financial_api:ZS:2026Q3:operating_cash_flow` (operating_cash_flow): Financial metrics input — Financial metrics input\n- `financial_api:ZS:2026Q3:capex` (capex): Financial metrics input — Financial metrics input\n- `zs-2026q3-shareholder-letter:p18:section-1` (zs-2026q3-shareholder-letter:p18:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p18:section-1\n- `zs-2026q3-shareholder-letter:p19:section-1` (zs-2026q3-shareholder-letter:p19:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p19:section-1\n### ManagementIntentAnalyst\n- `zs-2026q3-shareholder-letter:p32:section-1` (zs-2026q3-shareholder-letter:p32:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p32:section-1\n- `zs-2026q3-shareholder-letter:p16:section-1` (zs-2026q3-shareholder-letter:p16:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p16:section-1\n- `zs-2026q3-shareholder-letter:p14:section-1` (zs-2026q3-shareholder-letter:p14:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p14:section-1\n- `zs-2026q3-shareholder-letter:p18:section-1` (zs-2026q3-shareholder-letter:p18:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p18:section-1\n- `zs-2026q3-shareholder-letter:p6:section-1` (zs-2026q3-shareholder-letter:p6:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p6:section-1\n- `zs-2026q3-shareholder-letter:p19:section-1` (zs-2026q3-shareholder-letter:p19:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p19:section-1\n- `zs-2026q3-shareholder-letter:p35:section-1` (zs-2026q3-shareholder-letter:p35:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p35:section-1\n### GuidanceAnalyst\n- `financial_api:ZS:2026Q3:revenue` (revenue): Financial metrics input — Financial metrics input\n- `financial_api:ZS:2026Q3:eps` (eps): Financial metrics input — Financial metrics input\n- `zs-2026q3-shareholder-letter:p19:section-1` (zs-2026q3-shareholder-letter:p19:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p19:section-1\n- `zs-2026q3-shareholder-letter:p18:section-1` (zs-2026q3-shareholder-letter:p18:section-1): ZS 2026 Q3 Shareholder Letter — zs-2026q3-shareholder-letter:p18:section-1\n\n_This report is an earnings analysis artifact and is not investment advice._",
+  "warnings": [],
+  "purpose": "earnings_review_not_investment_advice",
+  "is_investment_advice": false,
+  "disclaimer": "This report is an earnings analysis artifact and is not investment advice."
+}

@@ -10,9 +10,11 @@ from __future__ import annotations
 import json
 import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from threading import Lock
 from typing import Any
+
+from pydantic import BaseModel
 
 
 @dataclass
@@ -20,6 +22,46 @@ class LLMResponse:
     text: str
     input_tokens: int
     output_tokens: int
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+class ProviderCallError(RuntimeError):
+    """Raised when a provider call fails before a usable LLM response exists."""
+
+    def __init__(
+        self,
+        *,
+        provider: str,
+        model: str,
+        stage: str,
+        message: str,
+        cause: Exception | None = None,
+        metadata: dict[str, Any] | None = None,
+    ):
+        self.provider = provider
+        self.model = model
+        self.stage = stage
+        self.cause_type = type(cause).__name__ if cause is not None else None
+        self.cause_message = str(cause) if cause is not None else None
+        self.metadata = metadata or {}
+        detail = f"provider={provider} model={model} stage={stage}: {message}"
+        if cause is not None:
+            detail = f"{detail}: {type(cause).__name__}: {cause}"
+        super().__init__(detail)
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {
+            "provider": self.provider,
+            "model": self.model,
+            "stage": self.stage,
+            "cause_type": self.cause_type,
+            "cause_message": self.cause_message,
+            **self.metadata,
+        }
+
+
+class ProviderResponseError(ProviderCallError):
+    """Raised when the provider response shape cannot be safely interpreted."""
 
 
 class LLMProvider(ABC):
@@ -32,27 +74,103 @@ class LLMProvider(ABC):
         temperature: float = 0.7,
     ) -> LLMResponse: ...
 
+    def complete_structured(
+        self,
+        system: str,
+        user: str,
+        output_model: type[BaseModel],
+        max_tokens: int = 2048,
+        temperature: float = 0.7,
+    ) -> LLMResponse:
+        return self.complete(system, user, max_tokens=max_tokens, temperature=temperature)
+
 
 class AnthropicProvider(LLMProvider):
     def __init__(self, model: str | None = None):
         from anthropic import Anthropic
 
         self.client = Anthropic()  # picks up ANTHROPIC_API_KEY from env
-        self.model = model or os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
+        self.model: str = model or os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-5"
 
     def complete(self, system, user, max_tokens=2048, temperature=0.7):
-        resp = self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-        )
-        return LLMResponse(
-            text=resp.content[0].text,
-            input_tokens=resp.usage.input_tokens,
-            output_tokens=resp.usage.output_tokens,
-        )
+        try:
+            resp = self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+            )
+        except Exception as exc:
+            raise ProviderCallError(
+                provider="anthropic",
+                model=self.model,
+                stage="text_call",
+                message="Anthropic text completion failed",
+                cause=exc,
+            ) from exc
+        return _anthropic_text_response(resp, model=self.model, stage="text_response")
+
+    def complete_structured(
+        self,
+        system: str,
+        user: str,
+        output_model: type[BaseModel],
+        max_tokens: int = 2048,
+        temperature: float = 0.7,
+    ) -> LLMResponse:
+        try:
+            resp = self.client.messages.parse(
+                model=self.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+                output_format=output_model,
+            )
+        except Exception as exc:
+            return _structured_fallback_or_raise(
+                self,
+                provider="anthropic",
+                model=self.model,
+                system=system,
+                user=user,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                cause=exc,
+            )
+
+        parsed = _anthropic_parsed_output(resp)
+        if parsed is None:
+            return _structured_fallback_or_raise(
+                self,
+                provider="anthropic",
+                model=self.model,
+                system=system,
+                user=user,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                cause=ProviderResponseError(
+                    provider="anthropic",
+                    model=self.model,
+                    stage="structured_response",
+                    message="Anthropic structured response did not include parsed output",
+                ),
+            )
+        try:
+            return LLMResponse(
+                text=_model_text(parsed),
+                input_tokens=resp.usage.input_tokens,
+                output_tokens=resp.usage.output_tokens,
+            )
+        except Exception as exc:
+            raise ProviderResponseError(
+                provider="anthropic",
+                model=self.model,
+                stage="structured_response",
+                message="Anthropic structured response had an unexpected shape",
+                cause=exc,
+            ) from exc
 
 
 class OpenAIProvider(LLMProvider):
@@ -60,7 +178,7 @@ class OpenAIProvider(LLMProvider):
         from openai import OpenAI
 
         self.client = OpenAI()  # picks up OPENAI_API_KEY from env
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
+        self.model: str = model or os.getenv("OPENAI_MODEL") or "gpt-5.4-mini"
 
     def complete(self, system, user, max_tokens=2048, temperature=0.7):
         params: dict[str, Any] = {
@@ -76,17 +194,256 @@ class OpenAIProvider(LLMProvider):
             params["max_tokens"] = max_tokens
             params["temperature"] = temperature
 
-        resp = self.client.chat.completions.create(**params)
-        return LLMResponse(
-            text=resp.choices[0].message.content or "",
-            input_tokens=resp.usage.prompt_tokens,
-            output_tokens=resp.usage.completion_tokens,
-        )
+        try:
+            resp = self.client.chat.completions.create(**params)
+        except Exception as exc:
+            raise ProviderCallError(
+                provider="openai",
+                model=self.model,
+                stage="text_call",
+                message="OpenAI text completion failed",
+                cause=exc,
+            ) from exc
+        return _openai_text_response(resp, model=self.model, stage="text_response")
+
+    def complete_structured(
+        self,
+        system: str,
+        user: str,
+        output_model: type[BaseModel],
+        max_tokens: int = 2048,
+        temperature: float = 0.7,
+    ) -> LLMResponse:
+        params: dict[str, Any] = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "response_format": _openai_structured_response_format(output_model),
+        }
+        if _openai_uses_max_completion_tokens(self.model):
+            params["max_completion_tokens"] = max(max_tokens, 4096)
+        else:
+            params["max_tokens"] = max_tokens
+            params["temperature"] = temperature
+
+        try:
+            resp = self.client.chat.completions.create(**params)
+        except Exception as exc:
+            return _structured_fallback_or_raise(
+                self,
+                provider="openai",
+                model=self.model,
+                system=system,
+                user=user,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                cause=exc,
+            )
+
+        try:
+            text = resp.choices[0].message.content
+            if not isinstance(text, str) or not text.strip():
+                raise TypeError("structured response did not include text content")
+            return LLMResponse(
+                text=text,
+                input_tokens=resp.usage.prompt_tokens,
+                output_tokens=resp.usage.completion_tokens,
+            )
+        except Exception as exc:
+            raise ProviderResponseError(
+                provider="openai",
+                model=self.model,
+                stage="structured_response",
+                message="OpenAI structured response had an unexpected shape",
+                cause=exc,
+            ) from exc
 
 
 def _openai_uses_max_completion_tokens(model: str) -> bool:
     normalized = model.lower()
     return normalized.startswith(("gpt-5", "o1", "o3", "o4"))
+
+
+def _openai_structured_response_format(output_model: type[BaseModel]) -> dict[str, Any]:
+    try:
+        from openai.lib._pydantic import to_strict_json_schema
+
+        schema = to_strict_json_schema(output_model)
+    except Exception:
+        schema = output_model.model_json_schema()
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": output_model.__name__,
+            "strict": True,
+            "schema": _openai_schema_subset(schema),
+        },
+    }
+
+
+def _openai_schema_subset(value: Any) -> Any:
+    if isinstance(value, dict):
+        property_names = value.get("propertyNames")
+        additional_properties = value.get("additionalProperties")
+        if (
+            isinstance(property_names, dict)
+            and isinstance(property_names.get("enum"), list)
+            and additional_properties is not None
+        ):
+            allowed_keys = [str(key) for key in property_names["enum"]]
+            converted = {
+                key: nested
+                for key, nested in value.items()
+                if key
+                not in {
+                    "additionalProperties",
+                    "format",
+                    "default",
+                    "maxProperties",
+                    "minProperties",
+                    "propertyNames",
+                }
+            }
+            converted["properties"] = {
+                key: _openai_schema_subset(additional_properties) for key in allowed_keys
+            }
+            converted["required"] = allowed_keys
+            converted["additionalProperties"] = False
+            return _openai_schema_subset(converted)
+
+        return {
+            key: _openai_schema_subset(nested)
+            for key, nested in value.items()
+            if key not in {"format", "default", "maxProperties", "minProperties"}
+        }
+    if isinstance(value, list):
+        return [_openai_schema_subset(item) for item in value]
+    return value
+
+
+def _model_text(value: Any) -> str:
+    if isinstance(value, BaseModel):
+        return value.model_dump_json()
+    if hasattr(value, "model_dump_json"):
+        return value.model_dump_json()
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _structured_fallback_enabled() -> bool:
+    return os.getenv("EARNINGS_DEBATE_STRUCTURED_FALLBACK", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def _structured_fallback_or_raise(
+    provider_instance: LLMProvider,
+    *,
+    provider: str,
+    model: str,
+    system: str,
+    user: str,
+    max_tokens: int,
+    temperature: float,
+    cause: Exception,
+) -> LLMResponse:
+    fallback_stage = str(getattr(cause, "stage", None) or "structured_call")
+    if not _structured_fallback_enabled():
+        if isinstance(cause, ProviderCallError):
+            raise cause
+        raise ProviderCallError(
+            provider=provider,
+            model=model,
+            stage="structured_call",
+            message="structured output call failed",
+            cause=cause,
+        ) from cause
+
+    try:
+        response = provider_instance.complete(
+            system,
+            user,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+    except Exception as fallback_exc:
+        raise ProviderCallError(
+            provider=provider,
+            model=model,
+            stage="text_fallback",
+            message="structured output failed and text fallback also failed",
+            cause=fallback_exc,
+            metadata={
+                "structured_fallback_stage": fallback_stage,
+                "structured_fallback_error_type": type(cause).__name__,
+                "structured_fallback_error": str(cause),
+            },
+        ) from fallback_exc
+
+    response.metadata.update(
+        {
+            "structured_fallback_used": True,
+            "structured_fallback_stage": fallback_stage,
+            "structured_fallback_error_type": type(cause).__name__,
+            "structured_fallback_error": str(cause),
+            "provider": provider,
+            "model": model,
+        }
+    )
+    return response
+
+
+def _openai_text_response(response: Any, *, model: str, stage: str) -> LLMResponse:
+    try:
+        return LLMResponse(
+            text=response.choices[0].message.content or "",
+            input_tokens=response.usage.prompt_tokens,
+            output_tokens=response.usage.completion_tokens,
+        )
+    except Exception as exc:
+        raise ProviderResponseError(
+            provider="openai",
+            model=model,
+            stage=stage,
+            message="OpenAI response had an unexpected shape",
+            cause=exc,
+        ) from exc
+
+
+def _anthropic_text_response(response: Any, *, model: str, stage: str) -> LLMResponse:
+    try:
+        text = response.content[0].text
+        if not isinstance(text, str):
+            raise TypeError("first content block did not contain text")
+        return LLMResponse(
+            text=text,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+        )
+    except Exception as exc:
+        raise ProviderResponseError(
+            provider="anthropic",
+            model=model,
+            stage=stage,
+            message="Anthropic response had an unexpected shape",
+            cause=exc,
+        ) from exc
+
+
+def _anthropic_parsed_output(response: Any) -> Any | None:
+    parsed = getattr(response, "parsed_output", None)
+    if parsed is not None:
+        return parsed
+    for block in getattr(response, "content", []) or []:
+        parsed = getattr(block, "parsed_output", None)
+        if parsed is not None:
+            return parsed
+    return None
 
 
 class FakeProvider(LLMProvider):
@@ -384,8 +741,22 @@ def get_provider() -> LLMProvider:
     name = os.getenv("LLM_PROVIDER", "anthropic").lower()
     if name == "fake":
         return FakeProvider()
-    if name == "anthropic":
-        return AnthropicProvider()
-    if name == "openai":
-        return OpenAIProvider()
+    try:
+        if name == "anthropic":
+            return AnthropicProvider()
+        if name == "openai":
+            return OpenAIProvider()
+    except Exception as exc:
+        model = (
+            os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
+            if name == "anthropic"
+            else os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
+        )
+        raise ProviderCallError(
+            provider=name,
+            model=model,
+            stage="provider_init",
+            message="LLM provider initialization failed",
+            cause=exc,
+        ) from exc
     raise ValueError(f"Unknown LLM_PROVIDER: {name}")

@@ -67,3 +67,29 @@ def test_reviews_api_returns_4xx_for_invalid_document_file(monkeypatch):
 
     assert response.status_code == 422
     assert "document file does not exist" in response.json()["detail"]
+
+
+def test_reviews_api_returns_422_for_temporal_contract_violation():
+    payload = {
+        "ticker": "NVDA",
+        "fiscal_period": "2025Q3",
+        "target_earnings_date": "2025-11-19",
+        "document_files": [
+            {
+                "path": "tests/fixtures/sample_presentation.txt",
+                "source_type": "earnings_presentation",
+                "document_id": "sample-presentation",
+                "title": "Sample earnings presentation",
+                "fiscal_period": "2025Q2",
+                "period_role": "target_period_document",
+            }
+        ],
+    }
+
+    response = TestClient(api.app, raise_server_exceptions=False).post(
+        "/reviews",
+        json=payload,
+    )
+
+    assert response.status_code == 422
+    assert "document_files fiscal_period" in response.text

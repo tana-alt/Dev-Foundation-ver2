@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException
 
 from .llm import get_provider
 from .preprocessor import DocumentFileValidationError
-from .workflow import ReviewRequest, ReviewResponse, ReviewWorkflow
+from .workflow import ReviewRequest, ReviewResponse, ReviewWorkflow, WorkflowValidationError
 
 app = FastAPI(title="Earnings Debate Agent API")
 
@@ -22,5 +22,5 @@ def create_review(
 ) -> ReviewResponse:
     try:
         return workflow.run(request)
-    except DocumentFileValidationError as exc:
+    except (DocumentFileValidationError, WorkflowValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

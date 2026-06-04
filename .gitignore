@@ -22,3 +22,9 @@ outputs/*
 !outputs/example/**
 !outputs/nvda-2027q1-real-llm/
 !outputs/nvda-2027q1-real-llm/**
+!outputs/example-current/
+!outputs/example-current/**
+!outputs/sample-nvda-20260603/
+!outputs/sample-nvda-20260603/**
+!outputs/sample-zs-20260603/
+!outputs/sample-zs-20260603/**

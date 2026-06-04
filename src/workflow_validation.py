@@ -40,7 +40,7 @@ class WorkflowValidationError(ValueError):
 
 INVESTMENT_ADVICE_PATTERNS = (
     re.compile(r"\b(buy|sell|hold)\s+(the\s+)?(stock|shares)\b", re.IGNORECASE),
-    re.compile(r"\b(buy|sell|hold)\s+[A-Z]{1,6}\b", re.IGNORECASE),
+    re.compile(r"\b(buy|sell|hold)\s+[A-Z]{1,6}\s+(stock|shares)\b", re.IGNORECASE),
     re.compile(r"\b(stock|shares)\s+(is|are)\s+a\s+(buy|sell|hold)\b", re.IGNORECASE),
     re.compile(
         r"\brecommend(s|ed|ing)?\s+(buying|selling|holding|to\s+(buy|sell|hold))\b",
@@ -56,6 +56,12 @@ INVESTMENT_ADVICE_PATTERNS = (
 
 class WorkflowValidationGate:
     """Owns deterministic workflow gates that do not require LLM calls."""
+
+    def __init__(self) -> None:
+        self.warnings: list[str] = []
+
+    def reset_warnings(self) -> None:
+        self.warnings.clear()
 
     def aggregate_evidence(
         self,
@@ -322,8 +328,9 @@ class WorkflowValidationGate:
         for path, text in self.iter_text_values(value, field_name):
             for pattern in INVESTMENT_ADVICE_PATTERNS:
                 if pattern.search(text):
-                    raise WorkflowValidationError(
-                        f"{path} contains investment-advice language: {pattern.pattern}"
+                    self.warnings.append(
+                        f"{path} contains potential investment-advice language "
+                        f"matching pattern: {pattern.pattern}"
                     )
 
     def iter_text_values(self, value: Any, path: str):

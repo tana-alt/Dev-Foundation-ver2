@@ -6,15 +6,20 @@ Apply this policy to every agent output.
 
 Every evidence item must include:
 
-- `source_ref`
-- `source_type`
-- `claim`
-- `quote_or_value`
-- `interpretation`
+- `evidence_id`
 - `polarity`
+- `summary`
+- `detail`
+- `impact_areas`
+- `source_ref`
 
 `source_ref` must point to a routed source section or precomputed metric supplied
 by the workflow. Do not invent source identifiers.
+
+Use only fields defined by the `EvidenceItem` schema. Do not add extra
+top-level fields such as `claim`, `quote_or_value`, `interpretation`, or
+`source_type`. Put the concise claim in `summary`, supporting explanation in
+`detail`, and source metadata inside the nested `source_ref` object.
 
 Copy `source_ref` from the supplied `source_index` exactly. Do not abbreviate,
 rename, or generalize `source_id`. Do not create generic identifiers such as
@@ -25,6 +30,16 @@ present.
 When `source_ref.source_type` is `financial_api` or `derived_metric`, the
 `source_ref` object must include the exact `metric_name` from the supplied
 precomputed metric source. Do not omit it and do not create a new metric name.
+
+## Presentation Metric Hints
+
+`presentation_metric_hints` are PDF/table extraction candidates only. They are
+not a canonical fact source, are not part of `metric_store`, and are not
+canonical temporal buckets.
+
+Use a hint only as a check against the routed presentation chunk and its
+`source_ref`. Treat `parsed`, `ambiguous`, and `promoted` as different levels of
+extraction confidence, and do not use `rejected` hints as evidence.
 
 ## Positive And Counter Evidence
 

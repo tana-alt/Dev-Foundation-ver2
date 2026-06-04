@@ -7,14 +7,23 @@ from fastapi.testclient import TestClient
 
 from src import api
 from src.llm import LLMResponse
-from src.workflow import ReviewWorkflow, WorkflowValidationError
+from src.workflow import MarkdownRenderer, ReviewWorkflow, WorkflowValidationError
 from src.workflow_models import (
+    AnalysisBrief,
+    CashFlowRiskFinding,
+    DebateResult,
+    EarningsQualityFinding,
     EvidenceItem,
     EvidencePolarity,
+    FinancialMetrics,
+    GuidanceFinding,
     ImpactArea,
+    JudgeDecision,
+    ManagementIntentFinding,
     ReviewRequest,
     SourceRef,
     SourceType,
+    VerdictLabel,
 )
 from src.workflow_validation import WorkflowValidationGate
 
@@ -247,6 +256,39 @@ class InvestmentAdviceJudgeLLM(FakeLLM):
         )
 
 
+class BlockingMissingDataLLM(FakeLLM):
+    def _finding_json(self, role: str) -> str:
+        payload = super()._finding_json(role)
+        if role == "GuidanceAnalyst":
+            return payload.replace(
+                '"missing_data": []',
+                '"missing_data": ["blocking missing data: source-backed guided-period consensus is unavailable"]',
+            )
+        return payload
+
+
+class UngroundedMaterialEvidenceLLM(FakeLLM):
+    def _finding_json(self, role: str) -> str:
+        positive_summary = "Revenue growth was strong"
+        negative_summary = "Margin pressure remains"
+        return f"""
+        {{
+          "agent_name": "{role}",
+          "stance": "mixed",
+          "summary": "{role} summary",
+          "key_evidence": [
+            {self._evidence_json(f"{role}:positive", "positive", "filing:eps", positive_summary)}
+          ],
+          "counter_evidence": [
+            {self._evidence_json(f"{role}:negative", "negative", "filing:risk", negative_summary)}
+          ],
+          "confidence": 0.70,
+          "missing_data": [],
+          "handoff_summary": "{role} handoff"
+        }}
+        """
+
+
 class ChangedJudgeSourceLLM(FakeLLM):
     def _judge_json(self) -> str:
         return (
@@ -324,6 +366,9 @@ def test_review_workflow_runs_ordered_api_first_steps(monkeypatch):
     assert response.fiscal_period == "2025Q3"
     assert response.judge_decision.verdict.value == "good"
     assert "## Negative Evidence" in response.markdown_report
+    assert "## Metric Store" in response.markdown_report
+    assert "consensus_for_reported_period" in response.markdown_report
+    assert "no URL in source_ref" not in response.markdown_report
     assert [step.step.value for step in response.steps] == [
         "data_ingestion",
         "financial_agents",
@@ -352,6 +397,657 @@ def test_review_workflow_runs_ordered_api_first_steps(monkeypatch):
     assert len(fake_llm.calls) == 7
 
 
+def test_workflow_markdown_includes_sec_provider_gap_from_metrics(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["financial_metrics"] = {
+        "ticker": "NVDA",
+        "fiscal_period": "2025Q3",
+        "source_provider": "sec",
+        "revenue": 35_000_000_000,
+    }
+    workflow = ReviewWorkflow(llm=FakeLLM())
+
+    response = workflow.run(ReviewRequest.model_validate(payload))
+
+    assert response.judge_decision.verdict is VerdictLabel.GOOD
+    assert response.judge_decision.confidence <= 0.40
+    assert "Workflow | provider_expected_missing" in response.markdown_report
+    assert "SEC fallback did not provide yfinance-expected fields" in response.markdown_report
+
+
+def test_workflow_routes_body_guidance_with_generic_heading_to_guidance_analyst(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"][1] = {
+        "section_id": "deck:p4:section-1",
+        "source_ref": {
+            "source_id": "deck:p4:section-1",
+            "source_type": "earnings_presentation",
+            "document_id": "deck",
+            "section_id": "deck:p4:section-1",
+            "page": 4,
+            "title": "Investor presentation",
+        },
+        "heading": "Investor presentation page 4",
+        "text": "Q2 FY2027 outlook: revenue is expected to be approximately $28 billion.",
+        "start_page": 4,
+        "end_page": 4,
+    }
+    payload["document_sections"] = [
+        section for section in payload["document_sections"] if section["section_id"] != "guidance"
+    ]
+    workflow = ReviewWorkflow(llm=FakeLLM())
+    metrics, sections, guidance_fact = workflow._ingest(ReviewRequest.model_validate(payload))
+
+    context = workflow._build_agent_context(
+        ReviewRequest.model_validate(payload),
+        metrics,
+        sections,
+        guidance_fact,
+    )
+
+    guidance_section_ids = [section["section_id"] for section in context["guidance_sections"]]
+    guidance_report = next(
+        report for report in context["routing_report"] if report["agent_name"] == "GuidanceAnalyst"
+    )
+
+    assert guidance_fact.status == "found"
+    assert "deck:p4:section-1" in guidance_section_ids
+    assert guidance_report["routed_section_ids"] == guidance_section_ids
+    assert guidance_report["routing_reason"] == "guidance_fact"
+
+
+def test_workflow_agent_context_routes_metric_store_and_canonical_temporal_buckets(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["financial_metrics"]["temporal_snapshots"] = {
+        "reported_period_actuals": {"metrics": {"eps": 0.81}},
+        "pre_earnings_consensus": {
+            "metrics": {"eps_consensus": 0.75},
+            "note": "pre_earnings_consensus",
+            "source_refs": [{"period_role": "pre_earnings_consensus"}],
+        },
+    }
+    request = ReviewRequest.model_validate(payload)
+    workflow = ReviewWorkflow(llm=FakeLLM())
+    metrics, sections, guidance_fact = workflow._ingest(request)
+    context = workflow._build_agent_context(request, metrics, sections, guidance_fact)
+
+    assert "temporal_snapshots" not in context["cash_flow_risk_metrics"]
+    assert "temporal_snapshots" not in context["guidance_metrics"]
+    assert "latest_snapshot" not in context["earnings_quality_metrics"]
+    assert "pre_earnings_consensus" not in repr(context["earnings_quality_metrics"])
+    buckets = context["earnings_quality_metrics"]["canonical_temporal_buckets"]
+    assert buckets["reported_period_actuals"]["metrics"]["eps"] == 0.81
+    assert buckets["consensus_for_reported_period"]["metrics"]["eps_consensus"] == 0.75
+    assert {
+        entry["period_role"] for entry in context["earnings_quality_metrics"]["metric_store"]
+    } >= {"reported_period_actuals", "consensus_for_reported_period"}
+
+
+def test_workflow_agent_context_dedupes_sections_with_routing_tags(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"] = [
+        {
+            "section_id": "deck:guidance",
+            "source_ref": {
+                "source_id": "deck:guidance",
+                "source_type": "earnings_presentation",
+                "document_id": "deck",
+                "section_id": "deck:guidance",
+                "page": 4,
+                "title": "Investor presentation",
+            },
+            "heading": "Q4 outlook",
+            "text": "Q4 outlook: revenue is expected to improve while execution risk remains.",
+            "start_page": 4,
+            "end_page": 4,
+        },
+        {
+            "section_id": "deck:guidance-risk",
+            "source_ref": {
+                "source_id": "deck:guidance-risk",
+                "source_type": "earnings_presentation",
+                "document_id": "deck",
+                "section_id": "deck:guidance-risk",
+                "page": 4,
+                "title": "Investor presentation",
+            },
+            "heading": "Risk assumptions",
+            "text": "Execution risk and demand uncertainty remain relevant to the outlook.",
+            "start_page": 4,
+            "end_page": 4,
+        },
+        {
+            "section_id": "deck:strategy",
+            "source_ref": {
+                "source_id": "deck:strategy",
+                "source_type": "earnings_presentation",
+                "document_id": "deck",
+                "section_id": "deck:strategy",
+                "page": 5,
+                "title": "Investor presentation",
+            },
+            "heading": "Management commentary",
+            "text": "Management described platform investment and go-to-market priorities.",
+            "start_page": 5,
+            "end_page": 5,
+        },
+    ]
+    request = ReviewRequest.model_validate(payload)
+    workflow = ReviewWorkflow(llm=FakeLLM())
+    metrics, sections, guidance_fact = workflow._ingest(request)
+    context = workflow._build_agent_context(request, metrics, sections, guidance_fact)
+
+    assert "management_intent_sections" not in context
+    assert "strategy_sections" not in context
+    assert "mdna_sections" not in context
+    assert "guidance_assumptions_sections" not in context
+
+    management_sections = context["management_sections"]
+    management_ids = [section["section_id"] for section in management_sections]
+    assert management_ids == ["deck:guidance", "deck:strategy"]
+    assert len(management_ids) == len(set(management_ids))
+
+    guidance_section = next(
+        section for section in management_sections if section["section_id"] == "deck:guidance"
+    )
+    strategy_section = next(
+        section for section in management_sections if section["section_id"] == "deck:strategy"
+    )
+    assert set(guidance_section["routing_tags"]) >= {"guidance", "management", "risk"}
+    assert guidance_section["merged_section_ids"] == ["deck:guidance", "deck:guidance-risk"]
+    assert "Execution risk and demand uncertainty" in guidance_section["text"]
+    assert set(strategy_section["routing_tags"]) >= {"other", "strategy", "mdna"}
+    assert "Routed for:" in guidance_section["routing_context"]
+
+    guidance_sections = context["guidance_sections"]
+    guidance_ids = [section["section_id"] for section in guidance_sections]
+    assert guidance_ids == ["deck:guidance"]
+    assert "Q4 outlook" in guidance_sections[0]["text"]
+    assert "Execution risk and demand uncertainty" in guidance_sections[0]["text"]
+
+    routing_report = {report["agent_name"]: report for report in context["routing_report"]}
+    assert routing_report["ManagementIntentAnalyst"]["routed_section_ids"] == management_ids
+    assert routing_report["GuidanceAnalyst"]["routed_section_ids"] == guidance_ids
+    assert (
+        routing_report["GuidanceAnalyst"]["routed_section_contexts"][0]["routing_tags"]
+        == guidance_sections[0]["routing_tags"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("heading", "text", "expected_raw_text"),
+    [
+        (
+            "FY2025 Q3 earnings presentation",
+            "Q4 FY2025 outlook. Revenue ($ in millions): 12,000.",
+            "Revenue ($ in millions): 12,000",
+        ),
+        (
+            "Q4 FY2025 outlook",
+            "Revenue in millions: 12,000.",
+            "Revenue in millions: 12,000",
+        ),
+        (
+            "Q4 FY2025 outlook ($ in millions)",
+            "Outlook Revenue 12,000.",
+            "Outlook Revenue 12,000",
+        ),
+        (
+            "Q4 FY2025 outlook",
+            "($ in millions)\nOutlook Revenue 12,000.",
+            "Outlook Revenue 12,000",
+        ),
+    ],
+)
+def test_workflow_extracts_guidance_pdf_values_into_presentation_hints(
+    monkeypatch,
+    heading,
+    text,
+    expected_raw_text,
+):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"][1] = {
+        "section_id": "deck:p4:section-1",
+        "source_ref": {
+            "source_id": "deck:p4:section-1",
+            "source_type": "earnings_presentation",
+            "document_id": "deck",
+            "section_id": "deck:p4:section-1",
+            "page": 4,
+            "title": "FY2025 Q3 earnings presentation",
+        },
+        "heading": heading,
+        "text": text,
+        "start_page": 4,
+        "end_page": 4,
+    }
+    request = ReviewRequest.model_validate(payload)
+    workflow = ReviewWorkflow(llm=FakeLLM())
+    metrics, sections, guidance_fact = workflow._ingest(request)
+    context = workflow._build_agent_context(request, metrics, sections, guidance_fact)
+
+    guidance_hints = [
+        hint for hint in metrics.presentation_metric_hints if hint.metric_name == "revenue_guidance"
+    ]
+    assert guidance_hints
+    assert guidance_hints[0].hint_status == "parsed"
+    assert guidance_hints[0].period_role == "guided_period"
+    assert guidance_hints[0].fiscal_period == "2025Q4"
+    assert guidance_hints[0].raw_text == expected_raw_text
+    assert guidance_hints[0].raw_value == "12,000"
+    assert guidance_hints[0].value == 12_000.0
+    assert guidance_hints[0].unit == "USD million"
+    assert guidance_hints[0].source_type == SourceType.EARNINGS_PRESENTATION
+    assert guidance_hints[0].source_name == "FY2025 Q3 earnings presentation"
+    assert not [entry for entry in metrics.metric_store if entry.metric_name == "revenue_guidance"]
+    assert context["presentation_metric_hints"][0]["hint_status"] == "parsed"
+    assert context["presentation_metric_hints"][0]["raw_value"] == "12,000"
+    assert "presentation_metric_hints" not in context["earnings_quality_metrics"]
+    assert "presentation_metric_hints" not in context["cash_flow_risk_metrics"]
+    assert "presentation_metric_hints" not in context["guidance_metrics"]
+    buckets = context["guidance_metrics"]["canonical_temporal_buckets"]
+    assert not buckets["guided_period"]
+
+
+def test_report_separates_metric_store_from_presentation_metric_hints():
+    source_ref = SourceRef(
+        source_id="deck:p4:section-1",
+        source_type=SourceType.EARNINGS_PRESENTATION,
+        document_id="deck",
+        section_id="deck:p4:section-1",
+        page=4,
+        metric_name="revenue_guidance",
+        fiscal_period="2025Q4",
+        period_role="guided_period",
+    )
+    metrics = FinancialMetrics(
+        ticker="NVDA",
+        fiscal_period="2025Q3",
+        eps=0.81,
+        presentation_metric_hints=[
+            {
+                "metric_name": "revenue_guidance",
+                "raw_text": "Revenue ($ in millions): 12,000",
+                "raw_value": "12,000",
+                "value": 12_000.0,
+                "unit": "USD million",
+                "fiscal_period": "2025Q4",
+                "period_role": "guided_period",
+                "source_type": "earnings_presentation",
+                "source_name": "FY2025 Q3 earnings presentation",
+                "source_ref": source_ref,
+                "extraction_method": "guidance_hint_regex",
+                "hint_status": "parsed",
+                "confidence": 0.75,
+            },
+            {
+                "metric_name": "revenue_guidance",
+                "raw_text": "Revenue grew 12%",
+                "raw_value": "12%",
+                "value": 12.0,
+                "unit": "%",
+                "fiscal_period": "2025Q4",
+                "period_role": "guided_period",
+                "source_type": "earnings_presentation",
+                "source_name": "FY2025 Q3 earnings presentation",
+                "source_ref": source_ref,
+                "extraction_method": "guidance_hint_regex",
+                "hint_status": "rejected",
+                "confidence": 0.1,
+            },
+        ],
+    )
+    finding = EarningsQualityFinding(
+        stance="mixed",
+        summary="summary",
+        key_evidence=[
+            EvidenceItem(
+                evidence_id="ev:positive",
+                polarity=EvidencePolarity.POSITIVE,
+                summary="EPS was positive.",
+                detail="EPS was positive.",
+                impact_areas=[ImpactArea.EPS],
+                source_ref=_source_ref("eps"),
+                confidence=0.7,
+            )
+        ],
+        counter_evidence=[
+            EvidenceItem(
+                evidence_id="ev:negative",
+                polarity=EvidencePolarity.NEGATIVE,
+                summary="Risk remains.",
+                detail="Risk remains.",
+                impact_areas=[ImpactArea.OVERALL],
+                source_ref=_source_ref("risk"),
+                confidence=0.7,
+            )
+        ],
+        confidence=0.7,
+        handoff_summary="handoff",
+    )
+    brief = AnalysisBrief(
+        ticker="NVDA",
+        fiscal_period="2025Q3",
+        earnings_quality_finding=finding,
+        cash_flow_risk_finding=CashFlowRiskFinding.model_validate(
+            {**finding.model_dump(), "agent_name": "CashFlowRiskAnalyst"}
+        ),
+        management_intent_finding=ManagementIntentFinding.model_validate(
+            {**finding.model_dump(), "agent_name": "ManagementIntentAnalyst"}
+        ),
+        guidance_finding=GuidanceFinding.model_validate(
+            {**finding.model_dump(), "agent_name": "GuidanceAnalyst"}
+        ),
+        synthesis="synthesis",
+    )
+    debate = DebateResult(
+        bull_case="bull",
+        bear_case="bear",
+        risk_case="risk",
+        evaluation="evaluation",
+        strongest_positive_evidence=finding.key_evidence,
+        strongest_negative_evidence=finding.counter_evidence,
+    )
+    decision = JudgeDecision(
+        verdict=VerdictLabel.NEUTRAL,
+        confidence=0.6,
+        summary="summary",
+        rationale="rationale",
+        eps_outlook="unclear",
+        eps_outlook_reason="unclear",
+        fcf_outlook="unclear",
+        fcf_outlook_reason="unclear",
+        positive_evidence=finding.key_evidence,
+        negative_evidence=finding.counter_evidence,
+    )
+    rendered = MarkdownRenderer().render(
+        request=ReviewRequest.model_validate(_request_payload()),
+        brief=brief,
+        debate=debate,
+        decision=decision,
+        metrics=metrics,
+    )
+
+    assert "## Metric Store" in rendered
+    assert "## Presentation Metric Hints" in rendered
+    assert "Revenue ($ in millions): 12,000" in rendered
+    assert "Revenue grew 12%" not in rendered
+
+
+def test_workflow_extracts_ambiguous_unitless_guidance_hint(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"][1] = {
+        "section_id": "deck:p4:section-1",
+        "source_ref": {
+            "source_id": "deck:p4:section-1",
+            "source_type": "earnings_presentation",
+            "document_id": "deck",
+            "section_id": "deck:p4:section-1",
+            "page": 4,
+            "title": "FY2025 Q3 earnings presentation",
+        },
+        "heading": "Q4 FY2025 outlook",
+        "text": "Outlook Revenue 12,000.",
+        "start_page": 4,
+        "end_page": 4,
+    }
+    request = ReviewRequest.model_validate(payload)
+    workflow = ReviewWorkflow(llm=FakeLLM())
+    metrics, _, _ = workflow._ingest(request)
+
+    guidance_hints = [
+        hint for hint in metrics.presentation_metric_hints if hint.metric_name == "revenue_guidance"
+    ]
+    assert guidance_hints
+    assert guidance_hints[0].hint_status == "ambiguous"
+    assert guidance_hints[0].unit is None
+    assert not [entry for entry in metrics.metric_store if entry.metric_name == "revenue_guidance"]
+
+
+def test_guidance_hint_clears_target_document_period_metadata_when_guided_period_unknown(
+    monkeypatch,
+):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"][1] = {
+        "section_id": "deck:p4:section-1",
+        "source_ref": {
+            "source_id": "deck:p4:section-1",
+            "source_type": "earnings_presentation",
+            "document_id": "deck",
+            "section_id": "deck:p4:section-1",
+            "page": 4,
+            "title": "FY2025 Q3 earnings presentation",
+            "fiscal_period": "2025Q3",
+            "period_role": "target_period_document",
+        },
+        "heading": "Outlook",
+        "text": "Revenue in millions: 12,000.",
+        "start_page": 4,
+        "end_page": 4,
+    }
+    request = ReviewRequest.model_validate(payload)
+    workflow = ReviewWorkflow(llm=FakeLLM())
+
+    metrics, _, _ = workflow._ingest(request)
+
+    guidance_hints = [
+        hint for hint in metrics.presentation_metric_hints if hint.metric_name == "revenue_guidance"
+    ]
+    assert guidance_hints
+    assert guidance_hints[0].hint_status == "parsed"
+    assert guidance_hints[0].fiscal_period is None
+    assert guidance_hints[0].period_role is None
+    assert guidance_hints[0].source_ref.fiscal_period is None
+    assert guidance_hints[0].source_ref.period_role is None
+
+
+def test_workflow_rejects_arr_definition_as_guidance_hint(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"][1] = {
+        "section_id": "deck:p30:section-1",
+        "source_ref": {
+            "source_id": "deck:p30:section-1",
+            "source_type": "earnings_presentation",
+            "document_id": "deck",
+            "section_id": "deck:p30:section-1",
+            "page": 30,
+            "title": "FY2025 Q3 earnings presentation",
+        },
+        "heading": "Financial outlook definitions",
+        "text": "Revenue (ARR) refers to the next 12 months of committed recurring revenue.",
+        "start_page": 30,
+        "end_page": 30,
+    }
+    request = ReviewRequest.model_validate(payload)
+    workflow = ReviewWorkflow(llm=FakeLLM())
+    metrics, sections, guidance_fact = workflow._ingest(request)
+    context = workflow._build_agent_context(request, metrics, sections, guidance_fact)
+
+    guidance_hints = [
+        hint for hint in metrics.presentation_metric_hints if hint.metric_name == "revenue_guidance"
+    ]
+    assert guidance_hints
+    assert guidance_hints[0].hint_status == "rejected"
+    assert not [hint for hint in context["presentation_metric_hints"] if "ARR" in hint["raw_text"]]
+
+
+def test_workflow_marks_historical_currency_guidance_hint_ambiguous(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"][1] = {
+        "section_id": "deck:p16:section-1",
+        "source_ref": {
+            "source_id": "deck:p16:section-1",
+            "source_type": "earnings_presentation",
+            "document_id": "deck",
+            "section_id": "deck:p16:section-1",
+            "page": 16,
+            "title": "FY2025 Q3 earnings presentation",
+        },
+        "heading": "Outlook",
+        "text": (
+            "Revenue of $850 million in Q3 exceeded prior expectations. "
+            "We expect continued customer growth next quarter."
+        ),
+        "start_page": 16,
+        "end_page": 16,
+    }
+    request = ReviewRequest.model_validate(payload)
+    workflow = ReviewWorkflow(llm=FakeLLM())
+    metrics, sections, guidance_fact = workflow._ingest(request)
+    context = workflow._build_agent_context(request, metrics, sections, guidance_fact)
+
+    guidance_hints = [
+        hint for hint in metrics.presentation_metric_hints if hint.metric_name == "revenue_guidance"
+    ]
+    assert guidance_hints
+    assert guidance_hints[0].hint_status == "ambiguous"
+    assert context["presentation_metric_hints"][0]["hint_status"] == "ambiguous"
+
+
+def test_workflow_does_not_extract_historical_percent_as_guidance_metric(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"][1] = {
+        "section_id": "deck:p4:section-1",
+        "source_ref": {
+            "source_id": "deck:p4:section-1",
+            "source_type": "earnings_presentation",
+            "document_id": "deck",
+            "section_id": "deck:p4:section-1",
+            "page": 4,
+            "title": "FY2025 Q3 earnings presentation",
+        },
+        "heading": "FY2025 Q3 earnings presentation",
+        "text": "Q4 FY2025 outlook. Revenue grew 12% in the reported quarter.",
+        "start_page": 4,
+        "end_page": 4,
+    }
+    request = ReviewRequest.model_validate(payload)
+    workflow = ReviewWorkflow(llm=FakeLLM())
+    metrics, _, _ = workflow._ingest(request)
+
+    assert not [entry for entry in metrics.metric_store if entry.metric_name == "revenue_guidance"]
+    assert [
+        hint
+        for hint in metrics.presentation_metric_hints
+        if hint.metric_name == "revenue_guidance" and hint.hint_status == "rejected"
+    ]
+
+
+def test_workflow_not_found_guidance_skips_guidance_llm(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["financial_metrics"].pop("guidance", None)
+    payload["document_sections"] = [
+        section for section in payload["document_sections"] if section["section_id"] != "guidance"
+    ]
+    payload["document_sections"][1]["text"] = "Demand uncertainty and CapEx execution risk remain."
+    fake_llm = FakeLLM()
+    workflow = ReviewWorkflow(llm=fake_llm)
+
+    response = workflow.run(ReviewRequest.model_validate(payload))
+
+    assert "GuidanceAnalyst" not in fake_llm.calls
+    assert response.analysis_brief.guidance_finding.guidance_status == "not_found"
+    assert response.analysis_brief.guidance_finding.key_evidence == []
+    assert response.analysis_brief.guidance_finding.missing_data
+
+
+def test_workflow_context_budget_failure_happens_before_llm(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    payload = _request_payload()
+    payload["document_sections"] = [
+        {
+            **payload["document_sections"][0],
+            "section_id": f"deck:oversized:{index}",
+            "source_ref": {
+                **payload["document_sections"][0]["source_ref"],
+                "source_id": f"deck:oversized:{index}",
+                "section_id": f"deck:oversized:{index}",
+            },
+            "heading": f"Investor presentation page {index}",
+            "text": "FY2027 outlook revenue is expected to improve. " * 180,
+        }
+        for index in range(20)
+    ]
+    fake_llm = FakeLLM()
+    workflow = ReviewWorkflow(llm=fake_llm)
+
+    with pytest.raises(WorkflowValidationError, match="context budget failed"):
+        workflow.run(ReviewRequest.model_validate(payload))
+
+    assert fake_llm.calls == []
+
+
 def test_workflow_rejects_bull_case_evidence_not_in_analysis_brief(monkeypatch):
     def fail_external_fetch(*args, **kwargs):
         raise AssertionError("fixture inputs should bypass external fetches")
@@ -365,7 +1061,7 @@ def test_workflow_rejects_bull_case_evidence_not_in_analysis_brief(monkeypatch):
         workflow.run(ReviewRequest.model_validate(_request_payload()))
 
 
-def test_workflow_rejects_investment_advice_text(monkeypatch):
+def test_workflow_warns_on_investment_advice_text(monkeypatch):
     def fail_external_fetch(*args, **kwargs):
         raise AssertionError("fixture inputs should bypass external fetches")
 
@@ -374,8 +1070,51 @@ def test_workflow_rejects_investment_advice_text(monkeypatch):
 
     workflow = ReviewWorkflow(llm=InvestmentAdviceJudgeLLM())
 
-    with pytest.raises(WorkflowValidationError, match="investment-advice language"):
-        workflow.run(ReviewRequest.model_validate(_request_payload()))
+    response = workflow.run(ReviewRequest.model_validate(_request_payload()))
+
+    assert response.warnings
+    assert "potential investment-advice language" in response.warnings[0]
+    assert "## Warnings" in response.markdown_report
+
+
+def test_workflow_does_not_cap_structural_guidance_missing_data_when_metrics_are_supplied(
+    monkeypatch,
+):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    workflow = ReviewWorkflow(llm=BlockingMissingDataLLM())
+
+    response = workflow.run(ReviewRequest.model_validate(_request_payload()))
+
+    assert response.judge_decision.verdict.value == "good"
+    assert response.judge_decision.confidence > 0.25
+    assert (
+        "source-backed guided-period consensus"
+        in response.analysis_brief.guidance_finding.missing_data[0]
+    )
+    assert "source-backed guided-period consensus" not in response.markdown_report
+
+
+def test_workflow_warns_and_caps_ungrounded_material_judge_evidence(monkeypatch):
+    def fail_external_fetch(*args, **kwargs):
+        raise AssertionError("fixture inputs should bypass external fetches")
+
+    monkeypatch.setattr("src.workflow._fetch_consensus", fail_external_fetch)
+    monkeypatch.setattr("src.workflow._fetch_filing_html", fail_external_fetch)
+
+    workflow = ReviewWorkflow(llm=UngroundedMaterialEvidenceLLM())
+
+    response = workflow.run(ReviewRequest.model_validate(_request_payload()))
+
+    assert response.warnings
+    assert "numeric grounding caveat applied" in "\n".join(response.warnings)
+    assert response.judge_decision.confidence <= 0.55
+    assert "numeric value was not routed" in response.markdown_report
+    assert "## Warnings" in response.markdown_report
 
 
 def test_workflow_rejects_judge_evidence_source_ref_changes(monkeypatch):

@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 
 from pydantic import (
     AliasChoices,
@@ -39,6 +39,7 @@ class VerdictLabel(str, Enum):
     GOOD = "good"
     NEUTRAL = "neutral"
     BAD = "bad"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
 
 
 class SourceType(str, Enum):
@@ -64,6 +65,43 @@ class ImpactArea(str, Enum):
     GUIDANCE = "guidance"
     BALANCE_SHEET = "balance_sheet"
     OVERALL = "overall"
+
+
+MetricStorePeriodRole = Literal[
+    "reported_period_actuals",
+    "consensus_for_reported_period",
+    "guided_period",
+    "consensus_for_guided_period",
+    "prior_sequential_period_actuals",
+    "prior_year_period",
+]
+CANONICAL_METRIC_STORE_PERIOD_ROLES = set(get_args(MetricStorePeriodRole))
+
+TemporalPeriodRole = Literal[
+    "reported_period_actuals",
+    "consensus_for_reported_period",
+    "guided_period",
+    "consensus_for_guided_period",
+    "prior_sequential_period_actuals",
+    "prior_year_period",
+    # Legacy temporal-snapshot/document roles retained for compatibility.
+    "prior_period_actuals",
+    "pre_earnings_consensus",
+    "post_earnings_guidance",
+    "latest_snapshot",
+    "target_period_document",
+]
+
+SourceProvider = Literal["yfinance", "sec", "manual", "derived"]
+
+SelectionMethod = Literal[
+    "earnings_date_exact",
+    "earnings_date_window",
+    "period_end_exact",
+    "provider_column_date_window",
+    "latest_at_or_before_cutoff",
+    "manual",
+]
 
 
 class WorkflowStep(str, Enum):
@@ -144,6 +182,10 @@ class SourceRef(WorkflowModel):
     line_end: int | None = Field(default=None, ge=1)
     metric_name: str | None = Field(default=None, max_length=120)
     as_of_date: date | None = None
+    fiscal_period: str | None = Field(default=None, pattern=r"^\d{4}Q[1-4]$")
+    period_role: TemporalPeriodRole | None = None
+    published_date: date | None = None
+    data_cutoff_date: date | None = None
 
     @model_validator(mode="after")
     def validate_locator(self) -> SourceRef:
@@ -173,6 +215,9 @@ class DocumentSection(WorkflowModel):
     text: str = Field(min_length=1, max_length=12000)
     start_page: int | None = Field(default=None, ge=1)
     end_page: int | None = Field(default=None, ge=1)
+    fiscal_period: str | None = Field(default=None, pattern=r"^\d{4}Q[1-4]$")
+    published_date: date | None = None
+    period_role: TemporalPeriodRole | None = None
 
     @model_validator(mode="after")
     def validate_pages(self) -> DocumentSection:
@@ -189,6 +234,9 @@ class DocumentFile(WorkflowModel):
     source_type: SourceType = SourceType.MANUAL_UPLOAD
     document_id: str = Field(min_length=1, max_length=120, pattern=r"^[A-Za-z0-9_.:-]+$")
     title: str = Field(min_length=1, max_length=300)
+    fiscal_period: str | None = Field(default=None, pattern=r"^\d{4}Q[1-4]$")
+    published_date: date | None = None
+    period_role: Literal["target_period_document"] | None = None
 
 
 class RawMetricBase(WorkflowModel):
@@ -219,11 +267,94 @@ class UnmappedMetric(RawMetricBase):
     reason: str | None = Field(default=None, max_length=200)
 
 
+class MetricStoreEntry(WorkflowModel):
+    metric_name: str = Field(min_length=1, max_length=120)
+    value: float | NonEmptyText
+    unit: str = Field(min_length=1, max_length=40)
+    source_type: SourceType
+    source_name: str = Field(min_length=1, max_length=200)
+    fiscal_period: str = Field(pattern=r"^\d{4}Q[1-4]$")
+    period_role: MetricStorePeriodRole
+    source_ref: SourceRef
+
+    @model_validator(mode="after")
+    def validate_source_ref_alignment(self) -> MetricStoreEntry:
+        if self.source_ref.source_type != self.source_type:
+            raise ValueError("source_ref.source_type must match source_type")
+        if not self.source_ref.metric_name:
+            raise ValueError("source_ref.metric_name is required for metric_store")
+        if not self.source_ref.fiscal_period:
+            raise ValueError("source_ref.fiscal_period is required for metric_store")
+        if not self.source_ref.period_role:
+            raise ValueError("source_ref.period_role is required for metric_store")
+        if self.source_ref.metric_name != self.metric_name:
+            raise ValueError("source_ref.metric_name must match metric_name")
+        if self.source_ref.fiscal_period != self.fiscal_period:
+            raise ValueError("source_ref.fiscal_period must match fiscal_period")
+        if self.source_ref.period_role != self.period_role:
+            raise ValueError("source_ref.period_role must match period_role")
+        return self
+
+
+class PresentationMetricHint(WorkflowModel):
+    metric_name: str = Field(min_length=1, max_length=120)
+    raw_text: str = Field(min_length=1, max_length=500)
+    raw_value: str | None = Field(default=None, max_length=80)
+    value: float | None = None
+    unit: str | None = Field(default=None, max_length=40)
+    fiscal_period: str | None = Field(default=None, pattern=r"^\d{4}Q[1-4]$")
+    period_role: MetricStorePeriodRole | None = None
+    source_type: SourceType
+    source_name: str = Field(min_length=1, max_length=200)
+    source_ref: SourceRef
+    extraction_method: str = Field(min_length=1, max_length=80)
+    hint_status: Literal["parsed", "ambiguous", "rejected", "promoted"]
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def validate_source_ref_alignment(self) -> PresentationMetricHint:
+        if self.source_ref.source_type != self.source_type:
+            raise ValueError("source_ref.source_type must match source_type")
+        if (
+            self.source_ref.period_role is not None
+            and self.source_ref.period_role not in CANONICAL_METRIC_STORE_PERIOD_ROLES
+        ):
+            raise ValueError(
+                "source_ref.period_role must be canonical for presentation_metric_hints"
+            )
+        if self.source_ref.metric_name and self.source_ref.metric_name != self.metric_name:
+            raise ValueError("source_ref.metric_name must match metric_name when present")
+        if self.source_ref.fiscal_period is not None and self.fiscal_period is None:
+            raise ValueError("source_ref.fiscal_period requires fiscal_period")
+        if self.source_ref.period_role is not None and self.period_role is None:
+            raise ValueError("source_ref.period_role requires period_role")
+        if (
+            self.fiscal_period is not None
+            and self.source_ref.fiscal_period is not None
+            and self.source_ref.fiscal_period != self.fiscal_period
+        ):
+            raise ValueError("source_ref.fiscal_period must match fiscal_period when present")
+        if (
+            self.period_role is not None
+            and self.source_ref.period_role is not None
+            and self.source_ref.period_role != self.period_role
+        ):
+            raise ValueError("source_ref.period_role must match period_role when present")
+        return self
+
+
 class FinancialMetrics(WorkflowModel):
     ticker: str = Field(min_length=1, max_length=15)
     fiscal_period: str = Field(pattern=r"^\d{4}Q[1-4]$")
     period_end_date: date | None = None
     currency: str = Field(default="USD", min_length=3, max_length=3)
+    period_role: TemporalPeriodRole = "reported_period_actuals"
+    earnings_date: date | None = None
+    source_provider: SourceProvider | None = None
+    source_row_date: date | None = None
+    source_table_column_date: date | None = None
+    data_cutoff_date: date | None = None
+    selection_method: SelectionMethod | None = None
 
     revenue: float | None = None
     revenue_consensus: float | None = None
@@ -240,8 +371,15 @@ class FinancialMetrics(WorkflowModel):
 
     guidance: str | None = Field(default=None, max_length=2000)
     source_refs: list[SourceRef] = Field(default_factory=list, max_length=20)
+    metric_store: list[MetricStoreEntry] = Field(default_factory=list, max_length=100)
+    presentation_metric_hints: list[PresentationMetricHint] = Field(
+        default_factory=list,
+        max_length=200,
+    )
     segment_metrics: list[NormalizedMetric] = Field(default_factory=list, max_length=500)
     unmapped_metrics: list[UnmappedMetric] = Field(default_factory=list, max_length=500)
+    temporal_snapshots: dict[str, dict] = Field(default_factory=dict, max_length=10)
+    warnings: list[str] = Field(default_factory=list, max_length=50)
 
     @field_validator("ticker", mode="before")
     @classmethod
@@ -267,6 +405,12 @@ class ReviewRequest(WorkflowModel):
         validation_alias=AliasChoices("fiscal_period", "quarter"),
         pattern=r"^\d{4}Q[1-4]$",
     )
+    target_earnings_date: date | None = None
+    target_period_end_date: date | None = None
+    prior_fiscal_period: str | None = Field(default=None, pattern=r"^\d{4}Q[1-4]$")
+    financial_data_as_of: date | None = None
+    document_period_policy: Literal["target_only"] = "target_only"
+    financial_period_policy: Literal["target_plus_prior"] = "target_plus_prior"
     filing_url: AnyUrl | None = None
     presentation_url: AnyUrl | None = None
     transcript_url: AnyUrl | None = None
@@ -289,14 +433,194 @@ class ReviewRequest(WorkflowModel):
         return normalized
 
     @model_validator(mode="after")
-    def validate_embedded_metrics(self) -> ReviewRequest:
+    def validate_temporal_contract(self) -> ReviewRequest:
+        if self.prior_fiscal_period is not None:
+            expected_prior = self._prior_sequential_period(self.fiscal_period)
+            if self.prior_fiscal_period != expected_prior:
+                raise ValueError(
+                    "prior_fiscal_period must be the immediately preceding fiscal quarter"
+                )
+
         if self.financial_metrics is None:
-            return self
-        if self.financial_metrics.ticker != self.ticker:
-            raise ValueError("financial_metrics.ticker must match request ticker")
-        if self.financial_metrics.fiscal_period != self.fiscal_period:
-            raise ValueError("financial_metrics.fiscal_period must match request fiscal_period")
+            if self.target_earnings_date is None:
+                raise ValueError(
+                    "target_earnings_date is required when financial_metrics is absent"
+                )
+        else:
+            if self.financial_metrics.ticker != self.ticker:
+                raise ValueError("financial_metrics.ticker must match request ticker")
+            if self.financial_metrics.fiscal_period != self.fiscal_period:
+                raise ValueError("financial_metrics.fiscal_period must match request fiscal_period")
+            if self.financial_metrics.period_role != "reported_period_actuals":
+                raise ValueError("financial_metrics.period_role must be reported_period_actuals")
+            for source_ref in self.financial_metrics.source_refs:
+                if source_ref.period_role == "latest_snapshot":
+                    raise ValueError("financial_metrics source_refs cannot be latest_snapshot")
+                if source_ref.period_role in {
+                    "pre_earnings_consensus",
+                    "post_earnings_guidance",
+                    "prior_period_actuals",
+                }:
+                    raise ValueError(
+                        "financial_metrics source_refs cannot use legacy temporal period_role"
+                    )
+            if self._contains_latest_snapshot(self.financial_metrics.temporal_snapshots):
+                raise ValueError(
+                    "financial_metrics temporal_snapshots cannot include latest_snapshot"
+                )
+            self._validate_supplied_metric_dates()
+            self._validate_metric_store_period_roles()
+
+        if self.document_period_policy == "target_only":
+            for document_file in self.document_files:
+                if self.target_earnings_date is not None and document_file.fiscal_period is None:
+                    raise ValueError(
+                        "document_files fiscal_period is required with target_earnings_date"
+                    )
+                if (
+                    document_file.fiscal_period is not None
+                    and document_file.fiscal_period != self.fiscal_period
+                ):
+                    raise ValueError(
+                        "document_files fiscal_period must match request fiscal_period"
+                    )
+                if self.target_earnings_date is not None and document_file.period_role is None:
+                    raise ValueError(
+                        "document_files period_role is required with target_earnings_date"
+                    )
+                if (
+                    document_file.period_role is not None
+                    and document_file.period_role != "target_period_document"
+                ):
+                    raise ValueError("document_files period_role must be target_period_document")
+                if (
+                    document_file.published_date is not None
+                    and self.target_earnings_date is not None
+                    and document_file.published_date > self.target_earnings_date
+                ):
+                    raise ValueError(
+                        "document_files published_date cannot be after target_earnings_date"
+                    )
+            for section in self.document_sections:
+                self._validate_target_section_source(section)
+        if (
+            self.financial_data_as_of is not None
+            and self.target_earnings_date is not None
+            and self.financial_data_as_of < self.target_earnings_date
+        ):
+            raise ValueError("financial_data_as_of cannot be before target_earnings_date")
         return self
+
+    def _contains_latest_snapshot(self, value) -> bool:
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                if key == "latest_snapshot" or nested == "latest_snapshot":
+                    return True
+                if self._contains_latest_snapshot(nested):
+                    return True
+        elif isinstance(value, list):
+            return any(self._contains_latest_snapshot(item) for item in value)
+        return value == "latest_snapshot"
+
+    def _validate_supplied_metric_dates(self) -> None:
+        if self.financial_metrics is None:
+            return
+        metrics = self.financial_metrics
+        if self.target_earnings_date is None and (
+            metrics.earnings_date is not None or metrics.source_row_date is not None
+        ):
+            raise ValueError(
+                "target_earnings_date is required when financial_metrics include provider row dates"
+            )
+        if self.target_period_end_date is None and (
+            metrics.period_end_date is not None or metrics.source_table_column_date is not None
+        ):
+            raise ValueError(
+                "target_period_end_date is required when financial_metrics include provider table dates"
+            )
+        if (
+            self.target_earnings_date is not None
+            and metrics.earnings_date is not None
+            and metrics.earnings_date != self.target_earnings_date
+        ):
+            raise ValueError("financial_metrics.earnings_date must match target_earnings_date")
+        if (
+            self.target_earnings_date is not None
+            and metrics.source_row_date is not None
+            and metrics.source_row_date != self.target_earnings_date
+        ):
+            raise ValueError("financial_metrics.source_row_date must match target_earnings_date")
+        if (
+            self.target_period_end_date is not None
+            and metrics.period_end_date is not None
+            and metrics.period_end_date != self.target_period_end_date
+        ):
+            raise ValueError("financial_metrics.period_end_date must match target_period_end_date")
+        if (
+            self.target_period_end_date is not None
+            and metrics.source_table_column_date is not None
+            and abs((metrics.source_table_column_date - self.target_period_end_date).days) > 7
+        ):
+            raise ValueError(
+                "financial_metrics.source_table_column_date must match target_period_end_date window"
+            )
+        if (
+            self.financial_data_as_of is not None
+            and metrics.data_cutoff_date is not None
+            and self.target_earnings_date is not None
+            and metrics.data_cutoff_date < self.target_earnings_date
+        ):
+            raise ValueError("financial_metrics.data_cutoff_date cannot precede target earnings")
+
+    def _validate_target_section_source(self, section: DocumentSection) -> None:
+        fiscal_period = section.fiscal_period or section.source_ref.fiscal_period
+        period_role = section.period_role or section.source_ref.period_role
+        if fiscal_period is not None and fiscal_period != self.fiscal_period:
+            raise ValueError("document_sections fiscal_period must match request fiscal_period")
+        if period_role is not None and period_role != "target_period_document":
+            raise ValueError("document_sections period_role must be target_period_document")
+        if self.target_earnings_date is not None and fiscal_period is None:
+            raise ValueError(
+                "document_sections fiscal_period is required with target_earnings_date"
+            )
+        published_date = section.published_date or section.source_ref.published_date
+        if (
+            published_date is not None
+            and self.target_earnings_date is not None
+            and published_date > self.target_earnings_date
+        ):
+            raise ValueError(
+                "document_sections published_date cannot be after target_earnings_date"
+            )
+
+    def _validate_metric_store_period_roles(self) -> None:
+        if self.financial_metrics is None:
+            return
+        for entry in self.financial_metrics.metric_store:
+            if entry.period_role == "prior_year_period":
+                expected = self._prior_year_period(self.fiscal_period)
+                if entry.fiscal_period != expected:
+                    raise ValueError(
+                        "prior_year_period metric_store entries must use the same quarter in the prior fiscal year"
+                    )
+            if entry.period_role == "prior_sequential_period_actuals":
+                expected = self._prior_sequential_period(self.fiscal_period)
+                if entry.fiscal_period != expected:
+                    raise ValueError(
+                        "prior_sequential_period_actuals metric_store entries must use the immediately preceding fiscal quarter"
+                    )
+
+    def _prior_year_period(self, fiscal_period: str) -> str:
+        year = int(fiscal_period[:4]) - 1
+        quarter = fiscal_period[-2:]
+        return f"{year}{quarter}"
+
+    def _prior_sequential_period(self, fiscal_period: str) -> str:
+        year = int(fiscal_period[:4])
+        quarter = int(fiscal_period[-1])
+        if quarter == 1:
+            return f"{year - 1}Q4"
+        return f"{year}Q{quarter - 1}"
 
 
 class EvidenceItem(WorkflowModel):
@@ -382,6 +706,9 @@ class ManagementIntentFinding(AgentFinding):
 
 class GuidanceFinding(AgentFinding):
     agent_name: Literal["GuidanceAnalyst"] = "GuidanceAnalyst"
+    key_evidence: list[EvidenceItem] = Field(default_factory=list, max_length=10)
+    counter_evidence: list[EvidenceItem] = Field(default_factory=list, max_length=10)
+    guidance_status: Literal["found", "not_disclosed", "ambiguous", "not_found"] | None = None
 
 
 class EPSQualityFinding(EarningsQualityFinding):
@@ -537,7 +864,8 @@ class ReviewResponse(WorkflowModel):
     bear_case: BearCase
     debate_result: DebateResult
     judge_decision: JudgeDecision
-    markdown_report: str = Field(min_length=1, max_length=20000)
+    markdown_report: str = Field(min_length=1, max_length=60000)
+    warnings: list[NonEmptyText] = Field(default_factory=list, max_length=50)
     purpose: Literal["earnings_review_not_investment_advice"] = (
         "earnings_review_not_investment_advice"
     )

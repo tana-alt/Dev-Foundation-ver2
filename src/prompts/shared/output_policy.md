@@ -11,6 +11,15 @@ Apply this policy to every LLM response.
 - Follow the requested Pydantic shape exactly.
 - Use the exact `agent_name` literal required by the prompt.
 
+## Language
+
+- Write every human-readable narrative string in Japanese, including
+  `summary`, `detail`, `rationale`, `handoff_summary`, `missing_data`,
+  `bull_case`, `bear_case`, `risk_case`, `evaluation`, and outlook reasons.
+- Keep schema literals, enum values, `agent_name`, `source_ref`, `source_id`,
+  `metric_name`, `period_role`, ticker symbols, fiscal-period labels, and JSON
+  keys exactly as required by the schema or routed source data.
+
 ## Shared Field Conventions
 
 Use these common labels unless an agent-specific schema narrows them:

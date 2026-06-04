@@ -1,0 +1,63 @@
+{
+  "request_id": "current-guidance-missing-sample",
+  "ticker": "NVDA",
+  "fiscal_period": "2025Q3",
+  "financial_metrics": {
+    "ticker": "NVDA",
+    "fiscal_period": "2025Q3",
+    "currency": "USD",
+    "eps": 0.81,
+    "eps_consensus": 0.75,
+    "revenue": 35000000000,
+    "revenue_consensus": 33000000000,
+    "operating_cash_flow": 15000000000,
+    "capex": 3000000000,
+    "source_refs": [
+      {
+        "source_id": "financial_api:NVDA:2025Q3",
+        "source_type": "financial_api",
+        "metric_name": "consensus_snapshot",
+        "title": "Fixture financial metrics"
+      }
+    ]
+  },
+  "document_sections": [
+    {
+      "section_id": "sample:eps",
+      "source_ref": {
+        "source_id": "sample:eps",
+        "source_type": "earnings_presentation",
+        "document_id": "current-guidance-missing",
+        "section_id": "sample:eps",
+        "title": "EPS discussion"
+      },
+      "heading": "EPS",
+      "text": "Diluted EPS exceeded consensus and margin quality improved."
+    },
+    {
+      "section_id": "sample:cash-flow",
+      "source_ref": {
+        "source_id": "sample:cash-flow",
+        "source_type": "earnings_presentation",
+        "document_id": "current-guidance-missing",
+        "section_id": "sample:cash-flow",
+        "title": "Cash flow discussion"
+      },
+      "heading": "Cash Flow",
+      "text": "Free cash flow was pressured by elevated CapEx and working capital timing."
+    },
+    {
+      "section_id": "sample:risk",
+      "source_ref": {
+        "source_id": "sample:risk",
+        "source_type": "earnings_presentation",
+        "document_id": "current-guidance-missing",
+        "section_id": "sample:risk",
+        "title": "Risk discussion"
+      },
+      "heading": "Risk",
+      "text": "Demand uncertainty and capacity execution risk remain material caveats."
+    }
+  ],
+  "include_markdown": true
+}

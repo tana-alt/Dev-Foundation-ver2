@@ -20,6 +20,8 @@ from src.workflow_models import (
     ImpactArea,
     JudgeDecision,
     ManagementIntentFinding,
+    MetricStoreEntry,
+    PresentationMetricHint,
     ReviewRequest,
     ReviewResponse,
     SourceRef,
@@ -131,6 +133,349 @@ def test_financial_metrics_normalizes_ticker_and_currency():
     assert metrics.currency == "USD"
 
 
+def test_financial_metrics_accepts_canonical_metric_store_entries():
+    entry = MetricStoreEntry(
+        metric_name="eps_consensus",
+        value=0.75,
+        unit="USD/share",
+        source_type=SourceType.FINANCIAL_API,
+        source_name="Yahoo Finance via yfinance",
+        fiscal_period="2025Q3",
+        period_role="consensus_for_reported_period",
+        source_ref=SourceRef(
+            source_id="yfinance:NVDA:2025Q3:eps_consensus",
+            source_type=SourceType.FINANCIAL_API,
+            metric_name="eps_consensus",
+            title="Yahoo Finance via yfinance",
+            fiscal_period="2025Q3",
+            period_role="consensus_for_reported_period",
+        ),
+    )
+    metrics = FinancialMetrics(
+        ticker="nvda",
+        fiscal_period="2025Q3",
+        metric_store=[entry],
+    )
+
+    assert metrics.metric_store[0].period_role == "consensus_for_reported_period"
+    assert metrics.metric_store[0].source_ref.period_role == "consensus_for_reported_period"
+
+
+def test_financial_metrics_accepts_presentation_metric_hints_outside_metric_store():
+    hint = PresentationMetricHint(
+        metric_name="revenue_guidance",
+        raw_text="Revenue ($ in millions): 12,000",
+        raw_value="12,000",
+        value=12_000.0,
+        unit="USD million",
+        fiscal_period="2025Q4",
+        period_role="guided_period",
+        source_type=SourceType.EARNINGS_PRESENTATION,
+        source_name="FY2025 Q3 earnings presentation",
+        source_ref=SourceRef(
+            source_id="deck:p4:section-1",
+            source_type=SourceType.EARNINGS_PRESENTATION,
+            document_id="deck",
+            section_id="deck:p4:section-1",
+            page=4,
+            metric_name="revenue_guidance",
+            fiscal_period="2025Q4",
+            period_role="guided_period",
+        ),
+        extraction_method="guidance_hint_regex",
+        hint_status="parsed",
+        confidence=0.75,
+    )
+
+    metrics = FinancialMetrics(
+        ticker="nvda",
+        fiscal_period="2025Q3",
+        presentation_metric_hints=[hint],
+    )
+
+    assert metrics.metric_store == []
+    assert metrics.presentation_metric_hints[0].hint_status == "parsed"
+
+
+def test_presentation_metric_hint_rejects_accepted_status():
+    with pytest.raises(ValidationError, match="hint_status"):
+        PresentationMetricHint(
+            metric_name="revenue_guidance",
+            raw_text="Revenue: 12,000",
+            source_type=SourceType.EARNINGS_PRESENTATION,
+            source_name="Deck",
+            source_ref=SourceRef(
+                source_id="deck:p4:section-1",
+                source_type=SourceType.EARNINGS_PRESENTATION,
+                document_id="deck",
+                section_id="deck:p4:section-1",
+            ),
+            extraction_method="guidance_hint_regex",
+            hint_status="accepted",
+        )
+
+
+def test_presentation_metric_hint_rejects_legacy_period_role():
+    with pytest.raises(ValidationError, match="period_role"):
+        PresentationMetricHint(
+            metric_name="revenue_guidance",
+            raw_text="Revenue: 12,000",
+            source_type=SourceType.EARNINGS_PRESENTATION,
+            source_name="Deck",
+            source_ref=SourceRef(
+                source_id="deck:p4:section-1",
+                source_type=SourceType.EARNINGS_PRESENTATION,
+                document_id="deck",
+                section_id="deck:p4:section-1",
+                metric_name="revenue_guidance",
+            ),
+            extraction_method="guidance_hint_regex",
+            hint_status="parsed",
+            period_role="pre_earnings_consensus",
+        )
+
+
+def test_presentation_metric_hint_rejects_legacy_source_ref_period_role():
+    with pytest.raises(ValidationError, match="source_ref.period_role"):
+        PresentationMetricHint(
+            metric_name="revenue_guidance",
+            raw_text="Revenue: 12,000",
+            source_type=SourceType.EARNINGS_PRESENTATION,
+            source_name="Deck",
+            source_ref=SourceRef(
+                source_id="deck:p4:section-1",
+                source_type=SourceType.EARNINGS_PRESENTATION,
+                document_id="deck",
+                section_id="deck:p4:section-1",
+                metric_name="revenue_guidance",
+                period_role="pre_earnings_consensus",
+            ),
+            extraction_method="guidance_hint_regex",
+            hint_status="parsed",
+        )
+
+
+def test_presentation_metric_hint_rejects_one_sided_source_ref_period_metadata():
+    with pytest.raises(ValidationError, match="source_ref.fiscal_period"):
+        PresentationMetricHint(
+            metric_name="revenue_guidance",
+            raw_text="Revenue: 12,000",
+            source_type=SourceType.EARNINGS_PRESENTATION,
+            source_name="Deck",
+            source_ref=SourceRef(
+                source_id="deck:p4:section-1",
+                source_type=SourceType.EARNINGS_PRESENTATION,
+                document_id="deck",
+                section_id="deck:p4:section-1",
+                metric_name="revenue_guidance",
+                fiscal_period="2025Q4",
+            ),
+            extraction_method="guidance_hint_regex",
+            hint_status="parsed",
+        )
+
+    with pytest.raises(ValidationError, match="source_ref.period_role"):
+        PresentationMetricHint(
+            metric_name="revenue_guidance",
+            raw_text="Revenue: 12,000",
+            source_type=SourceType.EARNINGS_PRESENTATION,
+            source_name="Deck",
+            source_ref=SourceRef(
+                source_id="deck:p4:section-1",
+                source_type=SourceType.EARNINGS_PRESENTATION,
+                document_id="deck",
+                section_id="deck:p4:section-1",
+                metric_name="revenue_guidance",
+                period_role="guided_period",
+            ),
+            extraction_method="guidance_hint_regex",
+            hint_status="parsed",
+        )
+
+
+def test_financial_metrics_rejects_legacy_metric_store_period_role():
+    with pytest.raises(ValidationError, match="period_role"):
+        MetricStoreEntry(
+            metric_name="eps_consensus",
+            value=0.75,
+            unit="USD/share",
+            source_type=SourceType.FINANCIAL_API,
+            source_name="Yahoo Finance via yfinance",
+            fiscal_period="2025Q3",
+            period_role="pre_earnings_consensus",
+            source_ref=SourceRef(
+                source_id="yfinance:NVDA:2025Q3:eps_consensus",
+                source_type=SourceType.FINANCIAL_API,
+                metric_name="eps_consensus",
+            ),
+        )
+
+
+def test_metric_store_entry_requires_aligned_source_ref_metadata():
+    with pytest.raises(ValidationError, match="source_ref.metric_name is required"):
+        MetricStoreEntry(
+            metric_name="revenue_guidance",
+            value=28.0,
+            unit="USD billion",
+            source_type=SourceType.EARNINGS_PRESENTATION,
+            source_name="Deck",
+            fiscal_period="2025Q4",
+            period_role="guided_period",
+            source_ref=SourceRef(
+                source_id="deck:p4",
+                source_type=SourceType.EARNINGS_PRESENTATION,
+                document_id="deck",
+                fiscal_period="2025Q4",
+                period_role="guided_period",
+            ),
+        )
+
+    with pytest.raises(ValidationError, match="source_ref.source_type"):
+        MetricStoreEntry(
+            metric_name="revenue_guidance",
+            value=28.0,
+            unit="USD billion",
+            source_type=SourceType.EARNINGS_PRESENTATION,
+            source_name="Deck",
+            fiscal_period="2025Q4",
+            period_role="guided_period",
+            source_ref=SourceRef(
+                source_id="filing:guidance",
+                source_type=SourceType.FILING,
+                document_id="10q",
+                metric_name="revenue_guidance",
+                fiscal_period="2025Q4",
+                period_role="guided_period",
+            ),
+        )
+
+
+def test_review_request_rejects_legacy_financial_source_ref_period_role():
+    with pytest.raises(ValidationError, match="legacy temporal period_role"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                source_refs=[
+                    SourceRef(
+                        source_id="api:eps-consensus",
+                        source_type=SourceType.FINANCIAL_API,
+                        metric_name="eps_consensus",
+                        fiscal_period="2025Q3",
+                        period_role="pre_earnings_consensus",
+                    )
+                ],
+            ),
+        )
+
+
+def test_review_request_rejects_fake_prior_year_metric_store_period():
+    entry = MetricStoreEntry(
+        metric_name="revenue",
+        value=30_000.0,
+        unit="USD",
+        source_type=SourceType.FINANCIAL_API,
+        source_name="Yahoo Finance via yfinance",
+        fiscal_period="2025Q2",
+        period_role="prior_year_period",
+        source_ref=SourceRef(
+            source_id="yfinance:NVDA:2025Q2:revenue",
+            source_type=SourceType.FINANCIAL_API,
+            metric_name="revenue",
+            title="Yahoo Finance via yfinance",
+            fiscal_period="2025Q2",
+            period_role="prior_year_period",
+        ),
+    )
+
+    with pytest.raises(ValidationError, match="same quarter in the prior fiscal year"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                metric_store=[entry],
+            ),
+        )
+
+
+def test_review_request_accepts_prior_sequential_metric_store_period():
+    entry = MetricStoreEntry(
+        metric_name="revenue",
+        value=30_000.0,
+        unit="USD",
+        source_type=SourceType.FINANCIAL_API,
+        source_name="Yahoo Finance via yfinance",
+        fiscal_period="2025Q2",
+        period_role="prior_sequential_period_actuals",
+        source_ref=SourceRef(
+            source_id="yfinance:NVDA:2025Q2:revenue",
+            source_type=SourceType.FINANCIAL_API,
+            metric_name="revenue",
+            title="Yahoo Finance via yfinance",
+            fiscal_period="2025Q2",
+            period_role="prior_sequential_period_actuals",
+        ),
+    )
+
+    request = ReviewRequest(
+        ticker="NVDA",
+        fiscal_period="2025Q3",
+        prior_fiscal_period="2025Q2",
+        financial_metrics=FinancialMetrics(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            metric_store=[entry],
+        ),
+    )
+
+    assert request.prior_fiscal_period == "2025Q2"
+
+
+def test_review_request_rejects_non_sequential_prior_period_contract():
+    entry = MetricStoreEntry(
+        metric_name="revenue",
+        value=30_000.0,
+        unit="USD",
+        source_type=SourceType.FINANCIAL_API,
+        source_name="Yahoo Finance via yfinance",
+        fiscal_period="2024Q3",
+        period_role="prior_sequential_period_actuals",
+        source_ref=SourceRef(
+            source_id="yfinance:NVDA:2024Q3:revenue",
+            source_type=SourceType.FINANCIAL_API,
+            metric_name="revenue",
+            title="Yahoo Finance via yfinance",
+            fiscal_period="2024Q3",
+            period_role="prior_sequential_period_actuals",
+        ),
+    )
+
+    with pytest.raises(ValidationError, match="immediately preceding fiscal quarter"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                metric_store=[entry],
+            ),
+        )
+
+
+def test_review_request_rejects_conflicting_prior_fiscal_period():
+    with pytest.raises(ValidationError, match="prior_fiscal_period"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q1",
+            prior_fiscal_period="2024Q3",
+            financial_metrics=FinancialMetrics(ticker="NVDA", fiscal_period="2025Q1"),
+        )
+
+
 def test_contracts_reject_extra_fields_and_strip_strings():
     source = SourceRef(
         source_id=" filing:press ",
@@ -176,6 +521,166 @@ def test_review_request_validates_embedded_metrics_match_request():
         )
 
 
+def test_review_request_requires_target_earnings_date_for_automatic_metrics():
+    with pytest.raises(ValidationError, match="target_earnings_date is required"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            document_sections=[
+                {
+                    "section_id": "deck:p1",
+                    "source_ref": {
+                        "source_id": "deck:p1",
+                        "source_type": "earnings_presentation",
+                        "document_id": "deck",
+                        "section_id": "deck:p1",
+                    },
+                    "heading": "Deck",
+                    "text": "Revenue improved.",
+                }
+            ],
+        )
+
+
+def test_review_request_rejects_non_target_document_file_period():
+    with pytest.raises(ValidationError, match="document_files fiscal_period"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            target_earnings_date="2025-11-19",
+            document_files=[
+                {
+                    "path": "tests/fixtures/sample_presentation.txt",
+                    "source_type": "earnings_presentation",
+                    "document_id": "deck",
+                    "title": "Deck",
+                    "fiscal_period": "2025Q2",
+                    "period_role": "target_period_document",
+                }
+            ],
+        )
+
+
+def test_review_request_requires_document_file_period_metadata_with_target_date():
+    with pytest.raises(ValidationError, match="document_files fiscal_period is required"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            target_earnings_date="2025-11-19",
+            document_files=[
+                {
+                    "path": "tests/fixtures/sample_presentation.txt",
+                    "source_type": "earnings_presentation",
+                    "document_id": "deck",
+                    "title": "Deck",
+                }
+            ],
+        )
+
+
+def test_review_request_rejects_flat_metrics_with_latest_snapshot_role():
+    with pytest.raises(ValidationError, match="financial_metrics.period_role"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                period_role="latest_snapshot",
+            ),
+        )
+
+
+def test_review_request_rejects_latest_snapshot_financial_source_ref():
+    with pytest.raises(ValidationError, match="source_refs cannot be latest_snapshot"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                source_refs=[
+                    SourceRef(
+                        source_id="api:latest",
+                        source_type=SourceType.FINANCIAL_API,
+                        metric_name="latest_snapshot",
+                        period_role="latest_snapshot",
+                    )
+                ],
+            ),
+        )
+
+
+def test_review_request_rejects_latest_snapshot_temporal_snapshot():
+    with pytest.raises(ValidationError, match="temporal_snapshots cannot include latest_snapshot"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                temporal_snapshots={
+                    "latest_snapshot": {
+                        "bucket": "latest_snapshot",
+                        "metrics": {"eps_consensus": 1.0},
+                    }
+                },
+            ),
+        )
+
+
+def test_review_request_rejects_financial_data_cutoff_before_target_earnings():
+    with pytest.raises(ValidationError, match="financial_data_as_of cannot be before"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            target_earnings_date="2025-11-19",
+            financial_data_as_of="2025-11-18",
+            financial_metrics=FinancialMetrics(ticker="NVDA", fiscal_period="2025Q3"),
+        )
+
+
+def test_review_request_rejects_future_dated_supplied_metrics():
+    with pytest.raises(ValidationError, match="source_row_date must match"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            target_earnings_date="2025-11-19",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                source_row_date="2026-02-18",
+            ),
+        )
+
+
+def test_review_request_requires_target_date_for_provider_dated_supplied_metrics():
+    with pytest.raises(ValidationError, match="target_earnings_date is required"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                source_row_date="2025-11-19",
+            ),
+        )
+
+
+def test_review_request_rejects_wrong_provider_table_column_date():
+    with pytest.raises(ValidationError, match="source_table_column_date"):
+        ReviewRequest(
+            ticker="NVDA",
+            fiscal_period="2025Q3",
+            target_period_end_date="2025-10-31",
+            financial_metrics=FinancialMetrics(
+                ticker="NVDA",
+                fiscal_period="2025Q3",
+                source_table_column_date="2026-01-31",
+            ),
+        )
+
+
 def test_verdict_label_is_lowercase_enum():
     decision_args = {
         "verdict": "GOOD",
@@ -197,6 +702,7 @@ def test_verdict_label_is_lowercase_enum():
     decision = JudgeDecision(**decision_args)
 
     assert decision.verdict == VerdictLabel.GOOD
+    assert VerdictLabel.INSUFFICIENT_EVIDENCE.value == "insufficient_evidence"
 
 
 def test_agent_role_centers_on_7_agent_contract_with_legacy_name_aliases():
@@ -405,3 +911,73 @@ def test_full_review_response_contains_structured_result_and_markdown():
     assert response.ticker == "NVDA"
     assert response.markdown_report.startswith("# Earnings Review")
     assert response.is_investment_advice is False
+
+
+def test_review_response_allows_real_llm_length_markdown_report():
+    evidence_positive = evidence("ev:positive", EvidencePolarity.POSITIVE)
+    evidence_negative = evidence("ev:negative", EvidencePolarity.NEGATIVE)
+    brief = analysis_brief(evidence_positive, evidence_negative)
+    brief = AnalysisBrief(
+        ticker="NVDA",
+        fiscal_period="2025Q3",
+        earnings_quality_finding=brief.earnings_quality_finding,
+        cash_flow_risk_finding=brief.cash_flow_risk_finding,
+        management_intent_finding=brief.management_intent_finding,
+        guidance_finding=brief.guidance_finding,
+        positive_evidence_pool=[evidence_positive],
+        negative_evidence_pool=[evidence_negative],
+        synthesis="Validated brief.",
+    )
+    status = StepStatus(step=WorkflowStep.DATA_INGESTION, state=StepState.COMPLETED)
+
+    response = ReviewResponse(
+        ticker="NVDA",
+        fiscal_period="2025Q3",
+        steps=[status],
+        analysis_brief=brief,
+        bull_case=BullCase(
+            thesis="Positive case.",
+            stance_strength="moderate",
+            strongest_positive_evidence=[evidence_positive],
+            eps_bull_argument="EPS case.",
+            fcf_bull_argument="FCF case.",
+            conditions_needed=["Execution remains on track."],
+            weak_points=["FCF risk remains."],
+            finding_coverage=complete_finding_coverage(),
+            confidence=0.7,
+        ),
+        bear_case=BearCase(
+            thesis="Negative case.",
+            stance_strength="moderate",
+            strongest_negative_evidence=[evidence_negative],
+            eps_bear_argument="EPS risk.",
+            fcf_bear_argument="FCF risk.",
+            failure_modes=["CapEx remains high."],
+            counter_to_bull_case=["FCF risk remains."],
+            finding_coverage=complete_finding_coverage(),
+            confidence=0.6,
+        ),
+        debate_result=DebateResult(
+            bull_case="Bull case.",
+            bear_case="Bear case.",
+            risk_case="Risk case.",
+            evaluation="Balanced.",
+            strongest_positive_evidence=[evidence_positive],
+            strongest_negative_evidence=[evidence_negative],
+        ),
+        judge_decision=JudgeDecision(
+            verdict=VerdictLabel.GOOD,
+            confidence=0.65,
+            summary="Summary.",
+            rationale="Rationale.",
+            positive_evidence=[evidence_positive],
+            negative_evidence=[evidence_negative],
+            eps_outlook="EPS outlook.",
+            eps_outlook_reason="EPS reason.",
+            fcf_outlook="FCF outlook.",
+            fcf_outlook_reason="FCF reason.",
+        ),
+        markdown_report="# Earnings Review\n\n" + ("Detailed analysis.\n" * 1600),
+    )
+
+    assert len(response.markdown_report) > 20000

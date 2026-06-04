@@ -1,0 +1,10 @@
+{
+  "request_id": "current-sec-fallback-sample",
+  "ticker": "NVDA",
+  "fiscal_period": "2026Q1",
+  "target_earnings_date": "2025-05-28",
+  "target_period_end_date": "2025-04-27",
+  "prior_fiscal_period": "2025Q4",
+  "filing_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581025000116/nvda-20250427.htm",
+  "include_markdown": true
+}

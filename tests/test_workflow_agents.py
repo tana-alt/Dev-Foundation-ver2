@@ -5,6 +5,7 @@ from src.workflow_agents import (
     ALL_WORKFLOW_AGENT_CLASSES,
     SPECIALIST_AGENT_CLASSES,
     AgentOutputValidationError,
+    AgentProviderCallError,
     BearAgent,
     BullAgent,
     CashFlowRiskAnalyst,
@@ -32,6 +33,36 @@ class FakeLLM:
         )
         text = self.responses.pop(0)
         return LLMResponse(text=text, input_tokens=1, output_tokens=1)
+
+
+class FailingStructuredLLM:
+    def complete_structured(self, system, user, output_model, max_tokens=2048, temperature=0.7):
+        raise RuntimeError("simulated structured provider failure")
+
+
+class FallbackMetadataLLM:
+    def complete_structured(self, system, user, output_model, max_tokens=2048, temperature=0.7):
+        return LLMResponse(
+            text=earnings_quality_json(),
+            input_tokens=1,
+            output_tokens=1,
+            metadata={
+                "structured_fallback_used": True,
+                "structured_fallback_stage": "structured_call",
+                "structured_fallback_error_type": "RuntimeError",
+                "structured_fallback_error": "structured output failed",
+                "provider": "test-provider",
+                "model": "test-model",
+            },
+        )
+
+
+class CaptureLogger:
+    def __init__(self):
+        self.calls = []
+
+    def warning(self, event, **kwargs):
+        self.calls.append((event, kwargs))
 
 
 def evidence_json(evidence_id, polarity, source_id="filing:eps"):
@@ -383,6 +414,44 @@ def test_agent_stops_after_single_retry():
         agent.run({"run_spec": {"ticker": "NVDA"}})
 
     assert len(llm.calls) == 2
+
+
+def test_agent_provider_failure_includes_agent_and_attempt():
+    agent = EarningsQualityAnalyst(FailingStructuredLLM(), max_retries=1)
+
+    with pytest.raises(AgentProviderCallError) as exc_info:
+        agent.run({"run_spec": {"ticker": "NVDA"}})
+
+    assert exc_info.value.agent_name == "EarningsQualityAnalyst"
+    assert exc_info.value.attempt == 1
+    assert exc_info.value.max_attempts == 2
+    assert "structured_call" in str(exc_info.value)
+    assert "simulated structured provider failure" in str(exc_info.value)
+
+
+def test_agent_logs_structured_fallback_metadata(monkeypatch):
+    capture = CaptureLogger()
+    monkeypatch.setattr("src.workflow_agents.logger", capture)
+
+    result = EarningsQualityAnalyst(FallbackMetadataLLM()).run({"run_spec": {"ticker": "NVDA"}})
+
+    assert result.agent_name == "EarningsQualityAnalyst"
+    assert capture.calls == [
+        (
+            "llm_structured_fallback_used",
+            {
+                "agent_name": "EarningsQualityAnalyst",
+                "attempt": 1,
+                "max_attempts": 2,
+                "structured_fallback_used": True,
+                "structured_fallback_stage": "structured_call",
+                "structured_fallback_error_type": "RuntimeError",
+                "structured_fallback_error": "structured output failed",
+                "provider": "test-provider",
+                "model": "test-model",
+            },
+        )
+    ]
 
 
 def test_bull_and_bear_schema_requires_finding_coverage():
