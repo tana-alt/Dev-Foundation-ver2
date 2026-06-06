@@ -35,6 +35,11 @@ def valid_actual_lane_map() -> dict[str, Any]:
     }
     data["governance"]["map_owner"] = "agent"
     data["handoff"]["next_action"] = "review"
+    data["spec_scope"] = {
+        "approved_spec_ref": "artifact/foundation/output/specs/foundation-lane-map-ci.md",
+        "spec_review_ref": "artifact/foundation/evidence/spec-review-foundation-lane-map-ci.yaml",
+        "requirement_ids": ["REQ-001"],
+    }
 
     lanes = cast(list[dict[str, Any]], data["lanes"])
     lanes[0]["owner"] = "unassigned"
