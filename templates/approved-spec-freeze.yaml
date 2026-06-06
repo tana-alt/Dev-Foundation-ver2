@@ -1,0 +1,41 @@
+schema_version: "0.1"
+record_type: approved_spec_freeze
+status: draft
+
+identity:
+  project_id: <project-id>
+  spec_id: <spec-id>
+  freeze_id: <freeze-id>
+  work_id: <work-id>
+  created_at: "YYYY-MM-DD"
+
+sources:
+  goal_ref: artifact/<project-id>/output/goals/<goal-id>.md
+  spec_ref: artifact/<project-id>/output/specs/<spec-id>.md
+  spec_packet_ref: artifact/<project-id>/output/specs/<spec-id>.yaml
+  spec_review_ref: artifact/<project-id>/evidence/spec-review-<review-id>.yaml
+  human_approval_ref: artifact/<project-id>/evidence/human-approval-<approval-id>.yaml
+
+authority:
+  behavior_authority: approved_spec_ref_only
+  behavior_authority_ref: artifact/<project-id>/output/specs/<spec-id>.md
+  implementation_policy_role: how_guidance_only
+
+freeze:
+  content_hash: sha256:<hash>
+  requirement_ids:
+    - REQ-001
+  acceptance_criteria_ids:
+    - AC-001
+  non_functional_requirement_ids:
+    - NFR-001
+  exception_case_ids:
+    - EXC-001
+
+change_policy:
+  direct_edit_after_freeze: prohibited
+  allowed_change_path: spec_amendment_record
+  human_approval_required: true
+
+handoff:
+  next_action: lane_mapping
