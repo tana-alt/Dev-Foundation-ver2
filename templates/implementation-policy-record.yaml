@@ -1,0 +1,57 @@
+schema_version: "0.1"
+record_type: implementation_policy_record
+status: draft
+
+identity:
+  project_id: <project-id>
+  work_id: <work-id>
+  lane: <lane>
+  policy_id: <policy-id>
+  created_at: "YYYY-MM-DD"
+
+scope:
+  behavior_authority_ref: artifact/<project-id>/output/specs/<spec-id>.md#REQ-001
+  requirement_ids:
+    - REQ-001
+  implementation_policy_refs:
+    - pyproject.toml
+    - Makefile
+    - tests/<nearby-test>.py
+  denied_context:
+    - unrelated_spec_sections
+    - unrelated_project_logs
+    - broad_repo_scan
+    - runtime_state
+    - secrets
+
+authority_boundary:
+  behavior_authority: approved_spec_ref_only
+  policy_role: how_guidance_only
+  must_not_redefine:
+    - requirement_statement
+    - acceptance_criteria
+    - user_visible_behavior
+    - public_contract
+    - data_contract
+    - trust_boundary
+
+policy:
+  coding_conventions:
+    - "Follow nearby source and test style."
+  allowed_choices:
+    - "Choose internal structure locally as long as approved requirement IDs are satisfied."
+  forbidden_choices:
+    - "Do not modify the approved specification unless explicitly scoped."
+    - "Do not introduce external write behavior without a human gate."
+
+verification:
+  required:
+    - "Run the smallest repo-backed check relevant to the changed surface."
+  evidence_required:
+    - changed_paths
+    - verification_results
+    - allowed_write_target_check
+    - residual_risk
+
+handoff:
+  next_action: build

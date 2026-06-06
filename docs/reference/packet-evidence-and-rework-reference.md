@@ -40,6 +40,9 @@ Adjacent references:
   handoff compatibility, retry/idempotency, and conceptual parallel lanes.
 - Use `git-worktree-and-branch-reference.md` for concrete branch/worktree
   setup, changed-path evidence, conflict checks, and PR preparation.
+- Use `specification-workflow-reference.md` for goal-to-spec flow, subagent
+  workflow phases, specification review, implementation-policy separation,
+  approved-spec lane slicing, and inconsistency-register handling.
 
 Expected effect after opening:
 
@@ -196,6 +199,10 @@ Common types: `missing_context`, `ambiguous_instruction`, `contract_mismatch`,
 ## Template Locations
 
 Use `templates/work-contract.yaml`, `templates/evidence-record.yaml`,
-`templates/verification-record.yaml`, `templates/rework-record.yaml`, and
-`templates/parallel-lane-map.yaml` when the task asks for structured records or
+`templates/verification-record.yaml`, `templates/rework-record.yaml`,
+`templates/parallel-lane-map.yaml`, `templates/specification-packet.yaml`,
+`templates/specification-review-record.yaml`,
+`templates/implementation-policy-record.yaml`,
+`templates/workflow-run-record.yaml`, and `templates/inconsistency-register.yaml`
+when the task asks for structured records, specification/subagent workflow, or
 parallel lane allocation.

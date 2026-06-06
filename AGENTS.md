@@ -16,8 +16,8 @@ or unrelated history by default.
 ## Open By Need References
 - Runtime/scheduler-supplied scope, handoff, retry/idempotency, and conceptual parallel-lane boundaries:
   `docs/reference/agent-runtime-and-scope-reference.md`
-- Open for work-contract/record fields, templates, identity/ref rules, evidence, verification records, and rework:
-  `docs/reference/packet-evidence-and-rework-reference.md`
+- Open for work-contract/record fields, specification/subagent workflow, templates, refs, evidence, verification records, and rework:
+  `docs/reference/packet-evidence-and-rework-reference.md`; spec/subagent details: `docs/reference/specification-workflow-reference.md`
 - Open for any project-scoped Plan/artifact/src placement choice, ignored local state, and storage boundaries:
   `docs/reference/repo-boundary-and-storage-reference.md`
 - Current verification, CI, CD, and PR detail:

@@ -1,0 +1,52 @@
+schema_version: "0.1"
+record_type: specification_review_record
+status: draft
+
+identity:
+  project_id: <project-id>
+  spec_id: <spec-id>
+  review_id: <review-id>
+  created_at: "YYYY-MM-DD"
+
+sources:
+  source_refs:
+    - artifact/<project-id>/output/specs/<spec-id>.md
+    - artifact/<project-id>/output/goals/<goal-id>.md
+
+checks:
+  - name: requirement_traceability
+    result: passed
+    evidence_ref: artifact/<project-id>/output/specs/<spec-id>.md
+    notes: ""
+  - name: observable_acceptance_criteria
+    result: passed
+    evidence_ref: artifact/<project-id>/output/specs/<spec-id>.md
+    notes: ""
+  - name: implementation_policy_leakage
+    result: passed
+    evidence_ref: artifact/<project-id>/output/specs/<spec-id>.md
+    notes: "Specification contains no coding style, file layout, library choice, branch strategy, or test command selection."
+  - name: human_gate_readiness
+    result: passed
+    evidence_ref: artifact/<project-id>/output/specs/<spec-id>.md
+    notes: "Spec is ready for human review before approved_spec_freeze."
+
+observations:
+  facts:
+    - "Observed source-backed fact."
+  inferences:
+    - "Labeled inference."
+  decisions:
+    - "Review decision."
+
+unresolved_questions: []
+
+human_gate:
+  required: true
+  status: required
+  reason: "Human approval is required before approved_spec_freeze."
+
+decision:
+  result: approved_for_human_review
+  rework_required: []
+  next_action: human_spec_review

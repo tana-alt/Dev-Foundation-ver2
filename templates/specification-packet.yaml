@@ -1,0 +1,67 @@
+schema_version: "0.1"
+record_type: specification_packet
+status: draft
+
+identity:
+  project_id: <project-id>
+  spec_id: <spec-id>
+  goal_ref: artifact/<project-id>/output/goals/<goal-id>.md
+  created_at: "YYYY-MM-DD"
+
+scope:
+  source_refs:
+    - artifact/<project-id>/output/goals/<goal-id>.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+  denied_context:
+    - implementation_policy
+    - implementation_history
+    - unrelated_project_logs
+    - broad_repo_scan
+    - runtime_state
+    - secrets
+
+behavior_contract:
+  requirements:
+    - id: REQ-001
+      statement: "Describe externally observable behavior, not implementation."
+      observable_outcome: "Observable result that must be true when this requirement is satisfied."
+      acceptance_criteria:
+        - id: AC-001
+          method: inspection
+          expected_result: "Observable expected result."
+      non_goals:
+        - "Explicitly out-of-scope behavior."
+
+interfaces:
+  public_contracts: []
+  data_contracts: []
+  trust_boundaries: []
+  side_effects: []
+
+implementation_boundary:
+  allowed_in_spec:
+    - externally_visible_behavior
+    - externally_visible_constraints
+    - safety_or_security_constraints
+  forbidden_in_spec:
+    - file_layout
+    - function_names
+    - class_names
+    - coding_style
+    - lint_rules
+    - library_choice
+    - branch_strategy
+    - worktree_commands
+    - test_command_selection
+    - refactor_strategy
+    - internal_algorithm_choice
+
+verification_expectation:
+  required_evidence:
+    - requirement_to_acceptance_criteria_trace
+    - unresolved_question_list
+  review_gate: specification_review
+
+handoff:
+  next_action: specification_review

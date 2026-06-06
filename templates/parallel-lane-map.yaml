@@ -21,6 +21,12 @@ git_scope:
   conflict_policy: no_overlap
   sibling_branch_refs: []
 
+spec_scope:
+  approved_spec_ref: artifact/<project-id>/output/specs/<spec-id>.md
+  spec_review_ref: artifact/<project-id>/evidence/spec-review-<review-id>.yaml
+  requirement_ids:
+    - REQ-001
+
 lanes:
   - lane: docs
     status: planned
@@ -29,6 +35,11 @@ lanes:
     source_refs:
       - AGENTS.md
       - docs/reference/agent-runtime-and-scope-reference.md
+    requirement_ids:
+      - REQ-001
+    implementation_policy_refs:
+      - docs/01-agent-operating-contract.md
+      - docs/03-repo-boundary-and-storage-contract.md
     allowed_write_targets:
       - docs/reference/
       - templates/
@@ -51,6 +62,11 @@ lanes:
     source_refs:
       - tests/test_contract_models.py
       - tests/test_foundation_integrity.py
+    requirement_ids:
+      - REQ-001
+    implementation_policy_refs:
+      - pyproject.toml
+      - Makefile
     allowed_write_targets:
       - tests/
       - scripts/
