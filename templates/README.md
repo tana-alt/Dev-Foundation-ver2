@@ -13,3 +13,12 @@
   used.
 - Use `templates/parallel-lane-map.yaml` for lane allocation templates; completed
   lane maps belong under `Plan/<project_id>/lane-maps/` when tracked.
+- Use `templates/specification-packet.yaml`,
+  `templates/specification-review-record.yaml`,
+  `templates/implementation-policy-record.yaml`,
+  `templates/workflow-run-record.yaml`, and
+  `templates/inconsistency-register.yaml` for reusable
+  specification/subagent workflow records; completed records belong under the
+  owning `project_id`.
+- Do not store completed specs, workflow runs, logs, evidence, verification
+  records, or project records in `templates/`.

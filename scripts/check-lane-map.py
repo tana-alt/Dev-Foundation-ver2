@@ -26,6 +26,7 @@ VALID_CONFLICT_POLICIES = {"no_overlap", "report_overlap", "explicitly_scoped"}
 VALID_MAP_OWNERS = {"human", "agent", "scheduler"}
 VALID_NEXT_ACTIONS = {"complete", "rework", "review", "continue"}
 REQUIRED_HANDOFF_EVIDENCE = {"source_refs", "changed_paths", "verification_results"}
+REQ_ID_PREFIX = "REQ-"
 TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 TEMPLATE_PLACEHOLDERS = {"<work-id>", "<project-id>", "<repo>", "<short-slug>"}
 
@@ -147,6 +148,113 @@ def validate_no_placeholder(
                     f"{label} must not contain template placeholders in Plan lane maps",
                 )
                 return
+
+
+def validate_requirement_ids(
+    issues: list[str],
+    path: Path,
+    label: str,
+    value: object,
+    *,
+    actual_record: bool,
+) -> list[str] | None:
+    requirement_ids = string_list(value)
+    if requirement_ids is None or not requirement_ids:
+        add_issue(issues, path, f"{label} must be a non-empty string list")
+        return None
+    validate_no_placeholder(issues, path, label, requirement_ids, actual_record=actual_record)
+    invalid_ids = sorted(
+        requirement_id
+        for requirement_id in requirement_ids
+        if not requirement_id.startswith(REQ_ID_PREFIX)
+    )
+    if invalid_ids:
+        add_issue(issues, path, f"{label} IDs must start with {REQ_ID_PREFIX}: {invalid_ids}")
+    return requirement_ids
+
+
+def validate_spec_scope(
+    issues: list[str],
+    path: Path,
+    data: dict[str, Any],
+    *,
+    actual_record: bool,
+) -> set[str] | None:
+    if "spec_scope" not in data:
+        return None
+
+    spec_scope = mapping(data.get("spec_scope"))
+    if spec_scope is None:
+        add_issue(issues, path, "spec_scope must be a mapping")
+        return None
+
+    for field in ("approved_spec_ref", "spec_review_ref"):
+        value = string_value(spec_scope.get(field))
+        if value is None:
+            add_issue(issues, path, f"spec_scope.{field} must be a non-empty string")
+            continue
+        validate_no_placeholder(
+            issues,
+            path,
+            f"spec_scope.{field}",
+            value,
+            actual_record=actual_record,
+        )
+
+    requirement_ids = validate_requirement_ids(
+        issues,
+        path,
+        "spec_scope.requirement_ids",
+        spec_scope.get("requirement_ids"),
+        actual_record=actual_record,
+    )
+    if requirement_ids is None:
+        return None
+    return set(requirement_ids)
+
+
+def validate_optional_lane_spec_fields(
+    issues: list[str],
+    path: Path,
+    lane: dict[str, Any],
+    lane_name: str,
+    *,
+    scoped_requirement_ids: set[str] | None,
+    actual_record: bool,
+) -> None:
+    if "requirement_ids" in lane:
+        lane_requirement_ids = validate_requirement_ids(
+            issues,
+            path,
+            f"{lane_name}.requirement_ids",
+            lane.get("requirement_ids"),
+            actual_record=actual_record,
+        )
+        if lane_requirement_ids is not None and scoped_requirement_ids is not None:
+            outside_scope = sorted(set(lane_requirement_ids) - scoped_requirement_ids)
+            if outside_scope:
+                add_issue(
+                    issues,
+                    path,
+                    f"{lane_name}.requirement_ids outside spec_scope: {outside_scope}",
+                )
+
+    if "implementation_policy_refs" in lane:
+        implementation_policy_refs = string_list(lane.get("implementation_policy_refs"))
+        if implementation_policy_refs is None or not implementation_policy_refs:
+            add_issue(
+                issues,
+                path,
+                f"{lane_name}.implementation_policy_refs must be a non-empty string list",
+            )
+            return
+        validate_no_placeholder(
+            issues,
+            path,
+            f"{lane_name}.implementation_policy_refs",
+            implementation_policy_refs,
+            actual_record=actual_record,
+        )
 
 
 def validate_branch_target(
@@ -387,6 +495,13 @@ def validate_lane_map(path: Path) -> list[str]:
             actual_record=actual_record,
         )
 
+    scoped_requirement_ids = validate_spec_scope(
+        issues,
+        path,
+        data,
+        actual_record=actual_record,
+    )
+
     lanes_raw = data.get("lanes")
     if not isinstance(lanes_raw, list) or not lanes_raw:
         add_issue(issues, path, "lanes must be a non-empty list")
@@ -473,6 +588,15 @@ def validate_lane_map(path: Path) -> list[str]:
                 f"{lane_name}.source_refs exceeds context budget "
                 f"({len(source_refs)} > {max_source_refs})",
             )
+
+        validate_optional_lane_spec_fields(
+            issues,
+            path,
+            lane,
+            lane_name,
+            scoped_requirement_ids=scoped_requirement_ids,
+            actual_record=actual_record,
+        )
 
         for field in (
             "allowed_write_targets",

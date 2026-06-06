@@ -20,6 +20,7 @@ REFERENCE_DOCS = (
     "docs/reference/migration-and-acceptance-reference.md",
     "docs/reference/packet-evidence-and-rework-reference.md",
     "docs/reference/repo-boundary-and-storage-reference.md",
+    "docs/reference/specification-workflow-reference.md",
     "docs/reference/verification-ci-and-pr-reference.md",
 )
 
@@ -32,6 +33,11 @@ TEMPLATES = (
     "templates/serena-project.yml",
     "templates/codex-config.toml.example",
     "templates/parallel-lane-map.yaml",
+    "templates/specification-packet.yaml",
+    "templates/specification-review-record.yaml",
+    "templates/implementation-policy-record.yaml",
+    "templates/workflow-run-record.yaml",
+    "templates/inconsistency-register.yaml",
 )
 
 ROOT_READMES = (
@@ -206,6 +212,23 @@ def test_agents_routes_project_scoped_work_to_reference_docs() -> None:
     assert "`docs/reference/git-worktree-and-branch-reference.md`" in agents
     assert "`project-worktree-scope`" not in agents
     assert "`project-storage-placement`" not in agents
+
+
+def test_doc_consistency_specification_subagent_workflow_is_routed_and_compact() -> None:
+    agents = read_text("AGENTS.md")
+    reference = read_text("docs/reference/specification-workflow-reference.md")
+    packet_reference = read_text("docs/reference/packet-evidence-and-rework-reference.md")
+    templates_readme = read_text("templates/README.md")
+
+    assert "`docs/reference/specification-workflow-reference.md`" in agents
+    assert "main_lane" in reference
+    assert "spec_drafter" in reference
+    assert "inconsistency register" in reference.lower()
+    assert "not a runtime scheduler" in reference
+    assert "worker heartbeat" in reference
+    assert "specification-workflow-reference.md" in packet_reference
+    assert "templates/specification-packet.yaml" in templates_readme
+    assert "blank reusable" in templates_readme
 
 
 def test_reference_set_matches_routed_reference_docs() -> None:

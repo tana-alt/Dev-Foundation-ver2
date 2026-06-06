@@ -32,6 +32,7 @@ matter in `SKILL.md`.
 ## Governance skills
 
 - `skill-authoring-governance`
+- `subagent-workflow-governance`
 
 ## Routing notes
 

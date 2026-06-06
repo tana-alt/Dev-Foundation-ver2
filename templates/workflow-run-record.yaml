@@ -1,0 +1,51 @@
+schema_version: "0.1"
+record_type: workflow_run_record
+status: draft
+
+identity:
+  project_id: <project-id>
+  work_id: <work-id>
+  goal_id: <goal-id>
+  created_at: "YYYY-MM-DD"
+
+phase:
+  current: goal_set
+  next_action: specification_draft
+
+record_refs:
+  goal_ref: artifact/<project-id>/output/goals/<goal-id>.md
+  approved_spec_ref: ""
+  spec_review_ref: ""
+  lane_map_ref: ""
+  work_contract_refs: []
+  build_result_refs: []
+  review_record_refs: []
+  integration_review_refs: []
+  inconsistency_register_ref: ""
+  rework_refs: []
+  convergence_check_ref: ""
+  final_handoff_ref: ""
+
+communication_rules:
+  human_interface: main_lane_only
+  subagent_to_human_direct: prohibited
+  subagent_to_subagent_direct: prohibited
+  state_authority: record_refs_not_conversation
+
+human_gates:
+  spec_approval:
+    required: true
+    status: required
+    evidence_ref: ""
+  final_merge:
+    required: true
+    status: required
+    evidence_ref: ""
+
+open_questions: []
+blocked_reasons: []
+residual_risk:
+  - "none"
+
+handoff:
+  next_action: specification_draft
