@@ -500,14 +500,40 @@ def validate_fix_review_data(data: dict[str, Any], label: str) -> list[str]:
 
 def validate_traceability_data(data: dict[str, Any], label: str) -> list[str]:
     issues: list[str] = []
-    for item in mappings(data.get("items")):
+    items = mappings(data.get("items"))
+    coverage = mapping(data.get("coverage"))
+
+    for item in items:
         item_id = string(item.get("id"))
         if not item_id.startswith(TRACEABILITY_PREFIXES):
             add_issue(issues, label, f"invalid traceability id {item_id!r}")
         if string(item.get("status")) not in TRACEABILITY_STATUSES:
             add_issue(issues, label, f"invalid traceability status for {item_id}")
-    if not mappings(data.get("items")):
-        add_issue(issues, label, "traceability items must be non-empty")
+
+    coverage_items = [
+        *mappings(coverage.get("functional_requirements")),
+        *mappings(coverage.get("non_functional_requirements")),
+        *mappings(coverage.get("exception_cases")),
+    ]
+    for requirement in mappings(coverage.get("functional_requirements")):
+        requirement_id = string(requirement.get("requirement_id"))
+        if not requirement_id.startswith("REQ-"):
+            add_issue(issues, label, f"invalid functional requirement id {requirement_id!r}")
+        for acceptance in mappings(requirement.get("acceptance_criteria")):
+            ac_id = string(acceptance.get("ac_id"))
+            if not ac_id.startswith("AC-"):
+                add_issue(issues, label, f"invalid acceptance criterion id {ac_id!r}")
+    for requirement in mappings(coverage.get("non_functional_requirements")):
+        requirement_id = string(requirement.get("requirement_id"))
+        if not requirement_id.startswith("NFR-"):
+            add_issue(issues, label, f"invalid non-functional requirement id {requirement_id!r}")
+    for exception_case in mappings(coverage.get("exception_cases")):
+        case_id = string(exception_case.get("case_id"))
+        if not case_id.startswith("EXC-"):
+            add_issue(issues, label, f"invalid exception case id {case_id!r}")
+
+    if not items and not coverage_items:
+        add_issue(issues, label, "traceability items or coverage must be non-empty")
     return issues
 
 

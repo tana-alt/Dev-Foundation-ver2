@@ -48,3 +48,26 @@ findings: []
 
     assert result.returncode == 1
     assert "review_mode must be narrow" in result.stderr
+
+
+def test_traceability_coverage_shape_is_supported(tmp_path: Path) -> None:
+    write_file(
+        tmp_path / "templates/requirement-traceability-matrix.yaml",
+        """schema_version: "0.1"
+record_type: requirement_traceability_matrix
+status: draft
+coverage:
+  functional_requirements:
+    - requirement_id: REQ-001
+      acceptance_criteria:
+        - ac_id: AC-001
+  non_functional_requirements:
+    - requirement_id: NFR-001
+  exception_cases:
+    - case_id: EXC-001
+""",
+    )
+
+    result = run_operational_check("check-review-convergence.py", tmp_path)
+
+    assert result.returncode == 0
