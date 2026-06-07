@@ -1,0 +1,19 @@
+schema_version: "0.1"
+record_type: context_scope_manifest
+status: draft
+scope:
+  selected_skill_refs:
+    - ".agents/skills/scope-routing-governance/SKILL.md"
+  source_refs_opened:
+    - ref: "."
+      reason: "too broad"
+  denied_context:
+    - broad_repo_scan
+    - secrets
+    - runtime_state
+  context_expansion: []
+budget:
+  max_selected_skills: 2
+  max_source_refs: 6
+  max_reference_docs: 2
+  broad_repo_scan_allowed: false

@@ -1,6 +1,6 @@
 UV ?= uv
 
-.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-hygiene check-secrets check-cd check-fast check-push check-required check-ci check-foundation
+.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-hygiene check-secrets check-cd check-fast check-push check-required check-ci check-foundation
 
 help:
 	@printf '%s\n' \
@@ -19,6 +19,14 @@ help:
 		'  make check-hooks           Run shell syntax checks on hooks/scripts' \
 		'  make check-shell           Run ShellCheck on tracked shell hooks/scripts' \
 		'  make check-lanes           Validate parallel lane-map templates and records' \
+		'  make check-skill-routes    Validate operational skill routes and budgets' \
+		'  make check-context-scope   Validate context-scope and budget records' \
+		'  make check-result-envelope Validate checker result envelopes' \
+		'  make check-residual-risk-carryover Validate residual-risk carryover records' \
+		'  make check-review-convergence Validate review/fix/convergence records' \
+		'  make check-audit-provenance Validate audit and source snapshot records' \
+		'  make check-operational-scorecard Validate operational scorecard records' \
+		'  make check-agent-operational Run operational record checks' \
 		'  make check-hygiene         Run repo hygiene guardrails' \
 		'  make check-secrets         Run Gitleaks with redacted output' \
 		'  make check-fast            Run fast local/push checks' \
@@ -80,6 +88,29 @@ check-shell:
 
 check-lanes:
 	$(UV) run python scripts/check-lane-map.py
+
+check-skill-routes:
+	$(UV) run python scripts/check-skill-routes.py
+
+check-context-scope:
+	$(UV) run python scripts/check-context-scope.py
+
+check-result-envelope:
+	$(UV) run python scripts/check-result-envelope.py
+
+check-residual-risk-carryover:
+	$(UV) run python scripts/check-residual-risk-carryover.py
+
+check-review-convergence:
+	$(UV) run python scripts/check-review-convergence.py
+
+check-audit-provenance:
+	$(UV) run python scripts/check-audit-provenance.py
+
+check-operational-scorecard:
+	$(UV) run python scripts/check-operational-scorecard.py
+
+check-agent-operational: check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard
 
 check-hygiene:
 	sh scripts/check-repo-hygiene.sh

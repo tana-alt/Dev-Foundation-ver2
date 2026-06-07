@@ -67,7 +67,9 @@ Plan/<project_id>/logs/Plan_N0001.log.md
 Plan/<project_id>/lane-maps/<work_id>.yaml
 
 artifact/<project_id>/manifest.yaml
+artifact/<project_id>/audit/
 artifact/<project_id>/evidence/
+artifact/<project_id>/governance/
 artifact/<project_id>/verification/
 artifact/<project_id>/output/
 
@@ -104,8 +106,8 @@ verification, artifact, or implementation files belong under the owning
   heartbeat, or claim source of truth.
 - `app/`: reserved runnable app surface; keep empty unless truly needed.
 - `src/`: project-scoped or documented shared implementation surface.
-- `artifact/`: project-scoped durable outputs, evidence, verification, and
-  fixtures, not a broad project log.
+- `artifact/`: project-scoped durable outputs, audit/governance records,
+  evidence, verification, and fixtures, not a broad project log.
 
 Do not introduce default roots such as runtime queues, active plan files, lock
 ledgers, dashboards, `projects/`, plural `apps/`, or plural `artifacts/`.

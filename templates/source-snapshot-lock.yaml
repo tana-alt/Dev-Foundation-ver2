@@ -1,0 +1,32 @@
+schema_version: "0.1"
+record_type: source_snapshot_lock
+status: draft
+
+identity:
+  project_id: example_project
+  work_id: example_work_id
+  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+  created_by: agent
+
+record_scope:
+  required_by_records:
+    - "artifact/<project_id>/output/final-handoffs/<work_id>.yaml"
+
+source_snapshots:
+  - ref: "AGENTS.md"
+    commit: unknown
+    line_range: ""
+    content_hash: "sha256:unknown"
+    hash_status: unknown
+    opened_by: agent
+    opened_for: "Template example."
+    required_by_record: "artifact/<project_id>/output/final-handoffs/<work_id>.yaml"
+    local_file: true
+
+hash_policy:
+  important_record_source_refs_hash_required: true
+  fake_hash_forbidden: true
+  unknown_hash_requires_residual_risk: true
+
+residual_risk_refs:
+  - "artifact/<project_id>/output/residual-risk/<work_id>.yaml#RISK-001"

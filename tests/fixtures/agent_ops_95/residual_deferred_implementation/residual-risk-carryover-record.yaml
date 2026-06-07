@@ -1,0 +1,18 @@
+schema_version: "0.1"
+record_type: residual_risk_carryover_record
+status: draft
+risks:
+  - id: RISK-002
+    severity: medium
+    type: deferred_implementation
+    summary: "Project-specific semantic conflict detection deferred."
+    source_refs:
+      - "artifact/example/verification/check-merge-integrity.yaml"
+    owner_lane: integration
+    human_decision_required: false
+    affected_requirement_ids:
+      - REQ-003
+    next_flow_seed:
+      problem: "Add project-specific semantic checks."
+      source_refs:
+        - "artifact/example/output/traceability/work.yaml#REQ-003"

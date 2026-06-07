@@ -1,0 +1,17 @@
+schema_version: "0.1"
+record_type: residual_risk_carryover_record
+status: draft
+risks:
+  - id: RISK-001
+    severity: high
+    type: human_gate_pending
+    summary: "Human review pending."
+    source_refs:
+      - "artifact/example/output/final-handoffs/work.yaml"
+    owner_lane: ""
+    human_decision_required: true
+    affected_requirement_ids: []
+    next_flow_seed:
+      problem: "Human review."
+      source_refs:
+        - "artifact/example/output/final-handoffs/work.yaml"

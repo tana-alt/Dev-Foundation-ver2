@@ -26,3 +26,6 @@ cd "$ROOT"
 unset $(git rev-parse --local-env-vars)
 CHECK_TARGET="${FOUNDATION_PRE_PUSH_TARGET:-check-push}"
 make "$CHECK_TARGET"
+make check-context-scope
+make check-residual-risk-carryover
+make check-review-convergence

@@ -1,0 +1,10 @@
+schema_version: "0.1"
+record_type: interface_contract
+status: draft
+
+interfaces:
+  - id: API-001
+    name: "Interface name."
+    contract: "Observable interface contract."
+    verification_refs: []
+    status: carried_risk

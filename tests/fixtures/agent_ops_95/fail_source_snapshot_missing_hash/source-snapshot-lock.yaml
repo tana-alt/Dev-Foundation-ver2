@@ -1,0 +1,11 @@
+schema_version: "0.1"
+record_type: source_snapshot_lock
+status: draft
+hash_policy:
+  unknown_hash_requires_residual_risk: true
+source_snapshots:
+  - ref: "AGENTS.md"
+    content_hash: "sha256:unknown"
+    hash_status: unknown
+    local_file: true
+residual_risk_refs: []

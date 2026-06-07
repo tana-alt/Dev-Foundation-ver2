@@ -3,3 +3,7 @@ set -eu
 
 ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/scripts/check-agent-worktree-policy.sh"
+
+cd "$ROOT"
+make check-skill-routes
+make check-context-scope

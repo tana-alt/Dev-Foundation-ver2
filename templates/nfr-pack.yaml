@@ -1,0 +1,10 @@
+schema_version: "0.1"
+record_type: nfr_pack
+status: draft
+
+items:
+  - id: NFR-001
+    type: reliability
+    statement: "Non-functional requirement."
+    verification_refs: []
+    status: carried_risk

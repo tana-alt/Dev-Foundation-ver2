@@ -20,5 +20,16 @@
   `templates/inconsistency-register.yaml` for reusable
   specification/subagent workflow records; completed records belong under the
   owning `project_id`.
+- Use `templates/context-scope-manifest.yaml`,
+  `templates/residual-risk-carryover-record.yaml`,
+  `templates/final-handoff-record.yaml`, and the review/fix/convergence
+  templates for operationalization records; completed records belong under the
+  owning `artifact/<project_id>/` surface.
+- Use `templates/budget-override-record.yaml`,
+  `templates/check-result-envelope.yaml`,
+  `templates/phase-gate-matrix.yaml`,
+  `templates/source-snapshot-lock.yaml`,
+  `templates/audit-trail-index.yaml`, and
+  `templates/operational-scorecard.yaml` for 9.5 hardening records.
 - Do not store completed specs, workflow runs, logs, evidence, verification
   records, or project records in `templates/`.

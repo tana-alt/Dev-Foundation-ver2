@@ -1,0 +1,31 @@
+schema_version: "0.1"
+record_type: wide_review_record
+status: draft
+
+identity:
+  project_id: example_project
+  work_id: example_work_id
+  review_id: wide-review-001
+  reviewer_id: reviewer-1
+  review_mode: wide
+  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+
+inputs:
+  source_refs: []
+  changed_paths: []
+  requirement_ids: []
+  context_expansion: []
+
+findings:
+  - id: REV-001
+    severity: low
+    type: interface_risk
+    summary: "Template finding."
+    related_ids: []
+    source_refs: []
+    recommendation: "Record concrete recommendation or none."
+
+verdict:
+  status: pass_with_risk
+  reason: "Template example."
+  residual_risk_refs: []

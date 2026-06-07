@@ -1,0 +1,33 @@
+schema_version: "0.1"
+record_type: requirement_traceability_matrix
+status: draft
+
+identity:
+  project_id: example_project
+  work_id: example_work_id
+  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+
+source_specs:
+  overview_spec_ref: "artifact/<project_id>/output/specs/overview-spec.md"
+  behavior_requirements_ref: "artifact/<project_id>/output/specs/behavior-requirements.yaml"
+  nfr_pack_ref: "artifact/<project_id>/output/specs/nfr-pack.yaml"
+  exception_pack_ref: "artifact/<project_id>/output/specs/exception-pack.yaml"
+  security_privacy_pack_ref: "artifact/<project_id>/output/specs/security-privacy-pack.yaml"
+  interface_contract_ref: "artifact/<project_id>/output/specs/interface-contract.yaml"
+  data_contract_ref: "artifact/<project_id>/output/specs/data-contract.yaml"
+
+items:
+  - id: REQ-001
+    type: behavior
+    implementation_refs: []
+    test_refs: []
+    review_refs: []
+    verification_refs: []
+    risk_refs: []
+    status: carried_risk
+
+coverage_summary:
+  total: 1
+  covered: 0
+  gap: 0
+  carried_risk: 1

@@ -1,0 +1,14 @@
+schema_version: "0.1"
+record_type: budget_override_record
+status: draft
+override:
+  reason: "Wide review requires neighboring lane contracts."
+  allowed_by:
+    - ".agents/skills/review-fix-convergence-governance/SKILL.md"
+  requested_budget:
+    broad_repo_scan_allowed: false
+scope_control:
+  still_forbidden:
+    - broad_repo_scan
+    - secrets
+    - runtime_state

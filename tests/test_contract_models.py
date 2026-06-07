@@ -978,6 +978,7 @@ class VerificationRecordTemplate(StrictModel):
     unverified_surfaces: list[str]
     residual_risk: list[str]
     human_gate: HumanGate
+    execution: dict[str, Any]
     next_action: Literal["complete", "rework", "review", "continue"]
 
     @model_validator(mode="after")
