@@ -3,31 +3,53 @@ record_type: requirement_traceability_matrix
 status: draft
 
 identity:
-  project_id: example_project
-  work_id: example_work_id
-  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+  project_id: <project-id>
+  work_id: <work-id>
+  spec_id: <spec-id>
+  created_at: "YYYY-MM-DD"
 
-source_specs:
-  overview_spec_ref: "artifact/<project_id>/output/specs/overview-spec.md"
-  behavior_requirements_ref: "artifact/<project_id>/output/specs/behavior-requirements.yaml"
-  nfr_pack_ref: "artifact/<project_id>/output/specs/nfr-pack.yaml"
-  exception_pack_ref: "artifact/<project_id>/output/specs/exception-pack.yaml"
-  security_privacy_pack_ref: "artifact/<project_id>/output/specs/security-privacy-pack.yaml"
-  interface_contract_ref: "artifact/<project_id>/output/specs/interface-contract.yaml"
-  data_contract_ref: "artifact/<project_id>/output/specs/data-contract.yaml"
+sources:
+  approved_spec_freeze_ref: artifact/<project-id>/output/spec-freezes/<freeze-id>.yaml
+  lane_map_ref: Plan/<project-id>/lane-maps/<work-id>.yaml
+  inconsistency_register_ref: artifact/<project-id>/output/inconsistency/<work-id>.yaml
 
-items:
-  - id: REQ-001
-    type: behavior
-    implementation_refs: []
-    test_refs: []
-    review_refs: []
-    verification_refs: []
-    risk_refs: []
-    status: carried_risk
+coverage:
+  functional_requirements:
+    - requirement_id: REQ-001
+      acceptance_criteria:
+        - ac_id: AC-001
+          lanes:
+            - docs
+          implementation_refs:
+            - src/<project-id>/
+          test_refs:
+            - tests/test_<surface>.py
+          evidence_refs:
+            - artifact/<project-id>/evidence/<evidence-id>.yaml
+          verification_refs:
+            - artifact/<project-id>/verification/<verification-id>.yaml
+          result: passed
+          residual_risk:
+            - none
+  non_functional_requirements:
+    - requirement_id: NFR-001
+      verification_refs:
+        - artifact/<project-id>/verification/<verification-id>.yaml
+      result: passed
+      blocked_reason: ""
+      residual_risk:
+        - none
+  exception_cases:
+    - case_id: EXC-001
+      test_refs:
+        - tests/test_<surface>.py
+      evidence_refs:
+        - artifact/<project-id>/evidence/<evidence-id>.yaml
+      result: passed
+      blocked_reason: ""
+      residual_risk:
+        - none
 
-coverage_summary:
-  total: 1
-  covered: 0
-  gap: 0
-  carried_risk: 1
+handoff:
+  open_critical_or_high: false
+  next_action: convergence_check
