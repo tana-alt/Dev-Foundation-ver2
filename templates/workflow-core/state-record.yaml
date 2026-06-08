@@ -1,0 +1,16 @@
+schema_version: "0.1"
+record_type: workflow_state_record
+status: issue_candidate
+
+identity:
+  project_id: example-project
+  workflow_id: WF-0001
+  created_at: "YYYY-MM-DD"
+
+transition:
+  from: issue_candidate
+  to: issue
+
+refs:
+  source_refs:
+    - AGENTS.md
