@@ -39,12 +39,12 @@ approved_work_contract:
     - "plan:workflow-ui-commondb-20260608:X1"
     - "commondb:demo-context:adapter-contract"
   allowed_write_targets:
-    - "docs/commondb-context-adapter-contract.md"
+    - "artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md"
     - "src/workflow_adapters/commondb_context_adapter.py"
     - "templates/context-request.yaml"
     - "templates/context-result.yaml"
-    - "artifact/demo-workflow-001/"
-    - "artifact/demo-workflow-commondb-run/"
+    - "artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-001/"
+    - "artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-commondb-run/"
     - "scripts/check-demo-workflow.py"
     - "tests/workflow_core/"
     - "tests/workflow_adapters/"
@@ -83,7 +83,7 @@ execution_run:
   runner: mock
   context_result_id: context-result-demo-001
   output_refs:
-    - "artifact:demo-workflow-commondb-run:context-result"
+    - "artifact:workflow-ui-commondb-20260608:demo-workflow-commondb-run:context-result"
 
 verification_result:
   id: verification-demo-001
@@ -99,7 +99,7 @@ handoff_artifact:
   verification_result_id: verification-demo-001
   status: ready_for_review
   artifact_refs:
-    - "artifact/demo-workflow-001/workflow.yaml"
-    - "artifact/demo-workflow-commondb-run/context-result.yaml"
+    - "artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-001/workflow.yaml"
+    - "artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-commondb-run/context-result.yaml"
   residual_risk:
     - "Uses mocked CommonDB context only."

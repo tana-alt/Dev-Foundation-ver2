@@ -35,8 +35,8 @@ lanes:
       - Plan/workflow-ui-commondb-20260608/plans/Plan_N0001.md
     allowed_write_targets:
       - README.md
-      - docs/external-facing-overview.md
-      - artifact/demo-foundation-overview
+      - artifact/workflow-ui-commondb-20260608/output/docs/external-facing-overview.md
+      - artifact/workflow-ui-commondb-20260608/output/demos/demo-foundation-overview
     denied_context:
       - secrets
       - runtime_state
@@ -67,7 +67,7 @@ lanes:
       - tests/workflow_core
       - templates/workflow-core
       - templates/approved-work-contract.yaml
-      - docs/workflow-core-state-model.md
+      - artifact/workflow-ui-commondb-20260608/output/docs/workflow-core-state-model.md
       - scripts/check-workflow-state.py
       - Makefile
     denied_context:
@@ -99,7 +99,7 @@ lanes:
       - src/workflow_adapters/codex_sdk_adapter.py
       - scripts/run-approved-work-contract.py
       - templates/codex-sdk-run-config.yaml
-      - artifact/demo-codex-sdk-run
+      - artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run
       - tests/workflow_adapters
     denied_context:
       - secrets
@@ -127,7 +127,7 @@ lanes:
       - docs/03-repo-boundary-and-storage-contract.md
       - Plan/workflow-ui-commondb-20260608/plans/Plan_N0001.md
     allowed_write_targets:
-      - docs/app-server-ui-adapter-design.md
+      - artifact/workflow-ui-commondb-20260608/output/docs/app-server-ui-adapter-design.md
       - templates/app-server-thread-link.yaml
       - templates/app-server-run-event.yaml
       - app/workflow_console
@@ -161,12 +161,12 @@ lanes:
       - templates/work-contract.yaml
       - Plan/workflow-ui-commondb-20260608/plans/Plan_N0001.md
     allowed_write_targets:
-      - docs/commondb-context-adapter-contract.md
+      - artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md
       - src/workflow_adapters/commondb_context_adapter.py
       - templates/context-request.yaml
       - templates/context-result.yaml
-      - artifact/demo-workflow-001
-      - artifact/demo-workflow-commondb-run
+      - artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-001
+      - artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-commondb-run
       - scripts/check-demo-workflow.py
       - tests/workflow_core
       - tests/workflow_adapters

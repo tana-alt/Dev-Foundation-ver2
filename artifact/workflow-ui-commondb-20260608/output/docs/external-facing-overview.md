@@ -81,7 +81,7 @@ decide whether to merge, release, deploy, or authorize gated integrations.
 
 ## Demo Artifact Outline
 
-The small outline under `artifact/demo-foundation-overview/` is a sanitized
+The small outline under `artifact/workflow-ui-commondb-20260608/output/demos/demo-foundation-overview/` is a sanitized
 demo sketch for explaining the foundation without running external systems. It
 shows the intended narrative:
 

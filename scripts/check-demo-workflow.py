@@ -10,9 +10,19 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-WORKFLOW_PATH = ROOT / "artifact/demo-workflow-001/workflow.yaml"
-REQUEST_PATH = ROOT / "artifact/demo-workflow-commondb-run/context-request.yaml"
-RESULT_PATH = ROOT / "artifact/demo-workflow-commondb-run/context-result.yaml"
+WORKFLOW_PATH = (
+    ROOT / "artifact/workflow-ui-commondb-20260608" / "output/demos/demo-workflow-001/workflow.yaml"
+)
+REQUEST_PATH = (
+    ROOT
+    / "artifact/workflow-ui-commondb-20260608"
+    / "output/demos/demo-workflow-commondb-run/context-request.yaml"
+)
+RESULT_PATH = (
+    ROOT
+    / "artifact/workflow-ui-commondb-20260608"
+    / "output/demos/demo-workflow-commondb-run/context-result.yaml"
+)
 REQUIRED_STAGES = (
     "issue_candidate",
     "issue",

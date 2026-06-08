@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, cast
 
 MAX_QUERY_LENGTH = 500
 MAX_SNIPPET_LENGTH = 1_200
@@ -126,36 +126,40 @@ def validate_context_result(data: dict[str, Any]) -> ContextResult:
     source_refs = tuple(_required_string_list(data, "source_refs"))
     snippets_data = data.get("snippets")
     _require_value(isinstance(snippets_data, list), "snippets must be a list")
+    snippet_items = cast(list[Any], snippets_data)
     error = data.get("error")
     _require_value(isinstance(error, dict), "error must be a mapping")
+    error_data = cast(dict[str, Any], error)
 
     _require_value(status in RESULT_STATUSES, "status must be ok, blocked, or error")
     _require_value(0 < len(source_refs) <= MAX_SOURCE_REFS, "source_refs count is invalid")
 
     snippets: list[ContextSnippet] = []
-    for snippet_data in snippets_data:
+    for snippet_data in snippet_items:
         _require_value(isinstance(snippet_data, dict), "snippet must be a mapping")
-        source_ref = _required_string(snippet_data, "source_ref")
-        text = _required_string(snippet_data, "text")
-        relevance = _required_string(snippet_data, "relevance")
+        snippet = cast(dict[str, Any], snippet_data)
+        source_ref = _required_string(snippet, "source_ref")
+        text = _required_string(snippet, "text")
+        relevance = _required_string(snippet, "relevance")
         _require_value(source_ref in source_refs, "snippet source_ref must be declared")
         _require_value(len(text) <= MAX_SNIPPET_LENGTH, "snippet is too large")
         _reject_forbidden_text((source_ref, text, relevance))
         snippets.append(ContextSnippet(source_ref=source_ref, text=text, relevance=relevance))
 
-    error_code = error.get("code")
-    error_message = error.get("message")
+    error_code = error_data.get("code")
+    error_message = error_data.get("message")
     if status == "ok":
-        _require_value(snippets, "ok context_result requires snippets")
+        _require_value(bool(snippets), "ok context_result requires snippets")
         _require_value(
             error_code is None and error_message is None, "ok result must not carry error"
         )
     else:
         _require_value(
-            isinstance(error_code, str) and error_code.strip(), "blocked/error code required"
+            isinstance(error_code, str) and bool(error_code.strip()),
+            "blocked/error code required",
         )
         _require_value(
-            isinstance(error_message, str) and error_message.strip(),
+            isinstance(error_message, str) and bool(error_message.strip()),
             "blocked/error message required",
         )
         _reject_forbidden_text((error_code, error_message))
@@ -165,11 +169,11 @@ def validate_context_result(data: dict[str, Any]) -> ContextResult:
     return ContextResult(
         result_id=result_id,
         request_id=request_id,
-        status=status,  # type: ignore[arg-type]
+        status=cast(Literal["ok", "blocked", "error"], status),
         source_refs=source_refs,
         snippets=tuple(snippets),
-        error_code=error_code,
-        error_message=error_message,
+        error_code=cast(str | None, error_code),
+        error_message=cast(str | None, error_message),
     )
 
 
@@ -184,24 +188,31 @@ def fetch_sanitized_context(
 
 def _required_string(data: dict[str, Any], key: str) -> str:
     value = data.get(key)
-    _require_value(isinstance(value, str) and value.strip(), f"{key} must be a non-empty string")
-    return value
+    _require_value(
+        isinstance(value, str) and bool(value.strip()),
+        f"{key} must be a non-empty string",
+    )
+    return cast(str, value)
 
 
 def _required_int(data: dict[str, Any], key: str) -> int:
     value = data.get(key)
     _require_value(isinstance(value, int), f"{key} must be an integer")
-    return value
+    return cast(int, value)
 
 
 def _required_string_list(data: dict[str, Any], key: str) -> list[str]:
     value = data.get(key)
-    _require_value(isinstance(value, list) and value, f"{key} must be a non-empty list")
     _require_value(
-        all(isinstance(item, str) and item.strip() for item in value),
+        isinstance(value, list) and bool(value),
+        f"{key} must be a non-empty list",
+    )
+    values = cast(list[Any], value)
+    _require_value(
+        all(isinstance(item, str) and bool(item.strip()) for item in values),
         f"{key} must contain only non-empty strings",
     )
-    return value
+    return cast(list[str], values)
 
 
 def _reject_forbidden_text(values: tuple[str | None, ...]) -> None:

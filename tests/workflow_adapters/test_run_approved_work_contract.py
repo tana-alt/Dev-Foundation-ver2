@@ -13,7 +13,15 @@ def test_runner_script_writes_mock_execution_record(tmp_path: Path) -> None:
     command = [
         sys.executable,
         str(ROOT / "scripts" / "run-approved-work-contract.py"),
-        str(ROOT / "artifact" / "demo-codex-sdk-run" / "approved-work-contract.yaml"),
+        str(
+            ROOT
+            / "artifact"
+            / "workflow-ui-commondb-20260608"
+            / "output"
+            / "demos"
+            / "demo-codex-sdk-run"
+            / "approved-work-contract.yaml"
+        ),
         "--config",
         str(ROOT / "templates" / "codex-sdk-run-config.yaml"),
         "--artifact-dir",

@@ -2,20 +2,23 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def load_fixture(relative_path: str) -> dict[str, object]:
+def load_fixture(relative_path: str) -> dict[str, Any]:
     data = yaml.safe_load((ROOT / relative_path).read_text(encoding="utf-8"))
     assert isinstance(data, dict)
-    return data
+    return cast(dict[str, Any], data)
 
 
 def test_demo_fixture_links_workflow_stages() -> None:
-    workflow = load_fixture("artifact/demo-workflow-001/workflow.yaml")
+    workflow = load_fixture(
+        "artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-001/workflow.yaml"
+    )
 
     assert workflow["issue"]["candidate_id"] == workflow["issue_candidate"]["id"]
     assert (
@@ -35,7 +38,9 @@ def test_demo_fixture_links_workflow_stages() -> None:
 
 
 def test_demo_fixture_context_result_is_sanitized() -> None:
-    result = load_fixture("artifact/demo-workflow-commondb-run/context-result.yaml")
+    result = load_fixture(
+        "artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-commondb-run/context-result.yaml"
+    )
     text = yaml.safe_dump(result, sort_keys=True).lower()
 
     assert "/users/" not in text

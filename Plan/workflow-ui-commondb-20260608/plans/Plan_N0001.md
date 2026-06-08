@@ -90,8 +90,8 @@ foundation without implying an already-shipped product app.
 Allowed write targets:
 
 - `README.md`
-- `docs/external-facing-overview.md`
-- `artifact/demo-foundation-overview/`
+- `artifact/workflow-ui-commondb-20260608/output/docs/external-facing-overview.md`
+- `artifact/workflow-ui-commondb-20260608/output/demos/demo-foundation-overview/`
 
 Expected outputs:
 
@@ -119,7 +119,7 @@ Allowed write targets:
 - `src/workflow_core/`
 - `tests/workflow_core/`
 - `templates/workflow-core/`
-- `docs/workflow-core-state-model.md`
+- `artifact/workflow-ui-commondb-20260608/output/docs/workflow-core-state-model.md`
 
 Expected outputs:
 
@@ -209,7 +209,7 @@ Allowed write targets:
 - `src/workflow_adapters/codex_sdk_adapter.py`
 - `scripts/run-approved-work-contract.py`
 - `templates/codex-sdk-run-config.yaml`
-- `artifact/demo-codex-sdk-run/`
+- `artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run/`
 - `tests/workflow_adapters/`
 
 Non-goals:
@@ -237,7 +237,7 @@ without becoming the state source of truth.
 
 Allowed write targets:
 
-- `docs/app-server-ui-adapter-design.md`
+- `artifact/workflow-ui-commondb-20260608/output/docs/app-server-ui-adapter-design.md`
 - `templates/app-server-thread-link.yaml`
 - `templates/app-server-run-event.yaml`
 
@@ -322,7 +322,7 @@ can be validated as one slice.
 
 Allowed write targets:
 
-- `artifact/demo-workflow-001/`
+- `artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-001/`
 - `scripts/check-demo-workflow.py`
 - `tests/workflow_core/test_demo_fixture.py`
 
@@ -340,7 +340,7 @@ Intent: define the Dev-Foundation side of the CommonDB context adapter.
 
 Allowed write targets:
 
-- `docs/commondb-context-adapter-contract.md`
+- `artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md`
 - `src/workflow_adapters/commondb_context_adapter.py`
 - `templates/context-request.yaml`
 - `templates/context-result.yaml`
@@ -389,7 +389,7 @@ this repo validates the resulting workflow artifact.
 
 Allowed write targets:
 
-- `artifact/demo-workflow-commondb-run/`
+- `artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-commondb-run/`
 - `scripts/check-demo-workflow.py`
 - `tests/workflow_core/`
 

@@ -9,7 +9,7 @@ Example local command:
 
 ```sh
 uv run python scripts/run-approved-work-contract.py \
-  artifact/demo-codex-sdk-run/approved-work-contract.yaml \
+  artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run/approved-work-contract.yaml \
   --config templates/codex-sdk-run-config.yaml \
-  --artifact-dir artifact/demo-codex-sdk-run/output
+  --artifact-dir artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run/output
 ```

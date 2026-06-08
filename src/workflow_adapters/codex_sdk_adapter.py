@@ -95,7 +95,9 @@ class CodexRunConfig:
     mode: RunMode = "mock"
     model: str = "configured-by-human"
     cwd: Path | None = None
-    artifact_dir: Path = Path("artifact/demo-codex-sdk-run")
+    artifact_dir: Path = Path(
+        "artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run"
+    )
     allow_real_sdk: bool = False
     mock_summary: str = "mock codex sdk run completed"
     extra_instructions: tuple[str, ...] = ()
@@ -106,7 +108,14 @@ class CodexRunConfig:
         mode_text = _require_text(runner, "mode") if "mode" in runner else "mock"
         if mode_text not in {"mock", "sdk"}:
             raise ContractValidationError("runner.mode must be 'mock' or 'sdk'")
-        artifact_dir = Path(str(runner.get("artifact_dir", "artifact/demo-codex-sdk-run")))
+        artifact_dir = Path(
+            str(
+                runner.get(
+                    "artifact_dir",
+                    "artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run",
+                )
+            )
+        )
         cwd_value = runner.get("cwd")
         cwd = Path(str(cwd_value)) if cwd_value else None
         return cls(
@@ -302,20 +311,25 @@ def _normalize_contract_mapping(data: dict[str, Any]) -> dict[str, Any]:
     values = (identity, intent, inputs, boundaries, verification)
     if not all(isinstance(value, dict) for value in values):
         return data
+    identity_data = cast(dict[str, Any], identity)
+    intent_data = cast(dict[str, Any], intent)
+    inputs_data = cast(dict[str, Any], inputs)
+    boundaries_data = cast(dict[str, Any], boundaries)
+    verification_data = cast(dict[str, Any], verification)
 
     return {
-        "work_contract_id": identity.get("work_id"),
-        "issue_id": data.get("issue_id", identity.get("issue_id", "")),
-        "proposal_id": data.get("proposal_id", identity.get("proposal_id", "")),
-        "project_id": identity.get("project_id"),
-        "goal": intent.get("task_intent"),
-        "source_refs": inputs.get("source_refs"),
-        "allowed_write_targets": boundaries.get("allowed_write_targets"),
-        "denied_context": boundaries.get("denied_context"),
-        "verification": verification.get("verification_required"),
+        "work_contract_id": identity_data.get("work_id"),
+        "issue_id": data.get("issue_id", identity_data.get("issue_id", "")),
+        "proposal_id": data.get("proposal_id", identity_data.get("proposal_id", "")),
+        "project_id": identity_data.get("project_id"),
+        "goal": intent_data.get("task_intent"),
+        "source_refs": inputs_data.get("source_refs"),
+        "allowed_write_targets": boundaries_data.get("allowed_write_targets"),
+        "denied_context": boundaries_data.get("denied_context"),
+        "verification": verification_data.get("verification_required"),
         "human_gate": data.get("human_gate", {"status": "required"}),
-        "risk_flags": boundaries.get("risk_flags", []),
-        "git_scope": boundaries.get("git_scope"),
+        "risk_flags": boundaries_data.get("risk_flags", []),
+        "git_scope": boundaries_data.get("git_scope"),
     }
 
 

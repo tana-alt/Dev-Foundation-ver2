@@ -6,7 +6,7 @@ runner:
   mode: mock
   model: configured-by-human
   cwd: ""
-  artifact_dir: artifact/demo-codex-sdk-run
+  artifact_dir: artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run
   allow_real_sdk: false
   mock_summary: "mock Codex SDK adapter completed without external writes"
   extra_instructions:

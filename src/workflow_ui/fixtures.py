@@ -19,13 +19,16 @@ class WorkflowRun(TypedDict):
 
 
 def load_sanitized_runs() -> list[WorkflowRun]:
+    execution_run_ref = (
+        "artifact/workflow-ui-commondb-20260608/output/demos/demo-workflow-001/run.yaml"
+    )
     return [
         {
             "issue_id": "ISSUE-demo-001",
             "title": "Render workflow run from sanitized records",
             "proposal_summary": "Use the mock console to inspect a bounded execution run.",
             "approved_contract_ref": "templates/approved-work-contract.yaml",
-            "execution_run_ref": "artifact/demo-workflow-001/run.yaml",
+            "execution_run_ref": execution_run_ref,
             "execution_status": "blocked",
             "runner": "mock",
             "verification_result": "skipped",

@@ -14,7 +14,7 @@ source_refs:
   - docs/reference/verification-ci-and-pr-reference.md
   - Plan/workflow-ui-commondb-20260608/plans/Plan_N0001.md
 allowed_write_targets:
-  - artifact/demo-codex-sdk-run
+  - artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run
 denied_context:
   - secrets
   - raw_terminal_logs

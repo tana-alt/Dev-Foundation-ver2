@@ -10,8 +10,8 @@ source_refs:
   - docs/03-repo-boundary-and-storage-contract.md
 allowed_write_targets:
   - README.md
-  - docs/external-facing-overview.md
-  - artifact/demo-foundation-overview/
+  - artifact/workflow-ui-commondb-20260608/output/docs/external-facing-overview.md
+  - artifact/workflow-ui-commondb-20260608/output/demos/demo-foundation-overview/
 steps:
   - id: issue_candidate
     summary: Capture a bounded documentation request.
