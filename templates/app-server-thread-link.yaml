@@ -1,0 +1,32 @@
+schema_version: "0.1"
+record_type: app_server_thread_link
+status: draft
+
+identity:
+  project_id: <project-id>
+  execution_run_id: <execution-run-id>
+  created_at: "YYYY-MM-DD"
+
+external_ref:
+  app_server_thread_ref: app-server-thread:<opaque-id>
+  app_server_transport: stdio
+  app_server_workspace_ref: ""
+
+workflow_core:
+  state_authority: workflow_core
+  execution_run_ref: artifact/<project-id>/runs/<execution-run-id>.yaml
+  approved_work_contract_ref: templates/approved-work-contract.yaml
+
+evidence_limits:
+  stores_raw_thread_body: false
+  stores_raw_terminal_log: false
+  stores_credentials: false
+  stores_browser_session: false
+  stores_local_runtime_state: false
+
+human_gate:
+  real_app_server_bridge:
+    required: true
+    status: required
+    reason: "Real App Server connections require explicit human approval."
+

@@ -1,0 +1,35 @@
+schema_version: "0.1"
+record_type: app_server_run_event
+status: draft
+
+identity:
+  project_id: <project-id>
+  execution_run_id: <execution-run-id>
+  event_id: <event-id>
+  created_at: "YYYY-MM-DD"
+
+event:
+  kind: thread_linked
+  status: observed
+  external_event_ref: app-server-event:<opaque-id>
+  summary: "Sanitized bounded event summary."
+  next_action: continue
+
+workflow_core:
+  state_authority: workflow_core
+  execution_run_ref: artifact/<project-id>/runs/<execution-run-id>.yaml
+  verification_ref: ""
+  handoff_ref: ""
+
+evidence_limits:
+  stores_raw_thread_body: false
+  stores_raw_terminal_log: false
+  stores_credentials: false
+  stores_browser_session: false
+  stores_local_runtime_state: false
+
+human_gate:
+  required_for_real_bridge: true
+  real_smoke_status: skipped
+  reason: "Real App Server smoke is skipped until the human gate is approved."
+

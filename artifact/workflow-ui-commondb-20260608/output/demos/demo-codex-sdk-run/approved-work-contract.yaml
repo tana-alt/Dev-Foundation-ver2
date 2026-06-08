@@ -1,0 +1,39 @@
+schema_version: "0.1"
+record_type: approved_work_contract
+status: approved
+
+work_contract_id: demo-codex-sdk-run
+issue_id: demo-issue-001
+proposal_id: demo-proposal-001
+project_id: workflow-ui-commondb-20260608
+goal: "Demonstrate a mocked headless Codex SDK run around an approved work contract."
+source_refs:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/reference/verification-ci-and-pr-reference.md
+  - Plan/workflow-ui-commondb-20260608/plans/Plan_N0001.md
+allowed_write_targets:
+  - artifact/workflow-ui-commondb-20260608/output/demos/demo-codex-sdk-run
+denied_context:
+  - secrets
+  - raw_terminal_logs
+  - raw_codex_thread_bodies
+  - external_write_without_human_gate
+verification:
+  - uv run pytest tests/workflow_adapters -q
+  - make check-fast
+human_gate:
+  required: true
+  status: approved
+  reason: "Demo contract approves only mocked local adapter execution."
+risk_flags:
+  - "real_sdk_smoke_human_gated"
+git_scope:
+  mode: parallel
+  base_ref: origin/main
+  merge_target: origin/main
+  branch_target: agent/workflow-ui-commondb-20260608/codex-runner/sdk-runner
+  worktree_target: ../worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-codex-runner
+  sibling_branch_refs: []
+  conflict_policy: explicitly_scoped
