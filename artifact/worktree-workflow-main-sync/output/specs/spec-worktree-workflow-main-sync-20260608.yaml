@@ -1,0 +1,134 @@
+schema_version: "0.1"
+record_type: specification_packet
+status: draft
+
+identity:
+  project_id: worktree-workflow-main-sync
+  spec_id: spec-worktree-workflow-main-sync-20260608
+  goal_ref: artifact/worktree-workflow-main-sync/output/goals/goal-worktree-workflow-main-sync-20260608.md
+  created_at: "2026-06-08"
+
+scope:
+  source_refs:
+    - AGENTS.md
+    - artifact/worktree-workflow-main-sync/output/goals/goal-worktree-workflow-main-sync-20260608.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - docs/reference/specification-workflow-reference.md
+    - docs/reference/git-worktree-and-branch-reference.md
+    - docs/reference/repo-boundary-and-storage-reference.md
+    - docs/reference/verification-ci-and-pr-reference.md
+  denied_context:
+    - implementation_policy
+    - implementation_history
+    - unrelated_project_logs
+    - broad_repo_scan
+    - runtime_state
+    - secrets
+
+behavior_contract:
+  requirements:
+    - id: REQ-001
+      statement: "Before an agent-owned worktree or lane branch is created for local write work, canonical primary branch freshness must be checked against the intended base and merge target."
+      observable_outcome: "Worktree creation evidence records exactly one freshness state from the approved state set and the refs supporting that state."
+      acceptance_criteria:
+        - id: AC-001
+          method: inspection
+          expected_result: "Evidence records canonical repo root, primary branch name, intended base ref, intended merge target, local primary ref, and remote tracking ref when available."
+        - id: AC-002
+          method: inspection
+          expected_result: "blocked_dirty_primary, blocked_detached_primary, blocked_missing_primary, or blocked_diverged_primary returns rework instead of silently creating or reusing an agent worktree."
+        - id: AC-003
+          method: inspection
+          expected_result: "stale_fast_forwardable records post-update evidence with the resulting primary ref used to derive or validate the worktree base."
+        - id: AC-004
+          method: inspection
+          expected_result: "explicit_base_not_primary records the base ref and why canonical primary freshness is acceptable for the scoped work; not_applicable records why no local write worktree, branch, or PR handoff is in scope."
+      non_goals:
+        - "Do not define command implementation details in the specification."
+    - id: REQ-002
+      statement: "When an agent-owned branch is prepared for PR creation or PR update, handoff must state freshness between the review branch, intended base ref, merge target, and canonical primary branch."
+      observable_outcome: "PR handoff evidence makes stale base risk visible before human review or merge."
+      acceptance_criteria:
+        - id: AC-005
+          method: inspection
+          expected_result: "Handoff evidence records source branch, target branch, base ref, merge target, branch/worktree ownership, and canonical primary freshness result."
+        - id: AC-006
+          method: inspection
+          expected_result: "If the merge target advanced after branch creation, handoff records checked-against-newer-target, rework, or explicit residual risk."
+        - id: AC-007
+          method: inspection
+          expected_result: "Opening or updating a PR does not mark a lane or workflow complete by itself."
+        - id: AC-008
+          method: inspection
+          expected_result: "Direct pushes to main or master and merges remain prohibited for agents."
+      non_goals:
+        - "Do not automate merge."
+    - id: REQ-003
+      statement: "For scoped workflow work that uses lanes, each lane must trace requirement IDs, lane status, allowed write targets, branch ownership, worktree target, and workflow-run record refs."
+      observable_outcome: "A reviewer can determine lane ownership, branch/worktree target, covered requirements, and workflow phase from project-scoped records without unrelated runtime state."
+      acceptance_criteria:
+        - id: AC-009
+          method: inspection
+          expected_result: "Workflow-run record references active goal, reviewed specification, specification review record, and lane map or work contract refs when those records exist."
+        - id: AC-010
+          method: inspection
+          expected_result: "Each lane or work contract records requirement IDs, allowed write targets, branch target, worktree target, verification expectations, and handoff evidence expectations."
+        - id: AC-011
+          method: inspection
+          expected_result: "Lane status distinguishes planned, assigned, in progress, ready for review, rework, blocked, and complete without treating the lane map as runtime state."
+        - id: AC-012
+          method: inspection
+          expected_result: "PR-open or review-requested state maps to ready for review or equivalent handoff state, not complete."
+        - id: AC-013
+          method: inspection
+          expected_result: "Completion requires allowed-write-target evidence, honestly reported verification, and no unresolved critical or high inconsistencies unless explicitly blocked."
+      non_goals:
+        - "Do not create a runtime scheduler, queue, lock ledger, heartbeat, or dashboard."
+
+interfaces:
+  public_contracts:
+    - "Agent final outputs, PR handoffs, work contracts, workflow-run records, and lane maps that report branch, worktree, base, merge target, changed paths, verification, and human-gate status."
+  data_contracts:
+    - "Requirement IDs use REQ-*."
+    - "Acceptance criteria use AC-*."
+    - "Workflow state is carried by project-scoped record refs, not conversation-only state."
+  trust_boundaries:
+    - "Human approval is required before approved-spec freeze."
+    - "Merge remains human-only."
+    - "Direct agent writes to protected primary branches remain prohibited."
+    - "Branch or worktree deletion requires explicit human approval."
+    - "CI/CD changes, dependency changes, release, deployment, secrets, auth, database, infrastructure, and external writes outside the owned review branch or PR require explicit human approval."
+  side_effects:
+    - "Allowed side effects are limited to local repository records and, after approval, owned agent review branches or PRs when evidence is clear."
+    - "Protected branch writes, merges, branch deletion, worktree deletion, runtime state storage, and secret-bearing record writes are prohibited without explicit human approval."
+
+implementation_boundary:
+  allowed_in_spec:
+    - externally_visible_behavior
+    - externally_visible_constraints
+    - safety_or_security_constraints
+  forbidden_in_spec:
+    - file_layout
+    - function_names
+    - class_names
+    - coding_style
+    - lint_rules
+    - library_choice
+    - branch_strategy
+    - worktree_commands
+    - test_command_selection
+    - refactor_strategy
+    - internal_algorithm_choice
+
+verification_expectation:
+  required_evidence:
+    - requirement_to_acceptance_criteria_trace
+    - unresolved_question_list
+    - freshness_state_definitions
+    - human_gate_list
+  review_gate: specification_review
+
+handoff:
+  next_action: specification_review

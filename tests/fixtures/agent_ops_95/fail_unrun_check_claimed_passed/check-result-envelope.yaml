@@ -1,0 +1,16 @@
+schema_version: "0.1"
+record_type: check_result_envelope
+status: draft
+result:
+  status: pass
+  reason: "claimed pass despite missing context"
+  severity: none
+  completion_support: true
+scope:
+  missing_context:
+    - FOUNDATION_LANE_MAP_REF
+evidence:
+  source_refs:
+    - "templates/check-result-envelope.yaml"
+next_action:
+  type: none

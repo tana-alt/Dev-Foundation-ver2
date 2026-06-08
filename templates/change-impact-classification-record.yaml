@@ -1,0 +1,33 @@
+schema_version: "0.1"
+record_type: change_impact_classification_record
+status: draft
+
+identity:
+  project_id: example_project
+  work_id: example_work_id
+  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+
+change:
+  summary: "Change summary."
+  changed_paths_declared: []
+  change_type:
+    - docs
+  side_effects:
+    external_write: false
+    network_required: false
+    secret_sensitive: false
+    ci_cd_changed: false
+    dependency_changed: false
+    protected_action_requested: false
+
+risk:
+  risk_level: low
+  reason: "Template example."
+
+reviews:
+  required_review_modes:
+    - narrow_review
+  human_gate_required: false
+  human_gate_reason: ""
+
+source_refs: []

@@ -1,0 +1,10 @@
+schema_version: "0.1"
+record_type: exception_pack
+status: draft
+
+items:
+  - id: EXC-001
+    scenario: "Exception or edge case."
+    expected_behavior: "Expected handling."
+    verification_refs: []
+    status: carried_risk

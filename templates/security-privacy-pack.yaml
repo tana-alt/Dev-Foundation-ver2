@@ -1,0 +1,11 @@
+schema_version: "0.1"
+record_type: security_privacy_pack
+status: draft
+
+items:
+  - id: SEC-001
+    scenario: "Security or privacy case."
+    expected_control: "Expected control."
+    review_refs: []
+    risk_refs: []
+    status: carried_risk

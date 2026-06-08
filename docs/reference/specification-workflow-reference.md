@@ -267,6 +267,42 @@ Workers should receive only their lane slice plus relevant approved spec
 sections and implementation policy refs, not the full map unless they are
 coordinating the split.
 
+## Workflow And Worktree Correspondence
+
+When scoped workflow work uses lanes, durable records must make the relationship
+among requirements, lane ownership, branch target, worktree target, and handoff
+evidence reviewable without reading local runtime state. Local worktree
+existence is not repo truth.
+
+A workflow-run record references the active goal and, when those records exist,
+the approved specification, specification review record, lane map, and lane work
+contracts. The lane map or work contract records each lane's requirement IDs,
+allowed write targets, branch target, worktree target, verification
+expectations, and handoff evidence expectations.
+
+Lane status must distinguish at least:
+
+```text
+planned
+assigned
+in_progress
+ready_for_review
+rework
+blocked
+complete
+```
+
+`ready_for_review` is the correct state for PR-open, PR-updated, or
+review-requested handoff. Do not mark a lane or workflow `complete` only because
+a PR was opened or updated. Completion requires evidence that changed paths
+stayed within allowed write targets, relevant verification was attempted and
+honestly reported, and unresolved critical or high inconsistencies are absent or
+explicitly blocked.
+
+Lane maps and workflow records are planning and handoff records. They must not
+be used as a runtime queue, lock ledger, scheduler, worker heartbeat, dashboard,
+or local worktree inventory.
+
 ## Subagent Phase Contracts
 
 ### `main_lane`

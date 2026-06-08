@@ -16,6 +16,8 @@ ACTIVE_DOCS = (
 
 REFERENCE_DOCS = (
     "docs/reference/agent-runtime-and-scope-reference.md",
+    "docs/reference/agent-operationalization-95-hardening-reference.md",
+    "docs/reference/agent-operationalization-reference.md",
     "docs/reference/git-worktree-and-branch-reference.md",
     "docs/reference/migration-and-acceptance-reference.md",
     "docs/reference/packet-evidence-and-rework-reference.md",
@@ -38,6 +40,32 @@ TEMPLATES = (
     "templates/implementation-policy-record.yaml",
     "templates/workflow-run-record.yaml",
     "templates/inconsistency-register.yaml",
+    "templates/context-scope-manifest.yaml",
+    "templates/residual-risk-carryover-record.yaml",
+    "templates/final-handoff-record.yaml",
+    "templates/change-impact-classification-record.yaml",
+    "templates/review-assignment-record.yaml",
+    "templates/narrow-review-record.yaml",
+    "templates/wide-review-record.yaml",
+    "templates/security-review-record.yaml",
+    "templates/fix-handoff-record.yaml",
+    "templates/fix-review-record.yaml",
+    "templates/requirement-traceability-matrix.yaml",
+    "templates/convergence-decision-record.yaml",
+    "templates/overview-spec.md",
+    "templates/behavior-requirements.yaml",
+    "templates/nfr-pack.yaml",
+    "templates/exception-pack.yaml",
+    "templates/security-privacy-pack.yaml",
+    "templates/interface-contract.yaml",
+    "templates/data-contract.yaml",
+    "templates/test-strategy.yaml",
+    "templates/budget-override-record.yaml",
+    "templates/check-result-envelope.yaml",
+    "templates/phase-gate-matrix.yaml",
+    "templates/source-snapshot-lock.yaml",
+    "templates/audit-trail-index.yaml",
+    "templates/operational-scorecard.yaml",
 )
 
 ROOT_READMES = (
@@ -66,6 +94,14 @@ RESTORE_SCRIPTS = (
     "scripts/check-repo-hygiene.sh",
     "scripts/check-secrets.sh",
     "scripts/check-shell-static-analysis.sh",
+    "scripts/agent_operational_checks.py",
+    "scripts/check-skill-routes.py",
+    "scripts/check-context-scope.py",
+    "scripts/check-result-envelope.py",
+    "scripts/check-residual-risk-carryover.py",
+    "scripts/check-review-convergence.py",
+    "scripts/check-audit-provenance.py",
+    "scripts/check-operational-scorecard.py",
 )
 
 DEPLOYMENT_CONFIGS = (
@@ -129,7 +165,7 @@ PROJECT_SCOPED_ROOT_DIRECT_FILES = {
     "src": {"README.md", ".gitkeep"},
 }
 
-ARTIFACT_PROJECT_DIRS = {"evidence", "verification", "output"}
+ARTIFACT_PROJECT_DIRS = {"audit", "evidence", "governance", "verification", "output"}
 
 
 def repo_path(relative_path: str) -> Path:
@@ -274,6 +310,8 @@ def test_project_storage_routes_are_documented() -> None:
         "Plan/<project_id>/logs/Plan_N0001.log.md",
         "Plan/<project_id>/lane-maps/<work_id>.yaml",
         "artifact/<project_id>/manifest.yaml",
+        "artifact/<project_id>/audit/",
+        "artifact/<project_id>/governance/",
         "src/<project_id>/",
         "`project_id`",
     ):
@@ -486,6 +524,11 @@ def test_tracked_hooks_enforce_agent_policy_and_checks() -> None:
 
     assert "scripts/check-agent-worktree-policy.sh" in pre_commit
     assert "scripts/check-agent-worktree-policy.sh" in pre_push
+    assert "check-skill-routes" in pre_commit
+    assert "check-context-scope" in pre_commit
+    assert "check-context-scope" in pre_push
+    assert "check-residual-risk-carryover" in pre_push
+    assert "check-review-convergence" in pre_push
     assert "check-push" in pre_push
     assert 'make "$CHECK_TARGET"' in pre_push
 
@@ -789,6 +832,7 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     secret_check = read_text("scripts/check-secrets.sh")
     shell_check = read_text("scripts/check-shell-static-analysis.sh")
     lane_check = read_text("scripts/check-lane-map.py")
+    operational_check = read_text("scripts/agent_operational_checks.py")
     verification_reference = read_text("docs/reference/verification-ci-and-pr-reference.md")
     workflow = read_text(".github/workflows/ci.yml")
 
@@ -806,6 +850,14 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert "test-fast:" in makefile
     assert "check-fast:" in makefile
     assert "check-push:" in makefile
+    assert "check-skill-routes:" in makefile
+    assert "check-context-scope:" in makefile
+    assert "check-result-envelope:" in makefile
+    assert "check-residual-risk-carryover:" in makefile
+    assert "check-review-convergence:" in makefile
+    assert "check-audit-provenance:" in makefile
+    assert "check-operational-scorecard:" in makefile
+    assert "check-agent-operational:" in makefile
     assert "check-ci:" in makefile
     assert "check-hygiene:" in makefile
     assert "check-shell:" in makefile
@@ -846,6 +898,12 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert "parallel-lane-map.yaml" in lane_check
     assert "Plan" in lane_check
     assert "no_overlap" in lane_check
+    assert "validate_context_scope" in operational_check
+    assert "validate_check_result_envelopes" in operational_check
+    assert "validate_residual_risk" in operational_check
+    assert "validate_review_convergence" in operational_check
+    assert "validate_audit_provenance" in operational_check
+    assert "validate_operational_scorecard" in operational_check
     assert "Install OSS check tools" in workflow
     assert "runs-on: ubuntu-24.04" in workflow
     assert "apt-get install -y shellcheck" in workflow
@@ -858,6 +916,7 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert "make check-shell" in verification_reference
     assert "make check-secrets" in verification_reference
     assert "make check-lanes" in verification_reference
+    assert "make check-agent-operational" in verification_reference
 
 
 def test_parallel_lane_management_is_routed_and_checked() -> None:

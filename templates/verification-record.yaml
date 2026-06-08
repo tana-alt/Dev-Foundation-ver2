@@ -33,4 +33,14 @@ human_gate:
   required: false
   status: not_applicable
   reason: "template example"
+execution:
+  command: "make check-foundation"
+  cwd: "."
+  exit_code: 0
+  ran_at: "YYYY-MM-DDTHH:mm:ssZ"
+  tool_versions:
+    python: "3.12.x"
+    uv: "unknown"
+  output_ref: "artifact/<project_id>/verification/logs/check-foundation.txt"
+  result: passed
 next_action: complete

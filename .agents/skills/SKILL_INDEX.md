@@ -33,6 +33,13 @@ matter in `SKILL.md`.
 
 - `skill-authoring-governance`
 - `subagent-workflow-governance`
+- `scope-routing-governance`
+- `spec-authority-governance`
+- `traceability-gate-governance`
+- `merge-integrity-governance`
+- `residual-risk-carryover`
+- `hook-validation-governance`
+- `review-fix-convergence-governance`
 
 ## Routing notes
 
@@ -43,3 +50,5 @@ matter in `SKILL.md`.
   guidance.
 - Agent context and tool-output safety is folded into security-check, not a
   separate local skill.
+- Operational governance skills route record-heavy workflow, context, hooks,
+  review, traceability, and residual-risk tasks without making active docs long.

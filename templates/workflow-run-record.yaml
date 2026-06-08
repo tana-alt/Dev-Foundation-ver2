@@ -9,10 +9,16 @@ identity:
   created_at: "YYYY-MM-DD"
 
 phase:
+  # PR-open, PR-updated, and review-requested handoffs map to review-oriented
+  # phase/next_action values. They do not by themselves make the workflow complete.
   current: goal_set
   next_action: specification_draft
 
 record_refs:
+  # Workflow-run records tie the active goal to approved spec, review, lane map,
+  # and work-contract refs when those records exist. Lane/work-contract records
+  # carry requirement IDs, allowed write targets, branch targets, worktree
+  # targets, verification expectations, and handoff evidence expectations.
   goal_ref: artifact/<project-id>/output/goals/<goal-id>.md
   approved_spec_ref: ""
   spec_review_ref: ""
@@ -31,6 +37,8 @@ communication_rules:
   subagent_to_human_direct: prohibited
   subagent_to_subagent_direct: prohibited
   state_authority: record_refs_not_conversation
+  # This record is not a runtime queue, lock ledger, scheduler, worker
+  # heartbeat, dashboard, or local worktree inventory.
 
 human_gates:
   spec_approval:
@@ -48,4 +56,6 @@ residual_risk:
   - "none"
 
 handoff:
+  # Completion requires accepted review or final handoff evidence, including
+  # changed-path scope, reported verification, residual risk, and human gates.
   next_action: specification_draft

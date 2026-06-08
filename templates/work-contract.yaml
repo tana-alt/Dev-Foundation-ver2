@@ -18,6 +18,8 @@ intent:
 inputs:
   source_refs:
     - path/or/url
+  requirement_ids:
+    - REQ-001
   required_context:
     - "Context that must be read or supplied."
   optional_context: []
@@ -55,6 +57,42 @@ outputs:
 evidence_and_verification:
   evidence_required:
     - "Source refs and reasoning needed to trust the result."
+    - changed_paths
+    - allowed_write_target_check
+    - canonical_primary_freshness
+    - pr_handoff_freshness
+    - branch_worktree_ownership
+  freshness_evidence_required:
+    canonical_primary_before_worktree_creation:
+      state: "current | stale_fast_forwardable | blocked_dirty_primary | blocked_detached_primary | blocked_missing_primary | blocked_diverged_primary | explicit_base_not_primary | not_applicable"
+      supporting_refs:
+        - canonical_repo_root
+        - primary_branch_name
+        - intended_base_ref
+        - intended_merge_target
+        - local_primary_ref_when_available
+        - remote_tracking_ref_when_available
+      post_update_ref_required_when:
+        - stale_fast_forwardable
+      explicit_base_reason_required_when:
+        - explicit_base_not_primary
+      rework_required_when:
+        - blocked_dirty_primary
+        - blocked_detached_primary
+        - blocked_missing_primary
+        - blocked_diverged_primary
+  pr_handoff_evidence_required:
+    - owned_source_branch
+    - intended_target_branch
+    - base_ref
+    - merge_target
+    - branch_worktree_ownership
+    - canonical_primary_freshness_result
+    - stale_merge_target_handling
+  completion_evidence_required:
+    - changed_paths_within_allowed_write_targets
+    - verification_attempted_and_reported
+    - no_unresolved_critical_or_high_inconsistencies_or_explicit_block
   verification_required:
     - "Check that should be run or explicitly skipped."
   verification_results: []

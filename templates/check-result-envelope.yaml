@@ -1,0 +1,38 @@
+schema_version: "0.1"
+record_type: check_result_envelope
+status: draft
+
+checker:
+  name: example-check
+  version: "0.1"
+  mode: local
+
+identity:
+  project_id: example_project
+  work_id: example_work_id
+  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+
+result:
+  status: pass
+  reason: "Template example."
+  severity: none
+  completion_support: true
+
+scope:
+  checked_paths: []
+  required_context: []
+  missing_context: []
+  denied_context_checked:
+    - secrets
+    - runtime_state
+    - broad_repo_scan
+
+evidence:
+  source_refs:
+    - "templates/check-result-envelope.yaml"
+  output_ref: ""
+  source_snapshot_lock_ref: ""
+
+next_action:
+  type: none
+  target_ref: ""

@@ -1,0 +1,13 @@
+project_id: codex-operationalization-implementation
+artifacts:
+  - id: phase-gate-matrix
+    path: artifact/codex-operationalization-implementation/governance/phase-gate-matrix.yaml
+    purpose: "Records local operational checker maturity before hook promotion."
+    source_refs:
+      - codex_operationalization_integrated_spec/
+      - agent-ops-95-hardening-docs/
+      - Makefile
+      - hooks/pre-commit
+      - hooks/pre-push
+    retention: "Keep while operational hook wiring is under review."
+    cleanup: "Fold into repo-wide reference or replace when a newer phase gate matrix supersedes it."

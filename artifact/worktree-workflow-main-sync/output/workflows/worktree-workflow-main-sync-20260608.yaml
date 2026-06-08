@@ -1,0 +1,58 @@
+schema_version: "0.1"
+record_type: workflow_run_record
+status: draft
+
+identity:
+  project_id: worktree-workflow-main-sync
+  work_id: worktree-workflow-main-sync-20260608
+  goal_id: goal-worktree-workflow-main-sync-20260608
+  created_at: "2026-06-08"
+
+phase:
+  current: final_handoff
+  next_action: complete
+
+record_refs:
+  goal_ref: artifact/worktree-workflow-main-sync/output/goals/goal-worktree-workflow-main-sync-20260608.md
+  approved_spec_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+  spec_review_ref: artifact/worktree-workflow-main-sync/evidence/spec-review-worktree-workflow-main-sync-20260608.yaml
+  lane_map_ref: Plan/worktree-workflow-main-sync/lane-maps/worktree-workflow-main-sync-20260608.yaml
+  work_contract_refs:
+    - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/docs-contracts.yaml
+    - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+  build_result_refs: []
+  review_record_refs:
+    - artifact/worktree-workflow-main-sync/evidence/reviews/review-docs-contracts-20260608.yaml
+    - artifact/worktree-workflow-main-sync/evidence/reviews/review-validation-20260608.yaml
+    - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608.yaml
+    - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+  integration_review_refs: []
+  inconsistency_register_ref: ""
+  rework_refs:
+    - artifact/worktree-workflow-main-sync/output/fix-handoffs/worktree-workflow-main-sync-20260608/validation.yaml
+  convergence_check_ref: artifact/worktree-workflow-main-sync/output/convergence/worktree-workflow-main-sync-20260608.yaml
+  final_handoff_ref: artifact/worktree-workflow-main-sync/output/final-handoffs/worktree-workflow-main-sync-20260608.yaml
+
+communication_rules:
+  human_interface: main_lane_only
+  subagent_to_human_direct: prohibited
+  subagent_to_subagent_direct: prohibited
+  state_authority: record_refs_not_conversation
+
+human_gates:
+  spec_approval:
+    required: true
+    status: approved
+    evidence_ref: artifact/worktree-workflow-main-sync/evidence/human-approval-worktree-workflow-main-sync-20260608.yaml
+  final_merge:
+    required: true
+    status: required
+    evidence_ref: ""
+
+open_questions: []
+blocked_reasons: []
+residual_risk:
+  - "No unresolved critical/high review or fix items remain. Final merge remains human-only and out of scope."
+
+handoff:
+  next_action: complete

@@ -1,0 +1,67 @@
+schema_version: "0.1"
+record_type: specification_review_record
+status: draft
+
+identity:
+  project_id: worktree-workflow-main-sync
+  spec_id: spec-worktree-workflow-main-sync-20260608
+  review_id: spec-review-worktree-workflow-main-sync-20260608
+  created_at: "2026-06-08"
+
+sources:
+  source_refs:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - docs/reference/specification-workflow-reference.md
+    - docs/reference/git-worktree-and-branch-reference.md
+    - docs/reference/repo-boundary-and-storage-reference.md
+    - docs/reference/verification-ci-and-pr-reference.md
+    - artifact/worktree-workflow-main-sync/output/goals/goal-worktree-workflow-main-sync-20260608.md
+    - artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+    - artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.yaml
+
+checks:
+  - name: requirement_traceability
+    result: passed
+    evidence_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+    notes: "REQ-001 through REQ-003 trace to the two human-requested problems and the requested subagent workflow shape."
+  - name: observable_acceptance_criteria
+    result: passed
+    evidence_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+    notes: "Freshness states are explicit, and AC-001 through AC-013 are inspectable without implementation details."
+  - name: implementation_policy_leakage
+    result: passed
+    evidence_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+    notes: "Specification avoids command selection, helper names, file layout, library choices, and test command selection."
+  - name: human_gate_readiness
+    result: passed
+    evidence_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+    notes: "Spec approval and merge remain human-only; protected side effects are explicitly gated."
+  - name: unresolved_questions
+    result: passed
+    evidence_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+    notes: "Unresolved questions are explicitly stated as none."
+
+observations:
+  facts:
+    - "Spec reviewer first returned rework for source ref mismatch, ambiguous freshness states, missing unresolved questions, and YAML human-gate/side-effect mismatch."
+    - "After rework, spec reviewer found no high, medium, or low findings."
+    - "After rework, spec reviewer decision was approved_for_human_review."
+  inferences:
+    - "The specification is ready for human review and possible approved-spec freeze."
+  decisions:
+    - "Decision: approved_for_human_review."
+
+unresolved_questions: []
+
+human_gate:
+  required: true
+  status: required
+  reason: "Human approval is required before approved_spec_freeze and before implementation lanes are assigned."
+
+decision:
+  result: approved_for_human_review
+  rework_required: []
+  next_action: human_spec_review

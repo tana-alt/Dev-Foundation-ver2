@@ -20,6 +20,8 @@ STATIC_REQUIRED_PATHS = (
     "docs/02-output-verification-contract.md",
     "docs/03-repo-boundary-and-storage-contract.md",
     "docs/reference/agent-runtime-and-scope-reference.md",
+    "docs/reference/agent-operationalization-95-hardening-reference.md",
+    "docs/reference/agent-operationalization-reference.md",
     "docs/reference/git-worktree-and-branch-reference.md",
     "docs/reference/migration-and-acceptance-reference.md",
     "docs/reference/packet-evidence-and-rework-reference.md",
@@ -29,19 +31,53 @@ STATIC_REQUIRED_PATHS = (
     "hooks/pre-push",
     "pyproject.toml",
     "scripts/check-agent-worktree-policy.sh",
+    "scripts/agent_operational_checks.py",
+    "scripts/check-audit-provenance.py",
+    "scripts/check-context-scope.py",
     "scripts/check-dev-environment.sh",
+    "scripts/check-operational-scorecard.py",
+    "scripts/check-residual-risk-carryover.py",
+    "scripts/check-result-envelope.py",
+    "scripts/check-review-convergence.py",
     "scripts/check-repo-hygiene.sh",
     "scripts/check-secrets.sh",
     "scripts/check-shell-static-analysis.sh",
+    "scripts/check-skill-routes.py",
     "scripts/setup-agent-environment.sh",
     "src/README.md",
     "templates/README.md",
     "templates/codex-config.toml.example",
     "templates/evidence-record.yaml",
+    "templates/audit-trail-index.yaml",
+    "templates/behavior-requirements.yaml",
+    "templates/budget-override-record.yaml",
+    "templates/change-impact-classification-record.yaml",
+    "templates/check-result-envelope.yaml",
+    "templates/context-scope-manifest.yaml",
+    "templates/convergence-decision-record.yaml",
+    "templates/data-contract.yaml",
+    "templates/exception-pack.yaml",
+    "templates/final-handoff-record.yaml",
+    "templates/fix-handoff-record.yaml",
+    "templates/fix-review-record.yaml",
+    "templates/interface-contract.yaml",
+    "templates/narrow-review-record.yaml",
+    "templates/nfr-pack.yaml",
+    "templates/operational-scorecard.yaml",
+    "templates/overview-spec.md",
+    "templates/phase-gate-matrix.yaml",
     "templates/project-storage-map.yaml",
+    "templates/requirement-traceability-matrix.yaml",
     "templates/rework-record.yaml",
+    "templates/residual-risk-carryover-record.yaml",
+    "templates/review-assignment-record.yaml",
+    "templates/security-review-record.yaml",
+    "templates/security-privacy-pack.yaml",
     "templates/serena-project.yml",
+    "templates/source-snapshot-lock.yaml",
+    "templates/test-strategy.yaml",
     "templates/verification-record.yaml",
+    "templates/wide-review-record.yaml",
     "templates/work-contract.yaml",
     "tests/test_clean_checkout_reproducibility.py",
     "tests/test_contract_models.py",
@@ -78,6 +114,7 @@ def dynamic_required_paths() -> list[str]:
         for path in sorted((ROOT / ".agents" / "skills").glob("*/SKILL.md"))
     )
     paths.extend(pytest_test_paths())
+    paths.extend(pytest_fixture_paths())
     paths.extend(
         path.relative_to(ROOT).as_posix()
         for path in sorted((ROOT / "plugins").glob("*/.codex-plugin/plugin.json"))
@@ -100,6 +137,17 @@ def pytest_test_paths() -> list[str]:
     return [
         path.relative_to(ROOT).as_posix()
         for path in sorted((ROOT / "tests").glob("test_*.py"))
+        if path.is_file()
+    ]
+
+
+def pytest_fixture_paths() -> list[str]:
+    fixture_root = ROOT / "tests" / "fixtures"
+    if not fixture_root.exists():
+        return []
+    return [
+        path.relative_to(ROOT).as_posix()
+        for path in sorted(fixture_root.rglob("*"))
         if path.is_file()
     ]
 

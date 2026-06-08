@@ -1,0 +1,47 @@
+schema_version: "0.1"
+record_type: audit_trail_index
+status: draft
+
+identity:
+  project_id: example_project
+  work_id: example_work_id
+  created_at: "YYYY-MM-DDTHH:mm:ssZ"
+  created_by: agent
+
+audit_trail:
+  context_scope_ref: "artifact/<project_id>/evidence/context-scope-<work_id>.yaml"
+  budget_override_refs: []
+  check_result_refs: []
+  verification_refs: []
+  change_impact_ref: "artifact/<project_id>/evidence/change-impact-<work_id>.yaml"
+  review_assignment_ref: ""
+  review_refs: []
+  fix_handoff_refs: []
+  fix_review_refs: []
+  traceability_ref: "artifact/<project_id>/output/traceability/<work_id>.yaml"
+  convergence_decision_ref: "artifact/<project_id>/output/convergence/<work_id>.yaml"
+  residual_risk_refs:
+    - "artifact/<project_id>/output/residual-risk/<work_id>.yaml"
+  source_snapshot_lock_ref: "artifact/<project_id>/audit/source-snapshot-lock-<work_id>.yaml"
+  final_handoff_ref: "artifact/<project_id>/output/final-handoffs/<work_id>.yaml"
+
+coverage:
+  has_context_scope: true
+  has_verification: false
+  has_traceability: true
+  has_convergence_decision: true
+  has_final_handoff: true
+  has_source_snapshots_for_important_records: false
+
+open_items:
+  critical_inc: 0
+  high_inc: 0
+  unresolved_fix: 0
+  required_context_missing: 0
+  not_run_required_checks: 0
+
+decision_support:
+  can_claim_complete: false
+  can_claim_complete_with_residual_risk: true
+  can_claim_95_plus: false
+  reason: "Template example; source snapshot hash is unknown."

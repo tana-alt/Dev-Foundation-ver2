@@ -125,6 +125,20 @@ include:
   scripts.
 - `make check-lanes`: validate `templates/parallel-lane-map.yaml` and tracked
   `Plan/<project_id>/lane-maps/*.yml` or `*.yaml` records.
+- `make check-skill-routes`: validate operational skill route coverage,
+  frontmatter, compactness, and active-doc budget.
+- `make check-context-scope`: validate context-scope manifests and budget
+  override records.
+- `make check-result-envelope`: validate checker result envelopes and status
+  taxonomy.
+- `make check-residual-risk-carryover`: validate residual risk and final
+  handoff carryover records.
+- `make check-review-convergence`: validate review, fix, traceability,
+  convergence, and final handoff records.
+- `make check-audit-provenance`: validate source snapshot locks, audit trail
+  indexes, and final handoff audit refs.
+- `make check-operational-scorecard`: validate operational scorecards.
+- `make check-agent-operational`: run the current operational record checks.
 - `make check-hygiene`: check tracked ignored files, forbidden local or
   past-source roots, sensitive tracked path names, gitlink metadata, and
   unignored nested Git directories.
@@ -215,6 +229,12 @@ Include:
 - intent: what problem the change solves
 - scope: changed paths, subsystems, artifacts, and non-goals
 - changed paths or artifacts
+- owned source branch, intended target branch, base ref, merge target, and
+  branch/worktree ownership
+- canonical primary freshness result and supporting refs used for worktree
+  creation, branch reuse, or PR handoff
+- stale merge-target handling: checked against newer target, rework required,
+  explicit residual risk, or not applicable
 - verifier results: check, method or command, result state, and output summary
 - docs impact
 - known risks, unverified surfaces, and follow-up
@@ -224,6 +244,10 @@ Include:
 
 Evidence should separate observed facts from inference, cite source refs instead
 of memory, avoid secrets, and preserve enough detail for review.
+
+Opening or updating a PR maps to review handoff, not completion. Completion
+evidence must come from accepted review or final handoff evidence with changed
+paths, verification, residual risk, and human-gate status honestly reported.
 
 ## Human Gates
 
@@ -254,6 +278,12 @@ Tracked hooks live in `hooks/` and are installed by
   `make check-push`. The default push gate is fast; set
   `FOUNDATION_FULL_PUSH=1` or `FOUNDATION_PRE_PUSH_TARGET=check-foundation` for
   full local validation before push.
+
+Operational hook additions remain local and deterministic: `pre-commit` also
+runs `make check-skill-routes` and `make check-context-scope`; `pre-push` also
+runs `make check-context-scope`, `make check-residual-risk-carryover`, and
+`make check-review-convergence`. These checks are not part of
+`check-foundation` until false-positive risk is reviewed.
 
 The worktree policy blocks direct writes on `main` or `master` and requires
 `agent/<work_id>/<lane>/<slug>` branch naming. Canonical-root work on an
