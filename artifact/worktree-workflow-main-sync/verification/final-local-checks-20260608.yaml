@@ -1,0 +1,66 @@
+schema_version: "0.1"
+record_type: verification_record
+status: draft
+
+identity:
+  verification_id: final-local-checks-20260608
+  work_id: worktree-workflow-main-sync-20260608
+  project_id: worktree-workflow-main-sync
+  created_at: "2026-06-08"
+
+checks:
+  - name: "lane map and workflow correspondence"
+    command: "make check-lanes"
+    result: passed
+    evidence_ref: "scripts/check-lane-map.py"
+    notes: "Passed with 2 lane-map files and 1 workflow file."
+  - name: "review and convergence records"
+    command: "make check-review-convergence"
+    result: passed
+    evidence_ref: "artifact/worktree-workflow-main-sync/output/convergence/worktree-workflow-main-sync-20260608.yaml"
+    notes: "Review convergence check passed."
+  - name: "lane-map validator tests"
+    command: "uv run pytest -q tests/test_lane_map_check.py"
+    result: passed
+    evidence_ref: "tests/test_lane_map_check.py"
+    notes: "20 tests passed."
+  - name: "doc consistency"
+    command: "make check-doc-consistency"
+    result: passed
+    evidence_ref: "tests/test_foundation_integrity.py"
+    notes: "4 selected tests passed."
+  - name: "contract models"
+    command: "make check-contracts"
+    result: passed
+    evidence_ref: "tests/test_contract_models.py"
+    notes: "18 tests passed."
+  - name: "diff whitespace"
+    command: "git diff --check"
+    result: passed
+    evidence_ref: "changed paths"
+    notes: "No whitespace errors reported."
+  - name: "fast gate"
+    command: "make check-fast"
+    result: passed
+    evidence_ref: "Makefile"
+    notes: "Format check, lint, hook shell syntax, lane check, and fast tests passed; fast tests reported 26 passed."
+
+unverified_surfaces:
+  - "Live remote freshness and GitHub PR state were not exercised; no PR or merge was requested."
+residual_risk:
+  - "Full foundation gate was not run; fast gate and targeted checks passed."
+human_gate:
+  required: false
+  status: not_applicable
+  reason: "No protected action was performed."
+execution:
+  command: "make check-fast"
+  cwd: "."
+  exit_code: 0
+  ran_at: "2026-06-08T00:00:00Z"
+  tool_versions:
+    python: "3.12.13 for pytest environment"
+    uv: "available through Makefile commands"
+  output_ref: "not_stored"
+  result: passed
+next_action: complete

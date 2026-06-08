@@ -229,6 +229,12 @@ Include:
 - intent: what problem the change solves
 - scope: changed paths, subsystems, artifacts, and non-goals
 - changed paths or artifacts
+- owned source branch, intended target branch, base ref, merge target, and
+  branch/worktree ownership
+- canonical primary freshness result and supporting refs used for worktree
+  creation, branch reuse, or PR handoff
+- stale merge-target handling: checked against newer target, rework required,
+  explicit residual risk, or not applicable
 - verifier results: check, method or command, result state, and output summary
 - docs impact
 - known risks, unverified surfaces, and follow-up
@@ -238,6 +244,10 @@ Include:
 
 Evidence should separate observed facts from inference, cite source refs instead
 of memory, avoid secrets, and preserve enough detail for review.
+
+Opening or updating a PR maps to review handoff, not completion. Completion
+evidence must come from accepted review or final handoff evidence with changed
+paths, verification, residual risk, and human-gate status honestly reported.
 
 ## Human Gates
 

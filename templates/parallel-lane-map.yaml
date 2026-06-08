@@ -9,7 +9,7 @@ identity:
 
 governance:
   map_owner: "human | agent | scheduler"
-  update_rule: "Update this map before assigning or changing any parallel lane. It is not a runtime lock."
+  update_rule: "Update this map before assigning or changing any parallel lane. It is not a runtime queue, lock ledger, scheduler, worker heartbeat, dashboard, or worktree inventory."
   context_budget:
     required_source_refs_per_lane_max: 4
     deny_broad_repo_scan: true
@@ -29,6 +29,9 @@ spec_scope:
 
 lanes:
   - lane: docs
+    # status values: planned, assigned, in_progress, ready_for_review, rework, blocked, complete.
+    # Use ready_for_review for PR-open, PR-updated, or review-requested handoff.
+    # Use complete only after accepted review or final handoff evidence.
     status: planned
     owner: unassigned
     task_intent: "Update routed docs or contracts for the scoped change."
@@ -52,10 +55,14 @@ lanes:
     verification_required:
       - make check-lanes
       - make check-doc-consistency
+      - "Inspect handoff evidence for changed paths, canonical freshness, and residual risk."
     branch_target: agent/<work-id>/docs/<short-slug>
     worktree_target: ../worktrees/<repo>/<work-id>-docs
 
   - lane: verification
+    # status values: planned, assigned, in_progress, ready_for_review, rework, blocked, complete.
+    # Use ready_for_review for PR-open, PR-updated, or review-requested handoff.
+    # Use complete only after accepted review or final handoff evidence.
     status: planned
     owner: unassigned
     task_intent: "Add or update tests for the scoped contract surface."
@@ -79,6 +86,7 @@ lanes:
     verification_required:
       - make check-lanes
       - make test-fast
+      - "Inspect handoff evidence for changed paths, canonical freshness, and residual risk."
     branch_target: agent/<work-id>/verification/<short-slug>
     worktree_target: ../worktrees/<repo>/<work-id>-verification
 
@@ -86,5 +94,10 @@ handoff:
   evidence_required:
     - source_refs
     - changed_paths
+    - allowed_write_target_check
+    - branch_worktree_ownership
+    - canonical_primary_freshness
+    - pr_handoff_freshness
     - verification_results
+    - residual_risk
   next_action: "complete | rework | review | continue"

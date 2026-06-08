@@ -15,7 +15,8 @@ conflict-check, and protected-branch mechanics.
 Open this reference when:
 
 - local write work needs branch or worktree isolation, branch naming, worktree
-  creation or validation, or protected branch/worktree policy;
+  creation or validation, canonical primary freshness evidence, or protected
+  branch/worktree policy;
 - parallel `git_scope` must be checked for completeness, or branch/worktree
   targets must be derived from `work_id`, `lane`, and a short slug;
 - changed-path evidence, allowed-write-target checks, sibling-conflict checks,
@@ -50,9 +51,10 @@ Expected effect after opening:
 
 - Derive or validate owned `agent/*` branch and external worktree targets,
   require complete `git_scope` or return rework, run local-write preflight from
-  the canonical repo root, check changed paths against allowed write targets,
-  check sibling branch conflicts when refs are supplied, and report branch,
-  worktree, base, merge target, changed paths, conflict status, and protected
+  the canonical repo root, record canonical primary freshness before worktree or
+  branch creation, check changed paths against allowed write targets, check
+  sibling branch conflicts when refs are supplied, and report branch, worktree,
+  base, merge target, changed paths, conflict status, and protected
   branch/worktree constraints without adding a record schema unless requested.
 
 ## Required Scope For Parallel Work
@@ -175,6 +177,41 @@ Fetch only when allowed by scope or normal local workflow:
 ```sh
 git fetch --prune origin
 ```
+
+## Canonical Primary Freshness
+
+Before creating or reusing an agent-owned worktree or lane branch for local
+write work, record canonical primary freshness evidence from the canonical repo
+root. This evidence belongs in the work contract, lane handoff, evidence
+record, or final output selected by the active workflow. Do not store it as a
+runtime queue, lock ledger, scheduler, worker heartbeat, dashboard, or local
+worktree inventory.
+
+The evidence must record exactly one freshness state:
+
+- `current`
+- `stale_fast_forwardable`
+- `blocked_dirty_primary`
+- `blocked_detached_primary`
+- `blocked_missing_primary`
+- `blocked_diverged_primary`
+- `explicit_base_not_primary`
+- `not_applicable`
+
+The evidence must include the canonical repo root, primary branch name,
+intended base ref, intended merge target, local primary ref when available, and
+remote tracking ref when available. When the state is
+`stale_fast_forwardable`, also record the post-update primary ref used to derive
+or validate the worktree base. When the state is `explicit_base_not_primary`,
+record the explicit base ref and why canonical primary freshness is safe or not
+applicable for the scoped work.
+
+Worktree or branch creation may proceed only with `current`,
+`stale_fast_forwardable` after post-update evidence,
+`explicit_base_not_primary`, or `not_applicable`. Return rework before creating
+or reusing the agent worktree when the state is `blocked_dirty_primary`,
+`blocked_detached_primary`, `blocked_missing_primary`, or
+`blocked_diverged_primary`.
 
 ## Create An Isolated Worktree
 
@@ -308,10 +345,17 @@ For write work, report:
 - worktree
 - base ref
 - merge target
+- canonical primary freshness state and supporting refs
 - changed paths
 - allowed-write-target check result
 - sibling conflict check result, or why it was unverified
 - verification commands and result states
+
+For PR or review handoff, also report the owned source branch, intended target
+branch, base ref, merge target, branch/worktree ownership, and canonical primary
+freshness result. If the intended merge target advanced after the worktree or
+branch was created, report whether the review branch was checked against the
+newer target, requires rework, or carries explicit residual risk.
 
 ## Human Gate
 
@@ -319,10 +363,11 @@ Agents may push owned `agent/*` review branches and open or update PRs when
 scope, branch/worktree ownership, changed-path evidence, and verification are
 clear.
 
-Do not push directly to `main` or `master`. Do not merge; merge is
-human-only. Do not delete branches, delete worktrees, deploy, release, or
-perform external writes outside the owned review branch or PR unless scope
-explicitly allows it or a human approves it.
+Opening or updating a PR is a handoff state, not completion. Do not push
+directly to `main` or `master`. Do not merge; merge is human-only. Do not delete
+branches, delete worktrees, deploy, release, or perform external writes outside
+the owned review branch or PR unless scope explicitly allows it or a human
+approves it.
 
 `FOUNDATION_ALLOW_AGENT_POLICY_BYPASS=1` is a human break-glass escape hatch for
 local recovery only. Record why it was used in handoff evidence and do not use

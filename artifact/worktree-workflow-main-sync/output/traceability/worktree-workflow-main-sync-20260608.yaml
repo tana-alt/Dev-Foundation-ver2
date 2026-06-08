@@ -1,0 +1,250 @@
+schema_version: "0.1"
+record_type: requirement_traceability_matrix
+status: draft
+
+identity:
+  project_id: worktree-workflow-main-sync
+  work_id: worktree-workflow-main-sync-20260608
+  spec_id: spec-worktree-workflow-main-sync-20260608
+  created_at: "2026-06-08"
+
+sources:
+  approved_spec_freeze_ref: artifact/worktree-workflow-main-sync/output/spec-freezes/freeze-worktree-workflow-main-sync-20260608.yaml
+  lane_map_ref: Plan/worktree-workflow-main-sync/lane-maps/worktree-workflow-main-sync-20260608.yaml
+  inconsistency_register_ref: ""
+
+coverage:
+  functional_requirements:
+    - requirement_id: REQ-001
+      acceptance_criteria:
+        - ac_id: AC-001
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/git-worktree-and-branch-reference.md
+            - templates/work-contract.yaml
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/review-docs-contracts-20260608.yaml
+            - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/docs-contracts.yaml
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-002
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/git-worktree-and-branch-reference.md
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-003
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/git-worktree-and-branch-reference.md
+            - templates/work-contract.yaml
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-004
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/git-worktree-and-branch-reference.md
+            - templates/work-contract.yaml
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/review-docs-contracts-20260608.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/docs-contracts.yaml
+          result: passed
+          residual_risk:
+            - none
+    - requirement_id: REQ-002
+      acceptance_criteria:
+        - ac_id: AC-005
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/git-worktree-and-branch-reference.md
+            - docs/reference/verification-ci-and-pr-reference.md
+            - templates/work-contract.yaml
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-006
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/git-worktree-and-branch-reference.md
+            - docs/reference/verification-ci-and-pr-reference.md
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-007
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/git-worktree-and-branch-reference.md
+            - docs/reference/verification-ci-and-pr-reference.md
+            - docs/reference/specification-workflow-reference.md
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/review-docs-contracts-20260608.yaml
+            - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/docs-contracts.yaml
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-008
+          lanes:
+            - docs-contracts
+          implementation_refs:
+            - docs/reference/git-worktree-and-branch-reference.md
+            - docs/reference/verification-ci-and-pr-reference.md
+          test_refs:
+            - tests/test_foundation_integrity.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/review-docs-contracts-20260608.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/docs-contracts.yaml
+          result: passed
+          residual_risk:
+            - none
+    - requirement_id: REQ-003
+      acceptance_criteria:
+        - ac_id: AC-009
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/specification-workflow-reference.md
+            - templates/workflow-run-record.yaml
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/output/workflows/worktree-workflow-main-sync-20260608.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-010
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - templates/work-contract.yaml
+            - templates/parallel-lane-map.yaml
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - Plan/worktree-workflow-main-sync/lane-maps/worktree-workflow-main-sync-20260608.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/docs-contracts.yaml
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-011
+          lanes:
+            - docs-contracts
+          implementation_refs:
+            - docs/reference/specification-workflow-reference.md
+            - templates/parallel-lane-map.yaml
+            - templates/workflow-run-record.yaml
+          test_refs:
+            - tests/test_foundation_integrity.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/review-docs-contracts-20260608.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/docs-contracts.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-012
+          lanes:
+            - docs-contracts
+            - validation
+          implementation_refs:
+            - docs/reference/specification-workflow-reference.md
+            - templates/parallel-lane-map.yaml
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+        - ac_id: AC-013
+          lanes:
+            - validation
+          implementation_refs:
+            - scripts/check-lane-map.py
+          test_refs:
+            - tests/test_lane_map_check.py
+          evidence_refs:
+            - artifact/worktree-workflow-main-sync/evidence/reviews/fix-review-validation-20260608-2.yaml
+          verification_refs:
+            - artifact/worktree-workflow-main-sync/output/work-contracts/worktree-workflow-main-sync-20260608/validation.yaml
+          result: passed
+          residual_risk:
+            - none
+  non_functional_requirements: []
+  exception_cases: []
+
+handoff:
+  open_critical_or_high: false
+  next_action: convergence_check

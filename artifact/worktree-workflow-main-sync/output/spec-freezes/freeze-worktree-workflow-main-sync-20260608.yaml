@@ -1,0 +1,53 @@
+schema_version: "0.1"
+record_type: approved_spec_freeze
+status: draft
+
+identity:
+  project_id: worktree-workflow-main-sync
+  spec_id: spec-worktree-workflow-main-sync-20260608
+  freeze_id: freeze-worktree-workflow-main-sync-20260608
+  work_id: worktree-workflow-main-sync-20260608
+  created_at: "2026-06-08"
+
+sources:
+  goal_ref: artifact/worktree-workflow-main-sync/output/goals/goal-worktree-workflow-main-sync-20260608.md
+  spec_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+  spec_packet_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.yaml
+  spec_review_ref: artifact/worktree-workflow-main-sync/evidence/spec-review-worktree-workflow-main-sync-20260608.yaml
+  human_approval_ref: artifact/worktree-workflow-main-sync/evidence/human-approval-worktree-workflow-main-sync-20260608.yaml
+
+authority:
+  behavior_authority: approved_spec_ref_only
+  behavior_authority_ref: artifact/worktree-workflow-main-sync/output/specs/spec-worktree-workflow-main-sync-20260608.md
+  implementation_policy_role: how_guidance_only
+
+freeze:
+  content_hash: sha256:f8da20a301d96d376f74d4b5d4424d435c1bbd7eeb060876274b359dbba65f2c
+  requirement_ids:
+    - REQ-001
+    - REQ-002
+    - REQ-003
+  acceptance_criteria_ids:
+    - AC-001
+    - AC-002
+    - AC-003
+    - AC-004
+    - AC-005
+    - AC-006
+    - AC-007
+    - AC-008
+    - AC-009
+    - AC-010
+    - AC-011
+    - AC-012
+    - AC-013
+  non_functional_requirement_ids: []
+  exception_case_ids: []
+
+change_policy:
+  direct_edit_after_freeze: prohibited
+  allowed_change_path: spec_amendment_record
+  human_approval_required: true
+
+handoff:
+  next_action: lane_mapping

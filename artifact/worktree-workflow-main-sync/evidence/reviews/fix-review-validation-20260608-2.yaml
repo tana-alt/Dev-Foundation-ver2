@@ -1,0 +1,64 @@
+schema_version: "0.1"
+record_type: fix_review_record
+status: draft
+
+identity:
+  project_id: worktree-workflow-main-sync
+  work_id: worktree-workflow-main-sync-20260608
+  review_id: fix-review-validation-20260608-2
+  review_mode: fix
+  created_at: "2026-06-08T00:00:00Z"
+
+inputs:
+  fix_handoff_ref: artifact/worktree-workflow-main-sync/output/fix-handoffs/worktree-workflow-main-sync-20260608/validation.yaml
+  source_refs:
+    - scripts/check-lane-map.py
+    - tests/test_lane_map_check.py
+  changed_paths:
+    - scripts/check-lane-map.py
+    - tests/test_lane_map_check.py
+
+fix_resolution:
+  - fix_id: FIX-001
+    status: resolved
+    evidence_refs:
+      - scripts/check-lane-map.py
+      - tests/test_lane_map_check.py
+    notes: "PR/review handoff evidence validation remains covered."
+  - fix_id: FIX-002
+    status: resolved
+    evidence_refs:
+      - scripts/check-lane-map.py
+      - tests/test_lane_map_check.py
+    notes: "Blocking freshness outcomes remain covered."
+  - fix_id: FIX-003
+    status: resolved
+    evidence_refs:
+      - scripts/check-lane-map.py
+      - tests/test_lane_map_check.py
+    notes: "Freshness alias/schema checks remain covered."
+  - fix_id: FIX-004
+    status: resolved
+    evidence_refs:
+      - scripts/check-lane-map.py
+      - tests/test_lane_map_check.py
+    notes: "Complete-lane changed-path validation remains covered."
+  - fix_id: FIX-005
+    status: resolved
+    evidence_refs:
+      - scripts/check-lane-map.py
+      - tests/test_lane_map_check.py
+    notes: "Freshness-labeled blocks with neither state nor freshness_state now fail and are covered by regression test."
+
+new_risk_check:
+  new_requirement_violation: none
+  new_security_surface: none
+  new_scope_leak: none
+  neighboring_lane_impact: none
+  over_mocked_or_false_test: none
+
+new_findings: []
+
+verdict:
+  status: pass
+  reason: "All validation fixes are closed and no regression was found."
