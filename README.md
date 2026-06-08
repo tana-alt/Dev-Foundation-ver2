@@ -4,6 +4,11 @@ This repo distills a small development foundation for agents, humans, tools,
 and automations. Keep it simple: active behavior belongs in three short docs,
 and detailed source material belongs in routed references only.
 
+For a compact external overview, see
+`docs/external-facing-overview.md`. It explains the repo as an agent governance
+and workflow foundation, including current runnable/check surfaces, non-goals,
+human gates, and a small demo artifact outline.
+
 ## Active Docs
 
 - `AGENTS.md`: agent entrypoint and routing map.
@@ -11,6 +16,8 @@ and detailed source material belongs in routed references only.
 - `docs/02-output-verification-contract.md`: evidence, verification, and gates.
 - `docs/03-repo-boundary-and-storage-contract.md`: folders, storage, secrets,
   skills, and plugins.
+- `docs/external-facing-overview.md`: external-facing summary of what this
+  foundation is, what can be run today, and what it intentionally does not do.
 
 ## References
 
