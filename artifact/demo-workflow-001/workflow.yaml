@@ -1,0 +1,105 @@
+schema_version: "0.1"
+record_type: demo_workflow
+demo_id: demo-workflow-001
+project_id: workflow-ui-commondb-20260608
+
+issue_candidate:
+  id: issue-candidate-demo-001
+  summary: "Add a bounded context adapter contract for a demo workflow."
+  source_refs:
+    - "plan:workflow-ui-commondb-20260608:X1"
+
+issue:
+  id: issue-demo-001
+  candidate_id: issue-candidate-demo-001
+  status: accepted
+  summary: "Define safe CommonDB context exchange for workflow validation."
+
+implementation_proposal:
+  id: proposal-demo-001
+  issue_id: issue-demo-001
+  status: proposed
+  summary: "Use a mocked adapter and sanitized fixtures to validate workflow context."
+  source_refs:
+    - "plan:workflow-ui-commondb-20260608:X1"
+
+approval_decision:
+  id: approval-demo-001
+  proposal_id: proposal-demo-001
+  decision: approved
+  approver_ref: "human:demo-approval"
+
+approved_work_contract:
+  work_contract_id: work-contract-demo-001
+  issue_id: issue-demo-001
+  proposal_id: proposal-demo-001
+  project_id: workflow-ui-commondb-20260608
+  goal: "Validate a safe CommonDB context adapter demo slice."
+  source_refs:
+    - "plan:workflow-ui-commondb-20260608:X1"
+    - "commondb:demo-context:adapter-contract"
+  allowed_write_targets:
+    - "docs/commondb-context-adapter-contract.md"
+    - "src/workflow_adapters/commondb_context_adapter.py"
+    - "templates/context-request.yaml"
+    - "templates/context-result.yaml"
+    - "artifact/demo-workflow-001/"
+    - "artifact/demo-workflow-commondb-run/"
+    - "scripts/check-demo-workflow.py"
+    - "tests/workflow_core/"
+    - "tests/workflow_adapters/"
+  denied_context:
+    - vault
+    - corpus
+    - qdrant
+    - local_paths
+    - raw_source
+    - raw_logs
+    - secrets
+    - vectors
+    - embeddings
+    - runtime_state
+    - model_memory_fallback
+  verification:
+    - "uv run pytest tests/workflow_core tests/workflow_adapters -q"
+    - "uv run python scripts/check-demo-workflow.py"
+    - "make check-fast"
+  human_gate:
+    required: false
+    status: not_applicable
+    reason: "Mocked local demo validation only."
+  git_scope:
+    mode: parallel
+    base_ref: origin/main
+    merge_target: origin/main
+    branch_target: agent/workflow-ui-commondb-20260608/demo-context/commondb-demo
+    worktree_target: ../worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-demo-context
+    conflict_policy: no_overlap
+
+execution_run:
+  id: execution-run-demo-001
+  work_contract_id: work-contract-demo-001
+  status: completed
+  runner: mock
+  context_result_id: context-result-demo-001
+  output_refs:
+    - "artifact:demo-workflow-commondb-run:context-result"
+
+verification_result:
+  id: verification-demo-001
+  execution_run_id: execution-run-demo-001
+  status: passed
+  checks:
+    - name: "demo fixture checker"
+      command: "uv run python scripts/check-demo-workflow.py"
+      result: passed
+
+handoff_artifact:
+  id: handoff-demo-001
+  verification_result_id: verification-demo-001
+  status: ready_for_review
+  artifact_refs:
+    - "artifact/demo-workflow-001/workflow.yaml"
+    - "artifact/demo-workflow-commondb-run/context-result.yaml"
+  residual_risk:
+    - "Uses mocked CommonDB context only."
