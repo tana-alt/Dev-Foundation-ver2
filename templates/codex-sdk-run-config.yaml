@@ -1,0 +1,15 @@
+schema_version: "0.1"
+record_type: codex_sdk_run_config
+status: draft
+
+runner:
+  mode: mock
+  model: configured-by-human
+  cwd: ""
+  artifact_dir: artifact/demo-codex-sdk-run
+  allow_real_sdk: false
+  mock_summary: "mock Codex SDK adapter completed without external writes"
+  extra_instructions:
+    - "Keep execution headless and local."
+    - "Use only the approved work contract source refs and allowed write targets."
+    - "Record real SDK smoke as skipped unless explicitly human-approved."
