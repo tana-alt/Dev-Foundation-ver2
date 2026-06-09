@@ -36,6 +36,37 @@ guideline details matter.
 - Empty, loading, error, permission, and no-results states.
 - Visual polish: alignment, density, contrast, image behavior, and truncation.
 
+## Review Modes
+
+Use only the smallest mode needed. These modes distill external UI review
+workflows into local review vocabulary without importing their full rule bodies:
+
+- `critique`: design-director review of hierarchy, information architecture,
+  cognitive load, tone, emotional fit, anti-patterns, and priority issues.
+- `audit`: measurable review of accessibility, performance signals,
+  theming/token use, responsive behavior, forms, navigation/state, animation,
+  touch targets, internationalization risk, and UI anti-patterns. Use a 5-axis
+  score for accessibility, performance, theming, responsive behavior, and
+  anti-patterns only when the user explicitly asks for scoring.
+- `polish`: final pass for design-system alignment, spacing, typography,
+  interaction states, copy, loading/error/empty states, and edge cases.
+- `distill`: remove redundant UI, copy, actions, cards, decoration, or
+  information complexity while preserving necessary function and accessibility.
+- `quieter`: reduce saturation, contrast extremes, heavy type, decorative
+  layers, and motion intensity without erasing product personality.
+- `typeset`: typography-focused pass for font choice, hierarchy, type scale,
+  line length, line-height, contrast, and consistency.
+
+Scoring is optional and should be used only when the user asks for an audit
+score. When current WCAG/WAI-ARIA, Vercel guideline details, or framework
+behavior matter, route through `doc-lookup` rather than relying on embedded
+local copies. Browser evidence routes to `browser-verification` when needed.
+When reviewing files, prefer terse actionable findings with file and line
+references over broad commentary.
+For design-engineering checks, evaluate motion, visual design, code structure,
+and performance together instead of treating polish as separate from runtime
+behavior.
+
 ## Do Not Use When
 
 - The task is to create a new UI, route, component, or data-wired interaction;

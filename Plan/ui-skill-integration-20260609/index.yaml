@@ -1,0 +1,10 @@
+project_id: ui-skill-integration-20260609
+plans:
+  - plan_id: Plan_N0001
+    status: completed
+    plan_ref: Plan/ui-skill-integration-20260609/plans/Plan_N0001.md
+    log_ref: Plan/ui-skill-integration-20260609/logs/Plan_N0001.log.md
+  - plan_id: Plan_N0002
+    status: completed
+    plan_ref: Plan/ui-skill-integration-20260609/plans/Plan_N0002.md
+    log_ref: Plan/ui-skill-integration-20260609/logs/Plan_N0002.log.md

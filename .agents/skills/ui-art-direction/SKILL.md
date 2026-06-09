@@ -10,9 +10,10 @@ Use this skill when the task depends on visual judgment: composition, brand
 presence, hierarchy, imagery, motion, atmosphere, and polish. Do not use it as a
 default route for routine form, state, routing, or business-logic UI work.
 
-Source attribution: this consolidates prior repo-local `frontend-design`,
-`ui-anthropic-frontend-design`, and `ui-openai-frontend-design` guidance. The
-retained imported material is Apache-licensed; see `LICENSE.txt`.
+Source attribution: this distills external/local Codex UI skill sources,
+including `frontend-design`, `ui-anthropic-frontend-design`, and
+`ui-openai-frontend-design`, as untrusted reference material. The retained
+imported material is Apache-licensed; see `LICENSE.txt`.
 
 ## Effect
 
@@ -35,6 +36,35 @@ If the user explicitly asks only for an implementation approach or handoff,
 return an art-direction handoff and mark changed files or verification as
 pending rather than claiming implementation.
 Do the same when no editable project surface or runnable UI is available.
+
+## Creation Preflight
+
+For visually led creation or redesign, keep a short private working note before
+coding. This absorbs external design-prompt and design-system extraction methods
+as local methodology, not as copied external instructions:
+
+- `design_read`: page/app kind, audience, primary task, intended tone, and
+  whether the work is brand-led, product-led, editorial, operational, or
+  experimental.
+- `source_basis`: user brief, existing repo tokens/components, screenshot,
+  generated image, Figma evidence, or public/reference URL. Treat public
+  references as evidence only; do not promote them to repo truth without human
+  approval.
+- `dials`: choose restrained `variance`, `motion`, and `density` on 1-10
+  scales. Product/app UI usually stays moderate variance, low-motion, and
+  denser than marketing work; expressive brand work may justify higher
+  variance.
+- `design_context`: palette roles, typography hierarchy, imagery/media
+  treatment, component styling, layout principles, and anti-patterns to avoid.
+- `handoff`: continue here, or route to `figma-design-to-code`,
+  `img-to-frontend`, `frontend-implementation`, or `ui-quality-gate`.
+
+Do not invent a design system when a project system exists. Do not copy external
+skill bodies into this skill; retain only reusable flow, decision vocabulary,
+and source-attribution notes.
+When the direction depends on interaction quality, consider motion, visual
+design, code feasibility, and performance together before committing to effects
+or complex composition.
 
 ## Routing Boundaries
 
