@@ -11,6 +11,8 @@ sections:
     - evidence/approved-spec-freeze-codexapp-vertical-20260609.yaml
     - evidence/spec-review-app-server-thread-alignment-backend-20260609.yaml
     - evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+    - evidence/spec-review-obsidian-commondb-contract-integration-20260609.yaml
+    - evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
     - evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
     - evidence/build-result-codexapp-vertical-ui-20260609.yaml
     - evidence/spec-draft-notes-personal-mac-workflow-app-20260609.yaml
@@ -26,16 +28,27 @@ sections:
     - output/specs/codex-app-vertical-integration-spec.md
     - output/specs/personal-mac-workflow-app-spec.md
     - output/specs/app-server-thread-alignment-backend-spec.md
+    - output/specs/obsidian-commondb-contract-integration-spec.md
     - output/workflows/codex-app-vertical-integration-20260609.yaml
     - output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml
     - output/implementation-policies/personal-mac-workflow-app-20260609/appkit-shell.yaml
+    - output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
     - output/inconsistency/app-server-thread-alignment-backend-20260609.yaml
     - output/inconsistency/personal-mac-workflow-app-20260609.yaml
+    - output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml
     - output/reviews/app-server-thread-alignment-backend-20260609.yaml
     - output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
     - output/reviews/app-server-thread-alignment-backend-convergence-20260609.yaml
     - output/reviews/app-server-thread-alignment-backend-final-handoff-20260609.yaml
+    - output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+    - output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+    - output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+    - output/reviews/obsidian-commondb-contract-integration-manifest-fix-review-20260610.yaml
+    - output/reviews/obsidian-commondb-contract-integration-manifest-completeness-fix-review-20260610.yaml
+    - output/reviews/obsidian-commondb-contract-integration-convergence-20260610.yaml
+    - output/reviews/obsidian-commondb-contract-integration-final-handoff-20260610.yaml
     - output/traceability/app-server-thread-alignment-backend-20260609.yaml
+    - output/traceability/obsidian-commondb-contract-integration-20260610.yaml
     - output/reviews/personal-mac-workflow-app-narrow-review-20260609.yaml
     - output/reviews/personal-mac-workflow-app-cross-review-pasteur-20260609.yaml
     - output/reviews/personal-mac-workflow-app-fix-review-20260609.yaml

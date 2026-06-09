@@ -1,0 +1,344 @@
+schema_version: "0.1"
+record_type: requirement_traceability_matrix
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  spec_id: SPEC-OBSIDIAN-COMMONDB-CONTRACT-INTEGRATION-001
+  created_at: "2026-06-09T16:56:22Z"
+
+sources:
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+  inconsistency_register_ref: artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml
+  review_refs:
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+
+items:
+  - id: REQ-OCI-001
+    status: carried_risk
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#REQ-OCI-001
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#freeze
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes
+  - id: REQ-OCI-002
+    status: carried_risk
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#REQ-OCI-002
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#freeze
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes
+  - id: REQ-OCI-003
+    status: carried_risk
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#REQ-OCI-003
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#freeze
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes
+  - id: REQ-OCI-004
+    status: carried_risk
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#REQ-OCI-004
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#freeze
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes
+  - id: REQ-OCI-005
+    status: carried_risk
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#REQ-OCI-005
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#freeze
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes
+  - id: REQ-OCI-006
+    status: carried_risk
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#REQ-OCI-006
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#freeze
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes
+  - id: REQ-OCI-007
+    status: carried_risk
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#REQ-OCI-007
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#freeze
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes
+  - id: REQ-OCI-008
+    status: carried_risk
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#REQ-OCI-008
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#freeze
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes
+      - artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml#INC-OCI-001
+
+coverage:
+  functional_requirements:
+    - requirement_id: REQ-OCI-001
+      acceptance_criteria:
+        - ac_id: AC-OCI-001
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-001, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-002
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-002, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-003
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-003, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-004
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-004, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+    - requirement_id: REQ-OCI-002
+      acceptance_criteria:
+        - ac_id: AC-OCI-005
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-005, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-006
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-006, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-007
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-007, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-008
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-008, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+    - requirement_id: REQ-OCI-003
+      acceptance_criteria:
+        - ac_id: AC-OCI-009
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-009, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-010
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-010, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-011
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-011, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-012
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-012, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+    - requirement_id: REQ-OCI-004
+      acceptance_criteria:
+        - ac_id: AC-OCI-013
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-013, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-014
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-014, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-015
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-015, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-016
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-016, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+    - requirement_id: REQ-OCI-005
+      acceptance_criteria:
+        - ac_id: AC-OCI-017
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-017, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-018
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-018, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-019
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-019, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-020
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-020, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+    - requirement_id: REQ-OCI-006
+      acceptance_criteria:
+        - ac_id: AC-OCI-021
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-021, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-022
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-022, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-023
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-023, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+    - requirement_id: REQ-OCI-007
+      acceptance_criteria:
+        - ac_id: AC-OCI-024
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-024, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-025
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-025, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-026
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-026, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+    - requirement_id: REQ-OCI-008
+      acceptance_criteria:
+        - ac_id: AC-OCI-027
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-027, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes, artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks, artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml#verification_results]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-028
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-028, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes, artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks, artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml#verification_results]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+        - ac_id: AC-OCI-029
+          lanes: [contract-integration]
+          implementation_refs: [not_applicable_records_only_no_code_changed]
+          test_refs: [not_applicable_records_only_phase]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#AC-OCI-029, artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml#acceptance_criteria_ids, Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#lanes, artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml]
+          verification_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#checks, artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml#verification_results]
+          result: carried_risk
+          residual_risk: [implementation_unstarted_records_only]
+  non_functional_requirements:
+    - requirement_id: NFR-OCI-001
+      verification_refs:
+        - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#human_gate
+        - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml#human_gate
+      result: carried_risk
+      blocked_reason: "Live CommonDB, Obsidian, external writes, protected Git, deployment, release, dependency, infrastructure, CI/CD, and secret handling remain human-gated."
+      residual_risk:
+        - "External Obsidian/CommonDB side completion is user_assertion only, not verified workflow evidence."
+  exception_cases:
+    - case_id: EXC-OCI-001
+      test_refs:
+        - not_applicable_records_only_phase
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml#unverified_surfaces
+        - artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml#handoff
+      result: carried_risk
+      blocked_reason: "Implementation tests and live external operations are not applicable for this records-only convergence pass."
+      residual_risk:
+        - "Future implementation must add targeted tests before claiming runtime behavior."
+
+handoff:
+  open_critical_or_high: false
+  next_action: convergence_check

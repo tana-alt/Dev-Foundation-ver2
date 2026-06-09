@@ -1,0 +1,103 @@
+schema_version: "0.1"
+record_type: fix_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  review_id: obsidian-commondb-contract-integration-manifest-completeness-fix-review-20260610
+  reviewer_id: manifest_completeness_rework_worker
+  review_mode: fix
+  created_at: "2026-06-10"
+
+inputs:
+  source_refs:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - .agents/skills/scope-routing-governance/SKILL.md
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-manifest-fix-review-20260610.yaml
+  changed_paths:
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-manifest-completeness-fix-review-20260610.yaml
+  allowed_write_targets:
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-manifest-completeness-fix-review-20260610.yaml
+
+fix_resolution:
+  - fix_id: FIX-OCI-MANIFEST-COMPLETENESS-001
+    finding_id: halley-manifest-unlisted-manifest-fix-review
+    status: closed
+    summary: "Listed the existing manifest fix review record in the artifact manifest output refs."
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/manifest.yaml#sections.output
+      - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-manifest-fix-review-20260610.yaml
+    notes: "Also listed this completeness fix review record so the manifest remains complete after the rework artifact is created."
+
+checks:
+  - name: allowed_write_target_check
+    result: passed
+    evidence_ref: user_request#allowed_write_targets
+    notes: "Only the manifest and this manifest completeness fix review record were edited by this worker."
+  - name: manifest_output_refs_added
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/manifest.yaml#sections.output
+    notes: "The manifest now lists cross-review, fix-review, manifest-fix-review, and this manifest-completeness-fix-review under sections.output."
+  - name: external_operation_boundary
+    result: passed
+    evidence_ref: user_request#required_behavior
+    notes: "No live CommonDB search, CommonDB indexing, CommonDB searchable migration, Obsidian vault read/write, external write, protected Git action, dependency change, CI/CD change, deployment, release, secret handling, or infrastructure action was performed."
+
+verification_results:
+  - check: yaml_parse_changed_files
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "Parsed manifest.yaml and this manifest completeness fix review record with PyYAML."
+  - check: manifest_refs_existence_check
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "All 56 manifest refs exist relative to artifact/workflow-ui-commondb-20260608; cross-review, fix-review, manifest-fix-review, and this manifest-completeness-fix-review are listed and exist."
+  - check: make_check_lanes
+    command: make check-lanes
+    result: passed
+    notes: "lane map check: passed (6 lane-map files, 2 workflow files)."
+  - check: make_check_review_convergence
+    command: make check-review-convergence
+    result: passed
+    notes: "review convergence check: passed."
+  - check: git_diff_check
+    command: git diff --check
+    result: passed
+    notes: "No whitespace errors were reported."
+  - check: make_check_fast
+    command: make check-fast
+    result: passed
+    notes: "ruff format --check, ruff check, shell syntax checks, lane map check, and focused pytest suite passed (26 tests)."
+
+human_gate:
+  required: true
+  status: not_requested_not_performed
+  notes: "Human-gated live CommonDB, Obsidian, external, protected Git, deployment, release, dependency, infrastructure, CI/CD, secret, and merge actions were out of scope and were not performed."
+
+closure:
+  finding_id: halley-manifest-unlisted-manifest-fix-review
+  status: closed
+  evidence_refs:
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml#sections.output
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-manifest-fix-review-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-manifest-completeness-fix-review-20260610.yaml
+  notes: "Halley's manifest completeness finding is closed: the previously unlisted manifest-fix-review artifact is now manifest-listed and exists."
+
+residual_risk:
+  - id: RR-OCI-MANIFEST-COMPLETENESS-001
+    status: none_identified
+    summary: "Records-only manifest enumeration fix; live CommonDB, Obsidian, external, and protected actions remain unperformed."
+
+verdict:
+  status: complete
+  next_action: review
+  notes: "Manifest completeness gap is closed with required verification passing."

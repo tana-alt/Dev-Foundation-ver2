@@ -1,0 +1,50 @@
+schema_version: "0.1"
+record_type: convergence_decision_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  created_at: "2026-06-09T16:56:22Z"
+
+inputs:
+  traceability_matrix_ref: "artifact/workflow-ui-commondb-20260608/output/traceability/obsidian-commondb-contract-integration-20260610.yaml"
+  review_refs:
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+  verification_refs:
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml#verification_results
+    - local_command:2026-06-10-yaml-parse
+    - local_command:2026-06-10-manifest-refs-exist
+    - local_command:2026-06-10-make-check-review-convergence
+    - local_command:2026-06-10-make-check-lanes
+    - local_command:2026-06-10-git-diff-check
+  residual_risk_refs:
+    - artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/traceability/obsidian-commondb-contract-integration-20260610.yaml#coverage
+
+coverage:
+  req_covered: true
+  ac_verified_or_gap_recorded: true
+  nfr_checked_or_carried: true
+  exc_checked_or_carried: true
+  sec_checked_or_carried: true
+  data_api_checked_or_carried: true
+
+reviews:
+  narrow_review_status: not_applicable
+  wide_review_status: complete
+  security_review_status: not_applicable
+  fix_review_status: complete
+
+open_items:
+  critical_inc: 0
+  high_inc: 0
+  unresolved_fix: 0
+  unverified_required_checks: 0
+
+decision:
+  status: complete_with_residual_risk
+  reason: "REV-OCI-001 is closed by FIX-OCI-001 in the fix-review record, the inconsistency register has no open critical/high items, and REQ-OCI-001 through REQ-OCI-008 plus AC-OCI-001 through AC-OCI-029 trace to the approved spec, freeze, lane map, reviews, and explicit records-only gaps. Implementation has not started, implementation tests are not applicable, and live CommonDB/Obsidian/external/protected operations remain human-gated and unverified."
+  next_action: human_review_required

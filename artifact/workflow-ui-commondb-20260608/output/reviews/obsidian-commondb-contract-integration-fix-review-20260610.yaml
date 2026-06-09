@@ -1,0 +1,84 @@
+schema_version: "0.1"
+record_type: fix_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  review_id: obsidian-commondb-contract-integration-fix-review-20260610
+  reviewer_id: rework_worker
+  created_at: "2026-06-10"
+
+inputs:
+  source_refs:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - .agents/skills/review-fix-convergence-governance/SKILL.md
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+  changed_paths_reviewed:
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+  allowed_write_targets:
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+
+fixes:
+  - fix_id: FIX-OCI-001
+    finding_id: REV-OCI-001
+    status: closed
+    summary: "Changed the lane-map handoff.next_action from implementation_lane_assignment to continue."
+    evidence_refs:
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#handoff
+    rationale: "continue is checker-compatible and preserves that the next step is implementation lane assignment rather than completion."
+
+checks:
+  - name: allowed_write_target_check
+    result: passed
+    evidence_ref: user_request#allowed_write_targets
+    notes: "Only the lane map and this fix-review record were changed."
+  - name: no_unrelated_surface_change
+    result: passed
+    evidence_ref: local_diff_review
+    notes: "No spec, freeze, manifest, code, tests, or unrelated records were edited."
+  - name: external_operation_boundary
+    result: passed
+    evidence_ref: user_request#required_behavior
+    notes: "No live CommonDB, Obsidian, external write, protected Git, dependency, CI/CD, deployment, or release action was performed."
+
+verification_results:
+  - check: make_check_lanes
+    command: make check-lanes
+    result: passed
+    notes: "lane map check: passed (6 lane-map files, 2 workflow files)."
+  - check: git_diff_check
+    command: git diff --check
+    result: passed
+    notes: "No whitespace errors were reported."
+  - check: yaml_parse_changed_records
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "Parsed the changed lane map and fix-review record with PyYAML."
+
+closure:
+  finding_id: REV-OCI-001
+  fix_id: FIX-OCI-001
+  status: closed
+  reason: "handoff.next_action now uses the allowed checker value continue."
+
+human_gate:
+  required: true
+  status: not_requested_not_performed
+  notes: "Human-gated live/external/protected operations were out of scope and were not performed."
+
+residual_risk:
+  - id: RR-OCI-001
+    status: carried
+    summary: "This rework only fixes check-lanes compatibility. Implementation lane assignment and live CommonDB/Obsidian operations remain outside this fix scope."
+
+verdict:
+  status: complete
+  next_action: continue
+  notes: "REV-OCI-001/FIX-OCI-001 is closed with required verification passing."

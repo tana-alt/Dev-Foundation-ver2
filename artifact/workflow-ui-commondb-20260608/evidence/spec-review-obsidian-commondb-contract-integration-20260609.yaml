@@ -1,0 +1,85 @@
+schema_version: "0.1"
+record_type: specification_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-OBSIDIAN-COMMONDB-CONTRACT-INTEGRATION-001
+  review_id: spec-review-obsidian-commondb-contract-integration-20260609
+  created_at: "2026-06-09"
+
+sources:
+  source_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-006
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-008
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-009
+    - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-final-handoff-20260609.yaml
+    - src/workflow_adapters/commondb_context_adapter.py
+    - tests/workflow_adapters/test_commondb_context_adapter.py
+    - docs/reference/specification-workflow-reference.md
+    - docs/reference/packet-evidence-and-rework-reference.md
+    - user_assertion:2026-06-09-obsidian-commondb-side-complete
+
+checks:
+  - name: requirement_traceability
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#requirements
+    notes: "REQ-OCI-001 through REQ-OCI-008 trace to CommonDB bounded context, personal Mac workflow REQ-006/REQ-008/REQ-009, and the user assertion that the external Obsidian/CommonDB side is complete."
+  - name: observable_acceptance_criteria
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#requirements
+    notes: "AC-OCI-001 through AC-OCI-029 define observable source intent, eligibility, search permission, searchability approval, bounded context, rejection, optionality, completion guard, and audit behavior."
+  - name: implementation_policy_leakage
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#non-goals
+    notes: "The specification avoids file layout, function names, class names, library choice, branch strategy, worktree commands, and test command selection."
+  - name: authority_boundary
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#authority-model
+    notes: "Workflow Core remains canonical for state, approvals, contracts, verification, handoff, scope amendment, and completion; Obsidian and CommonDB remain advisory."
+  - name: trust_and_side_effect_boundaries
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#human-gates
+    notes: "Live CommonDB search, indexing, searchable migration, Obsidian vault read/write, write-back, external writes, protected Git, deploy, release, dependencies, infrastructure, CI/CD, and secrets remain human-gated and unauthorized by this records-only phase."
+  - name: no_raw_body_storage
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#non-goals
+    notes: "The spec explicitly excludes raw memo bodies, raw thread bodies, vault/corpus/qdrant internals, local paths, vector payloads, embeddings, browser sessions, raw logs, and secrets from repo records."
+
+observations:
+  facts:
+    - "The CommonDB adapter contract states that CommonDB contributes bounded context through sanitized source refs and snippets while Workflow Core remains the canonical state boundary."
+    - "The personal Mac workflow spec requires search permission and searchability or indexing approval to remain separate."
+    - "The personal Mac workflow spec requires Obsidian backup or write-back to be optional and explicit."
+    - "The personal Mac workflow spec requires completion to depend on the approved goal, acceptance criteria, verification expectations, and human gates."
+    - "The app-server thread alignment final handoff carries CommonDB live integration into a later contract and keeps Obsidian write-back human-gated."
+    - "The existing CommonDB adapter source and tests cover sanitized request/result behavior and blocked states; they are source evidence, not behavior authority for the new specification."
+  inferences:
+    - "The integration spec can be frozen for records-only planning because it defines WHAT behavior and gates, while deferring implementation and live external operations."
+    - "The external Obsidian/CommonDB side completion is accepted only as a user assertion; this repo did not inspect or verify any external repository."
+  decisions:
+    - "Decision: approve the specification for human review and freeze under the current records-only user request."
+    - "Decision: route the next implementation through one planned contract-integration lane with implementation policy separated from behavior authority."
+
+unresolved_questions:
+  - id: OQ-OCI-001
+    status: carried
+    question: "Which exact external Obsidian/CommonDB source-ref vocabulary will be approved for live use?"
+  - id: OQ-OCI-002
+    status: carried
+    question: "Which destination scopes will be approved if searchability execution is later requested?"
+  - id: OQ-OCI-003
+    status: carried
+    question: "What transformed output, if any, may be written back to Obsidian in a later human-approved contract?"
+
+human_gate:
+  required: true
+  status: approved_by_user_request_for_records_only_spec_freeze
+  reason: "The user explicitly requested spec, review, freeze, lane map, implementation policy, and final handoff records for Obsidian/CommonDB contract integration on 2026-06-09; this approval does not authorize implementation or live external operations."
+
+decision:
+  result: approved_for_human_review
+  rework_required: []
+  next_action: approved_spec_freeze

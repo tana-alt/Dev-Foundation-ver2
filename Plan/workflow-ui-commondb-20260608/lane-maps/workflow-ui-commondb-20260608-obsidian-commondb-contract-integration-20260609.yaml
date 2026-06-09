@@ -1,0 +1,116 @@
+schema_version: "0.1"
+record_type: parallel_lane_map
+status: active
+
+identity:
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  project_id: workflow-ui-commondb-20260608
+  created_at: "2026-06-09"
+
+governance:
+  map_owner: agent
+  update_rule: "Main lane coordinates the next implementation/review through records. This map is not a runtime queue, lock ledger, scheduler, worker heartbeat, dashboard, or worktree inventory."
+  context_budget:
+    required_source_refs_per_lane_max: 6
+    deny_broad_repo_scan: true
+
+git_scope:
+  mode: parallel
+  base_ref: origin/main
+  merge_target: origin/main
+  conflict_policy: explicitly_scoped
+  sibling_branch_refs: []
+
+spec_scope:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-obsidian-commondb-contract-integration-20260609.yaml
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+  requirement_ids:
+    - REQ-OCI-001
+    - REQ-OCI-002
+    - REQ-OCI-003
+    - REQ-OCI-004
+    - REQ-OCI-005
+    - REQ-OCI-006
+    - REQ-OCI-007
+    - REQ-OCI-008
+
+lanes:
+  - lane: contract-integration
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609/contract-integration/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609-contract-integration"
+    task_intent: "Implement the approved Obsidian/CommonDB contract integration surface without live CommonDB search/indexing, Obsidian write-back, vault access, or external writes."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
+      - artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md
+      - src/workflow_adapters/commondb_context_adapter.py
+      - tests/workflow_adapters/test_commondb_context_adapter.py
+    requirement_ids:
+      - REQ-OCI-001
+      - REQ-OCI-002
+      - REQ-OCI-003
+      - REQ-OCI-004
+      - REQ-OCI-005
+      - REQ-OCI-006
+      - REQ-OCI-007
+      - REQ-OCI-008
+    coverage_note: "The implementation lane is limited to local contract integration behavior and sanitized records. Live CommonDB search/indexing/searchable migration, Obsidian vault read/write or write-back, local path handling, vector payload handling, raw memo body storage, and external writes remain out of scope and human-gated."
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
+    allowed_write_targets:
+      - src/workflow_adapters/commondb_context_adapter.py
+      - tests/workflow_adapters/test_commondb_context_adapter.py
+      - src/workflow_ui/fixtures.py
+      - tests/workflow_ui/test_console.py
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - secrets
+      - raw_memo_bodies
+      - raw_thread_bodies
+      - raw_source_bodies
+      - raw_terminal_logs
+      - browser_sessions
+      - vault_internals
+      - corpus_internals
+      - qdrant_internals
+      - local_paths
+      - vectors
+      - embeddings
+      - local_runtime_state
+      - unrelated_project_logs
+      - broad_repo_scan
+    expected_outputs:
+      - "Local contract integration behavior, if implemented later, limited to explicit source intent, eligibility, search permission/searchability separation, bounded context refs/snippets, rejection/blocked states, audit evidence refs, and Workflow Core authority preservation."
+      - "Targeted tests or console fixture updates, if needed, proving the approved requirement IDs without live external operations."
+      - "Build/review evidence with changed paths, allowed-write-target check, verification result, human-gate status, skipped live-operation status, and residual risk."
+    verification_required:
+      - "Run the closest targeted adapter and console tests affected by the future implementation."
+      - "Inspect changed records for raw memo body, raw source body, raw terminal log, browser session, credential, token, secret, vector, embedding, vault/corpus/qdrant internal, and local path leakage."
+      - "Confirm live CommonDB search/indexing/searchable migration, Obsidian vault read/write, Obsidian write-back, and external writes were not performed."
+      - "Record skipped, blocked, or not-applicable checks explicitly."
+    handoff_evidence_required:
+      - source_refs
+      - changed_paths
+      - allowed_write_target_check
+      - verification_results
+      - human_gate_status
+      - live_common_db_operation_status
+      - obsidian_write_back_status
+      - residual_risk
+
+handoff:
+  evidence_required:
+    - source_refs
+    - changed_paths
+    - allowed_write_target_check
+    - branch_worktree_ownership
+    - verification_results
+    - review_results
+    - human_gate_status
+    - residual_risk
+  next_action: continue

@@ -1,0 +1,136 @@
+schema_version: "0.1"
+record_type: wide_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  review_id: obsidian-commondb-contract-integration-cross-review-20260610
+  reviewer_id: review_worker
+  review_mode: wide
+  created_at: "2026-06-10"
+
+inputs:
+  source_refs:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - .agents/skills/review-fix-convergence-governance/SKILL.md
+    - .agents/skills/spec-authority-governance/SKILL.md
+    - docs/reference/specification-workflow-reference.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-review-obsidian-commondb-contract-integration-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    - artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-006
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-008
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-009
+  changed_paths_reviewed:
+    - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-review-obsidian-commondb-contract-integration-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+  review_record_path: artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+  requirement_ids:
+    - REQ-OCI-001
+    - REQ-OCI-002
+    - REQ-OCI-003
+    - REQ-OCI-004
+    - REQ-OCI-005
+    - REQ-OCI-006
+    - REQ-OCI-007
+    - REQ-OCI-008
+    - personal-mac-workflow-app-spec.md#REQ-006
+    - personal-mac-workflow-app-spec.md#REQ-008
+    - personal-mac-workflow-app-spec.md#REQ-009
+  context_expansion: []
+
+checks:
+  - name: spec_what_not_how
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#non-goals
+    notes: "The specification states behavior, authority, gates, acceptance criteria, and non-goals; implementation details are confined to lane map and implementation policy records."
+  - name: eligibility_and_permission_boundaries
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md#requirements
+    notes: "approved_memo/useful_source eligibility, search permission versus searchability approval, bounded destination scope, preview/audit refs, no raw body/storage, Obsidian optionality, write-back gate, completion guard, and scope guard are observable."
+  - name: destination_scope_human_gate
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-obsidian-commondb-contract-integration-20260609.yaml#unresolved_questions
+    notes: "Destination scope remains carried as OQ-OCI-002 and is not treated as approved."
+  - name: external_operation_gates
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml#human_gate
+    notes: "Live CommonDB search/indexing/searchable migration, Obsidian vault read/write, external writes, secrets, protected Git, deploy, dependency, infrastructure, and CI/CD remain human-gated."
+  - name: external_completion_assertion_boundary
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml#unverified_surfaces
+    notes: "External Obsidian/CommonDB completion is carried as user_assertion only; the records do not claim external repo verification."
+  - name: manifest_refs_exist
+    result: passed
+    evidence_ref: local_command:2026-06-10-manifest-ref-existence
+    notes: "All refs listed in artifact/workflow-ui-commondb-20260608/manifest.yaml exist relative to the artifact project root."
+  - name: lane_map_check_lanes_compatibility
+    result: failed
+    evidence_ref: local_command:2026-06-10-make-check-lanes
+    notes: "make check-lanes reported that lane-map handoff.next_action must be one of complete, continue, review, or rework; the current value is implementation_lane_assignment."
+
+findings:
+  - id: REV-OCI-001
+    severity: high
+    type: verification_gap
+    summary: "The Obsidian/CommonDB lane map is not check-lanes compatible."
+    related_ids:
+      - INC-005
+    source_refs:
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#handoff
+      - local_command:2026-06-10-make-check-lanes
+    recommendation: "Rework the lane-map handoff.next_action to an allowed checker value, likely continue for planned implementation assignment, while preserving the human review or assignment detail in a separate note or handoff field."
+
+verification_results:
+  - check: yaml_parse_reviewed_records
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "Parsed spec review, approved freeze, lane map, implementation policy, final handoff, and manifest with PyYAML before this review record was written."
+  - check: manifest_refs_exist
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "All refs listed in artifact/workflow-ui-commondb-20260608/manifest.yaml exist relative to artifact/workflow-ui-commondb-20260608."
+  - check: git_diff_check_before_review_record
+    command: git diff --check
+    result: passed
+    notes: "No whitespace errors were reported before this review record was written."
+  - check: git_diff_check_after_review_record
+    command: git diff --check
+    result: passed
+    notes: "No whitespace errors were reported after this review record was written."
+  - check: make_check_lanes
+    command: make check-lanes
+    result: failed
+    notes: "Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml: handoff.next_action must be one of ['complete', 'continue', 'review', 'rework']."
+  - check: implementation_tests
+    command: not run
+    result: not_applicable
+    notes: "Records-only review; no implementation behavior changed."
+
+human_gate:
+  required: true
+  status: required_for_live_or_write_operations
+  notes: "This review did not approve live CommonDB search/indexing/searchable migration, Obsidian vault read/write or write-back, external writes, protected Git, secrets, dependency, infrastructure, CI/CD, deployment, release, or merge."
+
+verdict:
+  status: rework
+  reason: "Records preserve the main behavior and safety boundaries, but the lane-map next_action fails the required check-lanes compatibility verification."
+  required_rework:
+    - finding_id: REV-OCI-001
+      action: "Make the lane-map handoff.next_action check-lanes compatible and rerun make check-lanes."
+  residual_risk_refs:
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml#residual_risk

@@ -1,0 +1,105 @@
+schema_version: "0.1"
+record_type: final_handoff_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  created_at: "2026-06-09T16:56:22Z"
+
+summary: "Integrated the Obsidian/CommonDB contract integration review and rework records into inconsistency, traceability, convergence, and final handoff records without starting implementation or live external operations."
+changed_paths:
+  - artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/traceability/obsidian-commondb-contract-integration-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-convergence-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/manifest.yaml
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - .agents/skills/review-fix-convergence-governance/SKILL.md
+  - docs/reference/specification-workflow-reference.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+  - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
+  - artifact/workflow-ui-commondb-20260608/manifest.yaml
+context_scope_ref: "not_applicable_records_only"
+change_impact_ref: "artifact/workflow-ui-commondb-20260608/output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml"
+traceability_matrix_ref: "artifact/workflow-ui-commondb-20260608/output/traceability/obsidian-commondb-contract-integration-20260610.yaml"
+convergence_decision_ref: "artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-convergence-20260610.yaml"
+audit_trail_index_ref: "not_applicable"
+review_refs:
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+verification_refs:
+  - local_command:2026-06-10-yaml-parse
+  - local_command:2026-06-10-manifest-refs-exist
+  - local_command:2026-06-10-make-check-review-convergence
+  - local_command:2026-06-10-make-check-lanes
+  - local_command:2026-06-10-git-diff-check
+verification_results:
+  - check: yaml_parse
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "Parsed the four new records and manifest with PyYAML."
+  - check: manifest_refs_exist
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "All refs listed in artifact/workflow-ui-commondb-20260608/manifest.yaml exist relative to the artifact root."
+  - check: req_ac_traceability_ids
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "Traceability contains REQ-OCI-001 through REQ-OCI-008 and AC-OCI-001 through AC-OCI-029."
+  - check: make_check_review_convergence
+    command: make check-review-convergence
+    result: passed
+    notes: "review convergence check: passed."
+  - check: make_check_lanes
+    command: make check-lanes
+    result: passed
+    notes: "lane map check: passed (6 lane-map files, 2 workflow files)."
+  - check: git_diff_check
+    command: git diff --check
+    result: passed
+    notes: "No whitespace errors were reported."
+  - check: implementation_tests
+    command: "not run"
+    result: not_applicable
+    notes: "Records-only convergence and final handoff; no implementation behavior changed."
+
+completion:
+  decision: complete_with_residual_risk
+  reason: "Records-only convergence is complete: REV-OCI-001 is closed, no open critical/high inconsistency remains, and REQ/AC traceability records explicit evidence plus implementation and live-operation gaps."
+
+human_gate:
+  required: true
+  status: required
+  reason: "Live CommonDB search/indexing/searchable migration, searchability execution, Obsidian vault read/write or write-back, external writes, protected Git, merge, deployment, release, dependency, infrastructure, CI/CD, and secret handling remain human-gated."
+
+carryover:
+  residual_risk_ref: "artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml"
+  next_goal_seed:
+    problem: "Human final review should decide whether to assign the planned contract-integration implementation lane or amend the contract for live CommonDB/Obsidian operations."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-convergence-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/traceability/obsidian-commondb-contract-integration-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml
+  recommended_next_action: human_review_required
+
+unverified_surfaces:
+  - "Implementation is unstarted; no source code or implementation tests changed in this records-only phase."
+  - "Implementation tests are not_applicable/skipped for this records-only convergence pass."
+  - "External Obsidian/CommonDB side completion is carried only as user_assertion:2026-06-09-obsidian-commondb-side-complete and was not independently verified."
+  - "No live CommonDB search, CommonDB indexing, searchable migration, searchability execution, Obsidian vault read/write, Obsidian write-back, external writes, protected Git, merge, deployment, release, dependency, infrastructure, CI/CD, or secret handling was performed."
+
+residual_risk:
+  - "Future implementation must prove runtime behavior for REQ-OCI-001 through REQ-OCI-008 and AC-OCI-001 through AC-OCI-029 with targeted tests before claiming implementation completion."
+  - "Future live operation requires a separate human-approved gate and must not treat user assertions as verified external state."
+  - "Search permission and searchability approval separation, raw/protected content exclusion, Workflow Core authority, and audit evidence boundaries must remain preserved in any later implementation."

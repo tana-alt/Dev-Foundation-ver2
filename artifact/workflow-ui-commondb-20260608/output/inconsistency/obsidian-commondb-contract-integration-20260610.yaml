@@ -1,0 +1,53 @@
+schema_version: "0.1"
+record_type: inconsistency_register
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  register_id: inconsistency-obsidian-commondb-contract-integration-20260610
+  created_at: "2026-06-09T16:56:22Z"
+
+scope:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+  source_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+    - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+
+items:
+  - id: INC-OCI-001
+    type: verification_gap
+    severity: high
+    status: resolved
+    summary: "Cross-review finding REV-OCI-001 reported that the lane-map handoff.next_action was not check-lanes compatible."
+    requirement_ids:
+      - REQ-OCI-008
+    affected_lanes:
+      - contract-integration
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-cross-review-20260610.yaml#REV-OCI-001
+      - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml#FIX-OCI-001
+      - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml#closure
+    required_resolution: "Use a check-lanes compatible lane-map handoff.next_action while preserving planned implementation assignment as a non-terminal next step."
+    owner_lane: contract-integration
+    human_decision_required: false
+    rework_ref: artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+    closure:
+      review_finding_id: REV-OCI-001
+      fix_id: FIX-OCI-001
+      fix_review_status: closed
+      resolved_by_refs:
+        - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml#handoff
+        - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml
+      verification_ref: artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-fix-review-20260610.yaml#verification_results
+      residual_risk:
+        - "Implementation remains unstarted; this closure only covers lane-map checker compatibility."
+        - "Live CommonDB, Obsidian, external write, protected Git, dependency, CI/CD, deployment, release, and secret-handling surfaces remain human-gated and unverified."
+
+handoff:
+  open_critical_or_high: false
+  next_action: convergence_check

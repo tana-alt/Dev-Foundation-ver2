@@ -1,0 +1,111 @@
+schema_version: "0.1"
+record_type: implementation_policy_record
+status: active
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  lane: contract-integration
+  policy_id: obsidian-commondb-contract-integration-20260609-contract
+  created_at: "2026-06-09"
+
+scope:
+  behavior_authority_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+  requirement_ids:
+    - REQ-OCI-001
+    - REQ-OCI-002
+    - REQ-OCI-003
+    - REQ-OCI-004
+    - REQ-OCI-005
+    - REQ-OCI-006
+    - REQ-OCI-007
+    - REQ-OCI-008
+  implementation_policy_refs:
+    - src/workflow_adapters/commondb_context_adapter.py
+    - tests/workflow_adapters/test_commondb_context_adapter.py
+    - src/workflow_ui/fixtures.py
+    - tests/workflow_ui/test_console.py
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+  denied_context:
+    - unrelated_spec_sections
+    - unrelated_project_logs
+    - broad_repo_scan
+    - runtime_state
+    - secrets
+    - raw_memo_bodies
+    - raw_thread_bodies
+    - raw_source_bodies
+    - raw_terminal_logs
+    - browser_sessions
+    - vault_internals
+    - corpus_internals
+    - qdrant_internals
+    - local_paths
+    - vectors
+    - embeddings
+
+authority_boundary:
+  behavior_authority: approved_spec_ref_only
+  policy_role: how_guidance_only
+  state_authority: workflow_core_only
+  must_not_redefine:
+    - requirement_statement
+    - acceptance_criteria
+    - user_visible_behavior
+    - public_contract
+    - data_contract
+    - trust_boundary
+    - human_gate
+    - out_of_scope_surface
+    - completion_gate
+
+policy:
+  coding_conventions:
+    - "Follow nearby adapter, fixture, console, and test style if this planned lane is later assigned."
+    - "Prefer explicit status fields for allowed, blocked, rejected, skipped, and not-applicable states."
+    - "Keep records deterministic and inspectable from targeted tests."
+  allowed_choices:
+    - "Represent source intent as bounded refs, summaries, decisions, and evidence refs."
+    - "Represent search permission and searchability approval as separate local contract states."
+    - "Represent Obsidian optionality and write-back denial as explicit local states."
+    - "Extend local fixtures or console surfaces only as needed to expose approved contract state."
+    - "Add or update targeted tests for source intent, eligibility, permission separation, bounded snippets, blocked states, authority preservation, and audit refs."
+  forbidden_choices:
+    - "Do not run, add, or simulate live CommonDB search as a completed external operation."
+    - "Do not add CommonDB indexing, searchable migration, or vector payload persistence."
+    - "Do not read from or write to an Obsidian vault."
+    - "Do not add Obsidian write-back."
+    - "Do not store raw memo bodies, raw thread bodies, raw source bodies, raw terminal logs, browser sessions, credentials, tokens, secrets, vault/corpus/qdrant internals, local paths, vectors, or embeddings."
+    - "Do not let CommonDB or Obsidian approve contracts, satisfy verification, approve handoff, approve scope amendments, or mark completion."
+    - "Do not change the approved specification through implementation policy."
+
+verification:
+  required:
+    - "Run the smallest targeted tests covering changed adapter, fixture, or console behavior."
+    - "Inspect changed paths for denied raw/protected content and live-operation side effects."
+    - "Confirm allowed write targets were not exceeded."
+    - "Record skipped, blocked, or not-applicable verification with reason and residual risk."
+  evidence_required:
+    - changed_paths
+    - verification_results
+    - allowed_write_target_check
+    - human_gate_status
+    - live_common_db_operation_status
+    - obsidian_write_back_status
+    - residual_risk
+
+human_gates:
+  live_common_db_search: required
+  common_db_indexing_or_searchable_migration: required
+  obsidian_vault_read_or_write: required
+  obsidian_write_back: required
+  external_writes: required
+  merge_deploy_or_protected_git: required
+  dependency_infrastructure_or_ci_cd_change: required
+  secret_handling: required
+
+handoff:
+  next_action: build_when_assigned

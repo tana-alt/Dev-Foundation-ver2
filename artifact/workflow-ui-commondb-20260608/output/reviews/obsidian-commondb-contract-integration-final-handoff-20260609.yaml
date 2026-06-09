@@ -1,0 +1,125 @@
+schema_version: "0.1"
+record_type: final_handoff_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609
+  created_at: "2026-06-09"
+
+summary: "Created records-only Obsidian/CommonDB contract integration specification, review, freeze, lane map, implementation policy, manifest refs, and final handoff while leaving implementation and live external operations unstarted."
+
+changed_paths:
+  - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-review-obsidian-commondb-contract-integration-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+  - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/manifest.yaml
+
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - docs/reference/specification-workflow-reference.md
+  - docs/reference/packet-evidence-and-rework-reference.md
+  - templates/specification-packet.yaml
+  - templates/specification-review-record.yaml
+  - templates/implementation-policy-record.yaml
+  - templates/parallel-lane-map.yaml
+  - artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-006
+  - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-008
+  - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-009
+  - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-final-handoff-20260609.yaml
+  - src/workflow_adapters/commondb_context_adapter.py
+  - tests/workflow_adapters/test_commondb_context_adapter.py
+  - user_assertion:2026-06-09-obsidian-commondb-side-complete
+
+artifact_refs:
+  spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-obsidian-commondb-contract-integration-20260609.yaml
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-obsidian-commondb-contract-integration-20260609.yaml
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+  implementation_policy_ref: artifact/workflow-ui-commondb-20260608/output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
+  manifest_ref: artifact/workflow-ui-commondb-20260608/manifest.yaml
+
+spec_verdict:
+  decision: approved_for_records_only_freeze
+  reason: "REQ-OCI-001 through REQ-OCI-008 cover source intent, approved_memo/useful_source eligibility, search permission versus searchability approval separation, bounded refs/snippets, Obsidian optionality/write-back gate, rejection/blocked states, completion/scope guard, audit/evidence refs, and no raw body/storage constraints."
+  behavior_authority: approved_spec_ref_only
+  implementation_policy_role: how_guidance_only
+  state_authority: workflow_core_only
+
+next_implementation_lane_summary:
+  lane: contract-integration
+  status: planned
+  owner: unassigned
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-obsidian-commondb-contract-integration-20260609.yaml
+  allowed_write_targets:
+    - src/workflow_adapters/commondb_context_adapter.py
+    - tests/workflow_adapters/test_commondb_context_adapter.py
+    - src/workflow_ui/fixtures.py
+    - tests/workflow_ui/test_console.py
+    - artifact/workflow-ui-commondb-20260608/evidence/
+    - artifact/workflow-ui-commondb-20260608/output/reviews/
+  implementation_must_not_start_without_assignment: true
+
+verification_results:
+  - check: yaml_parse_new_records
+    command: "python3 - <<'PY' ..."
+    result: passed
+    evidence_ref: local_command:2026-06-09-yaml-parse-new-records
+    notes: "Parsed manifest, spec review, approved freeze, lane map, implementation policy, and this final handoff record with PyYAML."
+  - check: manifest_refs_exist
+    command: "python3 - <<'PY' ..."
+    result: passed
+    evidence_ref: local_command:2026-06-09-manifest-ref-existence
+    notes: "Manifest evidence/output refs exist after final handoff creation; Plan lane-map ref is outside artifact manifest and exists separately."
+  - check: template_marker_scan
+    command: "rg template-marker pattern over changed records"
+    result: passed
+    evidence_ref: local_command:2026-06-09-template-marker-scan
+    notes: "No template-marker matches were reported for changed records."
+  - check: git_diff_check
+    command: git diff --check
+    result: passed
+    evidence_ref: local_command:2026-06-09-git-diff-check
+    notes: "No whitespace errors were reported."
+  - check: implementation_tests
+    command: "not run"
+    result: not_applicable
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/reviews/obsidian-commondb-contract-integration-final-handoff-20260609.yaml
+    notes: "This phase created records only and intentionally did not implement code."
+
+human_gate:
+  required: true
+  status: required_for_next_live_or_write_operations
+  reason: "Live CommonDB search/indexing/searchable migration, searchability execution, Obsidian vault read/write or write-back, external writes, protected Git, merge, deploy, release, dependency, infrastructure, CI/CD, and secret handling remain human-gated."
+
+open_questions:
+  - id: OQ-OCI-001
+    status: carried
+    question: "Which exact external Obsidian/CommonDB source-ref vocabulary will be approved for live use?"
+  - id: OQ-OCI-002
+    status: carried
+    question: "Which destination scopes will be approved if searchability execution is later requested?"
+  - id: OQ-OCI-003
+    status: carried
+    question: "What transformed output, if any, may be written back to Obsidian in a later human-approved contract?"
+
+unverified_surfaces:
+  - "External Obsidian/CommonDB repository state was not inspected; external completion is carried only as user_assertion:2026-06-09-obsidian-commondb-side-complete."
+  - "No live CommonDB search, indexing, searchable migration, Obsidian vault read/write, Obsidian write-back, or external writes were performed."
+  - "No implementation tests were run because this task intentionally created records only."
+
+residual_risk:
+  - "Future implementation must preserve the separation between search permission and searchability approval."
+  - "Future implementation must continue to reject raw memo bodies, storage internals, local paths, vectors, embeddings, browser sessions, raw logs, and secrets."
+  - "External source-ref vocabulary and destination-scope policy need a human-approved follow-up before live integration."
+
+completion:
+  decision: complete_with_residual_risk
+  next_action: implementation_lane_assignment_after_human_review
