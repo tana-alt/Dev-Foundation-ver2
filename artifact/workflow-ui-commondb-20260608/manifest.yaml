@@ -20,6 +20,9 @@ sections:
     - evidence/spec-review-personal-mac-workflow-app-20260609.yaml
     - evidence/approved-spec-freeze-personal-mac-workflow-app-20260609.yaml
     - evidence/build-result-personal-mac-workflow-app-20260609.yaml
+    - evidence/spec-review-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+    - evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+    - evidence/commondb-mcp-config-audit-20260610.yaml
   output:
     - output/docs/external-facing-overview.md
     - output/docs/workflow-core-state-model.md
@@ -29,10 +32,12 @@ sections:
     - output/specs/personal-mac-workflow-app-spec.md
     - output/specs/app-server-thread-alignment-backend-spec.md
     - output/specs/obsidian-commondb-contract-integration-spec.md
+    - output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
     - output/workflows/codex-app-vertical-integration-20260609.yaml
     - output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml
     - output/implementation-policies/personal-mac-workflow-app-20260609/appkit-shell.yaml
     - output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
+    - output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
     - output/inconsistency/app-server-thread-alignment-backend-20260609.yaml
     - output/inconsistency/personal-mac-workflow-app-20260609.yaml
     - output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml
@@ -53,6 +58,12 @@ sections:
     - output/reviews/personal-mac-workflow-app-cross-review-pasteur-20260609.yaml
     - output/reviews/personal-mac-workflow-app-fix-review-20260609.yaml
     - output/reviews/personal-mac-workflow-app-convergence-20260609.yaml
+    - output/reviews/local-only-app-deploy-and-mcp-dry-run-design-handoff-20260610.yaml
+    - output/reviews/commondb-mcp-config-audit-20260610.yaml
+    - output/reviews/local-only-app-deploy-and-mcp-dry-run-cross-review-20260610.yaml
+    - output/reviews/local-only-app-deploy-and-mcp-dry-run-cross-review-manifest-fix-20260610.yaml
+    - output/reviews/local-only-app-deploy-and-mcp-dry-run-manifest-fix-review-20260610.yaml
+    - output/reviews/local-only-app-deploy-and-mcp-dry-run-manifest-completeness-review-20260610.yaml
     - output/traceability/personal-mac-workflow-app-20260609.yaml
     - output/designs/personal-mac-workflow-app-direction-b.png
     - output/demos/demo-foundation-overview/README.md

@@ -1,0 +1,291 @@
+schema_version: "0.1"
+record_type: parallel_lane_map
+status: active
+
+identity:
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610
+  project_id: workflow-ui-commondb-20260608
+  created_at: "2026-06-10"
+
+governance:
+  map_owner: agent
+  update_rule: "Main lane coordinates later worker dispatch through records only. This map is not a runtime queue, lock ledger, scheduler, worker heartbeat, dashboard, or worktree inventory."
+  context_budget:
+    required_source_refs_per_lane_max: 6
+    deny_broad_repo_scan: true
+
+git_scope:
+  mode: parallel
+  base_ref: origin/main
+  merge_target: origin/main
+  conflict_policy: explicitly_scoped
+  sibling_branch_refs: []
+
+spec_scope:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  requirement_ids:
+    - REQ-LD-001
+    - REQ-LD-002
+    - REQ-LD-003
+    - REQ-LD-004
+    - REQ-LD-005
+    - REQ-LD-006
+
+lanes:
+  - lane: config-mcp-enable
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610/config-mcp-enable/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610-config-mcp-enable"
+    task_intent: "Prepare a human-gated local MCP config change plan for dry-run-only `commondb.search` enablement, without editing config until the exact target and rollback are approved."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+    requirement_ids:
+      - REQ-LD-004
+      - REQ-LD-006
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - secrets
+      - raw_thread_bodies
+      - raw_memo_bodies
+      - raw_source_bodies
+      - local_paths
+      - browser_sessions
+      - terminal_logs
+      - vector_payloads
+      - embeddings
+      - qdrant_internals
+      - broad_repo_scan
+    expected_outputs:
+      - "A config-target proposal naming the exact local-only config surface, rollback, and dry-run-only `commondb.search` boundary, with config mutation blocked until human approval."
+    verification_required:
+      - "Confirm no config file was edited unless a later human-approved lane contract names the exact local target."
+      - "Confirm only `commondb.search` is in scope and Qdrant remains disabled/not used."
+    handoff_evidence_required:
+      - source_refs
+      - allowed_write_target_check
+      - human_gate_status
+      - qdrant_disabled_status
+      - dry_run_only_status
+      - residual_risk
+
+  - lane: local-app-deploy
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610/local-app-deploy/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610-local-app-deploy"
+    task_intent: "Prepare and verify local-only personal app build/deploy readiness without public network exposure, launch agents, system install, release, or notarization."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+      - app/PersonalWorkflowApp/Package.swift
+      - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/PersonalWorkflowApp.swift
+      - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+    requirement_ids:
+      - REQ-LD-001
+      - REQ-LD-002
+      - REQ-LD-006
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+    allowed_write_targets:
+      - app/PersonalWorkflowApp/
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - secrets
+      - public_deploy_credentials
+      - runtime_state
+      - local_runtime_logs
+      - browser_sessions
+      - broad_repo_scan
+    expected_outputs:
+      - "Local-only build/deploy readiness evidence, rollback note, and explicit blocked status for install until the human approves the exact user-local destination."
+    verification_required:
+      - "Build or prepare only the PersonalWorkflowApp local artifact when the lane is later assigned."
+      - "Confirm no public network listener, public tunnel, LaunchAgent, daemon, login item, auto-start, system /Applications install, release, notarization, dependency, CI/CD, or infrastructure change occurred."
+      - "Record rollback steps for removing the local app artifact and approved local-only config."
+    handoff_evidence_required:
+      - source_refs
+      - changed_paths
+      - allowed_write_target_check
+      - local_only_deploy_status
+      - rollback_status
+      - human_gate_status
+      - residual_risk
+
+  - lane: e2e-link-check
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610/e2e-link-check/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610-e2e-link-check"
+    task_intent: "Verify local app launch, primary window rendering, Codex App opaque/pending/blocked link safety, CommonDB controls, and denied-content absence."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+      - app/PersonalWorkflowApp/Package.swift
+      - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+      - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+    requirement_ids:
+      - REQ-LD-003
+      - REQ-LD-006
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+    allowed_write_targets:
+      - app/PersonalWorkflowApp/
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - raw_thread_bodies
+      - raw_memo_bodies
+      - raw_source_bodies
+      - credentials
+      - tokens
+      - cookies
+      - browser_sessions
+      - local_paths
+      - terminal_logs
+      - vector_payloads
+      - embeddings
+      - qdrant_internals
+      - broad_repo_scan
+    expected_outputs:
+      - "E2E/link evidence proving app launch and primary window render, safe Codex link state, visible CommonDB controls, and denied-content absence."
+    verification_required:
+      - "Launch the local app in the smallest available local check for the assigned environment."
+      - "Check primary window render, Codex App link button state and opaque URL/ref behavior, CommonDB controls visibility, and pending/blocked state for unavailable links."
+      - "Inspect UI output for absence of secrets, raw bodies, local paths, vector payloads, embeddings, Qdrant internals, and raw risky payloads."
+    handoff_evidence_required:
+      - source_refs
+      - changed_paths
+      - e2e_launch_result
+      - codex_link_check_result
+      - ui_denied_content_absence_result
+      - verification_results
+      - residual_risk
+
+  - lane: security-dry-run
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610/security-dry-run/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610-security-dry-run"
+    task_intent: "Verify fake security-risk `commondb.search` dry-run output is blocked or redacted before agent consumption and cannot become authority."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+      - .agents/skills/security-check/SKILL.md
+    requirement_ids:
+      - REQ-LD-004
+      - REQ-LD-005
+      - REQ-LD-006
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - real_secrets
+      - exploit_payloads
+      - credentials
+      - tokens
+      - cookies
+      - raw_risky_payloads
+      - raw_thread_bodies
+      - raw_memo_bodies
+      - raw_source_bodies
+      - local_paths
+      - vector_payloads
+      - embeddings
+      - qdrant_internals
+      - broad_repo_scan
+    expected_outputs:
+      - "Security dry-run evidence using only fake non-secret risk content, proving blocked/redacted agent-visible output and non-authoritative advisory status."
+    verification_required:
+      - "Use dry-run only; do not perform live MCP search or external writes."
+      - "Confirm fake risk output is blocked or redacted before agent consumption."
+      - "Confirm output cannot authorize scope, prompts, contracts, verification, handoff, completion, or side effects."
+      - "Confirm raw risky payloads, secrets, local paths, vectors, embeddings, and Qdrant internals are absent from records, UI, logs, and handoff."
+    handoff_evidence_required:
+      - source_refs
+      - dry_run_result
+      - blocked_or_redacted_status
+      - agent_authority_status
+      - denied_content_absence_result
+      - human_gate_status
+      - residual_risk
+
+  - lane: review-convergence
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610/review-convergence/review"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610-review-convergence"
+    task_intent: "Review lane outputs for spec conformance, blocked human gates, allowed-target compliance, verification evidence, and residual risk before final human handoff."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+      - artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+    requirement_ids:
+      - REQ-LD-001
+      - REQ-LD-002
+      - REQ-LD-003
+      - REQ-LD-004
+      - REQ-LD-005
+      - REQ-LD-006
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+      - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    denied_context:
+      - secrets
+      - raw_thread_bodies
+      - raw_memo_bodies
+      - raw_source_bodies
+      - local_paths
+      - browser_sessions
+      - terminal_logs
+      - vector_payloads
+      - embeddings
+      - qdrant_internals
+      - broad_repo_scan
+    expected_outputs:
+      - "Review/convergence record with spec verdict, lane evidence refs, blocked gates, verification results, unverified surfaces, and residual risk."
+    verification_required:
+      - "Validate YAML records and manifest refs."
+      - "Run make check-lanes when lane maps are present."
+      - "Run git diff --check."
+      - "Confirm implementation lanes did not exceed allowed write targets or bypass human gates."
+    handoff_evidence_required:
+      - source_refs
+      - changed_paths
+      - allowed_write_target_check
+      - verification_results
+      - spec_verdict
+      - human_gate_status
+      - residual_risk
+
+handoff:
+  evidence_required:
+    - source_refs
+    - changed_paths
+    - allowed_write_target_check
+    - branch_worktree_ownership
+    - verification_results
+    - review_results
+    - human_gate_status
+    - residual_risk
+  next_action: continue

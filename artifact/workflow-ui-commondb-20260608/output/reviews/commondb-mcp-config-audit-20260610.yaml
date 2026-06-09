@@ -1,0 +1,58 @@
+schema_version: "0.1"
+record_type: config_audit_review
+status: blocked_pending_config
+project_id: workflow-ui-commondb-20260608
+review_id: commondb-mcp-config-audit-20260610
+created_at: "2026-06-10"
+reviewer: config-audit
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - .agents/skills/security-check/SKILL.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  - artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md
+evidence_ref: artifact/workflow-ui-commondb-20260608/evidence/commondb-mcp-config-audit-20260610.yaml
+findings:
+  - id: CONFIG-LOCATION-001
+    severity: info
+    finding: "$HOME/codex.toml is missing; $HOME/.codex/config.toml exists and is the observed active candidate."
+  - id: MCP-COMMONDB-001
+    severity: blocking
+    finding: "commondb.search MCP was not observed in the redacted config structure."
+    required_action: "Add commondb.search to $HOME/.codex/config.toml only after human approval and without recording secret-bearing values."
+  - id: QDRANT-001
+    severity: caution
+    finding: "Qdrant was not observed in the redacted config structure; runtime enabled state remains unknown."
+    required_action: "Keep Qdrant treated as disabled/unknown until an explicitly approved no-secret status check or enablement gate exists."
+  - id: DRY-RUN-001
+    severity: blocking
+    finding: "The fake security-risk dry_run search cannot be executed until commondb.search is configured and a dry_run/no-secret call is clearly available."
+    required_action: "Use the bounded dry_run request shape from evidence and expect blocked/error with no agent-visible raw context."
+decision:
+  commondb_search_status: not_configured
+  qdrant_status: unknown_not_observed_in_config
+  required_action: "Configure commondb.search MCP in $HOME/.codex/config.toml with redacted, owner-approved command/env shape; do not edit config in this audit."
+  dry_run_test_plan: "After config, issue dry_run=true fake security-risk lookup with sanitized source_refs, zero snippets, denied raw bodies/local paths/qdrant internals/vectors/embeddings/logs/tokens/secrets, and accept only blocked/error or redacted metadata."
+verification:
+  result: blocked
+  passed_checks:
+    - "Config location metadata check did not print secrets."
+    - "Config structure check printed only section/key names with values redacted."
+  blocked_checks:
+    - "Live commondb.search dry_run was not run because the MCP server is not configured/enabled."
+  skipped_checks:
+    - "Qdrant runtime status check skipped to avoid unsafe external/service probing."
+changed_paths:
+  - artifact/workflow-ui-commondb-20260608/evidence/commondb-mcp-config-audit-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/commondb-mcp-config-audit-20260610.yaml
+human_gate_status: required_before_config_edit_or_live_mcp_call
+unverified_surfaces:
+  - "Actual commondb.search server startup."
+  - "Actual CommonDB dry_run response behavior."
+  - "Qdrant runtime service state."
+residual_risk:
+  - "The active Codex configuration may have additional runtime resolution behavior not inferable from safe redacted file inspection."
+  - "A future config action could accidentally include secret-bearing command args unless reviewed before use."
+next_action: "Owner or main_lane should add the minimal commondb.search MCP config, then rerun this audit's dry_run plan with no-secret output capture."

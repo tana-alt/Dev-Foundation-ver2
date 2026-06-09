@@ -1,0 +1,140 @@
+schema_version: "0.1"
+record_type: design_handoff_record
+status: complete_with_residual_risk
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610
+  created_at: "2026-06-10"
+  worker_role: deploy-design_lane-mapper
+
+summary: "Completed records-only spec/lane/policy design for local-only PersonalWorkflowApp deploy readiness, E2E/link checks, and CommonDB `commondb.search` MCP dry-run security verification. No code, config, deploy, install, live MCP call, indexing, Obsidian write-back, or external write was performed."
+
+changed_records:
+  - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-mcp-dry-run-design-handoff-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/manifest.yaml
+
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - docs/reference/specification-workflow-reference.md
+  - .agents/skills/deploy-readiness/SKILL.md
+  - .agents/skills/security-check/SKILL.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  - app/PersonalWorkflowApp/Package.swift
+  - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/PersonalWorkflowApp.swift
+  - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+  - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+
+spec_verdict:
+  result: frozen_and_ready_for_lane_dispatch
+  basis:
+    - "Spec has observable REQ-LD-001 through REQ-LD-006 and AC-LD-001 through AC-LD-031."
+    - "Spec keeps Qdrant disabled, limits MCP scope to dry-run `commondb.search`, and blocks fake risky output from agent authority."
+    - "Spec keeps local deploy user-scoped and blocks public network, launch agents, system install, release, notarization, CI/CD, dependency, infrastructure, and external writes."
+  main_lane_implementation_authorized: false
+
+planned_lanes:
+  - lane: config-mcp-enable
+    status: planned
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    gates:
+      - mcp_config_edit
+      - live_mcp_call
+  - lane: local-app-deploy
+    status: planned
+    allowed_write_targets:
+      - app/PersonalWorkflowApp/
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    gates:
+      - local_install
+      - public_network_exposure
+      - launch_agent_or_auto_start
+      - release_notarization_distribution
+  - lane: e2e-link-check
+    status: planned
+    allowed_write_targets:
+      - app/PersonalWorkflowApp/
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    gates:
+      - external_write_from_link
+      - unsafe_ui_content
+  - lane: security-dry-run
+    status: planned
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    gates:
+      - live_mcp_call
+      - secret_or_raw_risky_payload_handling
+  - lane: review-convergence
+    status: planned
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+      - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    gates:
+      - merge
+      - protected_git
+      - final_human_review
+
+human_gates_remaining:
+  - mcp_config_edit
+  - live_mcp_call
+  - local_install
+  - searchability_or_indexing
+  - qdrant_enablement
+  - obsidian_read_write_or_write_back
+  - public_network_exposure
+  - launch_agent_daemon_login_item_or_auto_start
+  - system_applications_install
+  - release_notarization_distribution
+  - dependency_ci_cd_infrastructure_change
+  - protected_git_merge_or_external_write
+  - secret_or_secret_bearing_material_handling
+
+verification_results:
+  - check: yaml_parse
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "Parsed the spec front matter, spec review, freeze, lane map, implementation policy, design handoff, and manifest with PyYAML."
+  - check: manifest_refs_exist
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "All refs listed in artifact/workflow-ui-commondb-20260608/manifest.yaml exist relative to the artifact root."
+  - check: make_check_lanes
+    command: make check-lanes
+    result: passed
+    notes: "lane map check: passed (7 lane-map files, 2 workflow files)."
+  - check: git_diff_check
+    command: git diff --check
+    result: passed
+    notes: "No whitespace errors were reported."
+  - check: implementation_tests
+    command: "not run"
+    result: not_applicable
+    notes: "Records-only design/lane-mapping phase; code implementation is prohibited."
+
+unverified_surfaces:
+  - "No app code, MCP config, deploy packaging, local install, live MCP call, indexing, searchability migration, Obsidian read/write, or external write was performed."
+  - "E2E launch, Codex link check, CommonDB control visibility, dry-run MCP behavior, fake security-risk blocking/redaction, and Qdrant-disabled runtime checks remain for later assigned lanes."
+  - "Exact local MCP config target, exact Codex App opaque link/ref shape, and exact local user install destination remain unresolved gates."
+
+residual_risk:
+  - "Future implementation lanes must prove runtime behavior and update evidence before any completion claim."
+  - "Human approval is still required before config edits, live MCP calls, local install, searchability/indexing, Obsidian write-back, public exposure, launch agents, release, protected Git, external writes, or secret handling."
+  - "Dry-run outputs must continue to be treated as untrusted, advisory, blocked/redacted before agent consumption, and non-authoritative."
+
+next_action: main_lane_dispatch_planned_lanes_after_human_review

@@ -1,0 +1,97 @@
+schema_version: "0.1"
+record_type: fix_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610
+  review_id: local-only-app-deploy-and-mcp-dry-run-manifest-fix-review-20260610
+  reviewer_id: manifest_rework_worker
+  review_mode: fix
+  created_at: "2026-06-10"
+
+inputs:
+  source_refs:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - .agents/skills/scope-routing-governance/SKILL.md
+    - .agents/skills/traceability-gate-governance/SKILL.md
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/commondb-mcp-config-audit-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/commondb-mcp-config-audit-20260610.yaml
+  changed_paths:
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-mcp-dry-run-manifest-fix-review-20260610.yaml
+  allowed_write_targets:
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-mcp-dry-run-manifest-fix-review-20260610.yaml
+
+fix_resolution:
+  - fix_id: XR-MANIFEST-001
+    finding_id: XR-MANIFEST-001
+    status: closed
+    summary: "Listed the missing CommonDB MCP config audit evidence and review refs in the artifact manifest."
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/manifest.yaml#sections.evidence
+      - artifact/workflow-ui-commondb-20260608/manifest.yaml#sections.output
+      - artifact/workflow-ui-commondb-20260608/evidence/commondb-mcp-config-audit-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/commondb-mcp-config-audit-20260610.yaml
+
+checks:
+  - name: allowed_write_target_check
+    result: passed
+    evidence_ref: user_request#allowed_write_targets
+    notes: "This worker edited only the manifest and this fix review record."
+  - name: manifest_refs_added
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/manifest.yaml
+    notes: "The two XR-MANIFEST-001 refs are listed in their matching manifest sections."
+  - name: external_operation_boundary
+    result: passed
+    evidence_ref: user_request#task_boundary
+    notes: "No live CommonDB action, Obsidian action, config change, protected Git action, deployment, dependency change, secret handling, or external write was performed."
+
+verification_results:
+  - check: yaml_parse_changed_files
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "Parsed manifest.yaml and this fix review record with PyYAML."
+  - check: manifest_refs_existence
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "The two XR-MANIFEST-001 refs are listed in manifest.yaml and both files exist."
+  - check: make_check_lanes
+    command: make check-lanes
+    result: passed
+    notes: "lane map check: passed (7 lane-map files, 2 workflow files)."
+  - check: git_diff_check
+    command: git diff --check
+    result: passed
+    notes: "No whitespace errors were reported."
+
+human_gate:
+  required: true
+  status: not_requested_not_performed
+  notes: "Human-gated live CommonDB, Obsidian, config, protected Git, deployment, release, dependency, infrastructure, CI/CD, secret, and merge actions were out of scope and were not performed."
+
+closure:
+  finding_id: XR-MANIFEST-001
+  status: closed
+  evidence_refs:
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml#sections.evidence
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml#sections.output
+    - artifact/workflow-ui-commondb-20260608/evidence/commondb-mcp-config-audit-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/commondb-mcp-config-audit-20260610.yaml
+  notes: "XR-MANIFEST-001 is closed by manifest-listing both previously missing refs and confirming they exist."
+
+residual_risk:
+  - id: RR-XR-MANIFEST-001
+    status: none_identified
+    summary: "Records-only manifest enumeration fix; live CommonDB, Obsidian, config, protected Git, and other human-gated actions remain unperformed."
+
+verdict:
+  status: complete
+  next_action: review
+  notes: "XR-MANIFEST-001 closure is ready for review after verification results are recorded."

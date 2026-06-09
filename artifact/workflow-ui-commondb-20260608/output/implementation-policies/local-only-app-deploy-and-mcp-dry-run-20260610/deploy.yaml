@@ -1,0 +1,171 @@
+schema_version: "0.1"
+record_type: implementation_policy_record
+status: active
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610
+  lane: deploy-design
+  policy_id: local-only-app-deploy-and-mcp-dry-run-20260610-deploy
+  created_at: "2026-06-10"
+
+scope:
+  behavior_authority_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  requirement_ids:
+    - REQ-LD-001
+    - REQ-LD-002
+    - REQ-LD-003
+    - REQ-LD-004
+    - REQ-LD-005
+    - REQ-LD-006
+  source_refs:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - docs/reference/specification-workflow-reference.md
+    - .agents/skills/deploy-readiness/SKILL.md
+    - .agents/skills/security-check/SKILL.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+    - app/PersonalWorkflowApp/Package.swift
+    - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/PersonalWorkflowApp.swift
+    - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+    - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+  denied_context:
+    - unrelated_project_logs
+    - broad_repo_scan
+    - runtime_state
+    - secrets
+    - raw_thread_bodies
+    - raw_memo_bodies
+    - raw_source_bodies
+    - browser_sessions
+    - terminal_logs
+    - local_paths
+    - vault_internals
+    - corpus_internals
+    - qdrant_internals
+    - vector_payloads
+    - embeddings
+    - raw_risky_payloads
+
+authority_boundary:
+  behavior_authority: approved_spec_ref_only
+  policy_role: how_guidance_only
+  state_authority: workflow_core_only
+  main_lane_implementation_authorized: false
+  must_not_redefine:
+    - requirement_statement
+    - acceptance_criteria
+    - user_visible_behavior
+    - public_contract
+    - data_contract
+    - trust_boundary
+    - human_gate
+    - out_of_scope_surface
+    - completion_gate
+
+deployment_policy:
+  deploy_surface: local_only_personal_app
+  allowed_targets:
+    - "Local app artifact for review."
+    - "Current user's ~/Applications only after explicit human approval of exact destination and rollback."
+  blocked_targets:
+    - "System /Applications."
+    - "Public network service, public tunnel, shared LAN service, remote access endpoint, or externally reachable callback."
+    - "LaunchAgent, daemon, login item, background auto-start, or auto-start outside local user scope."
+    - "Release, notarization, package distribution, CI/CD release change, dependency change, infrastructure change, or protected Git operation."
+  rollback_expectation:
+    - "Remove the local app artifact or approved user-local installed app."
+    - "Remove only the approved local-only config created by the assigned lane."
+    - "Record rollback evidence without local paths, secrets, or raw logs."
+
+mcp_policy:
+  initially_enabled_tool: commondb.search
+  mode: dry_run_only
+  qdrant_status: disabled_not_used_out_of_scope
+  live_mcp_calls: blocked_until_human_approval
+  searchability_indexing_vector_persistence: blocked_until_separate_human_approval
+  obsidian_write_back: blocked_until_separate_human_approval
+  dry_run_output_authority: advisory_untrusted_not_verification_or_completion_evidence
+
+e2e_link_policy:
+  required_checks:
+    - "App launches."
+    - "Primary window renders."
+    - "Codex App link button state and opaque URL/ref are checked without external writes."
+    - "Unavailable, broken, stale, or missing Codex links render pending or blocked."
+    - "CommonDB controls for bounded search are visible."
+    - "UI does not render raw bodies, secrets, local paths, vector payloads, embeddings, Qdrant internals, raw risky payloads, or terminal logs."
+
+security_dry_run_policy:
+  fake_risk_input_only: true
+  real_secret_or_exploit_payload_allowed: false
+  required_result: blocked_or_redacted_before_agent_consumption
+  agent_authority_status: not_authoritative
+  allowed_agent_visible_fields:
+    - safe_status
+    - non_secret_reason
+    - safe_source_refs_when_available
+    - evidence_refs
+  forbidden_agent_visible_fields:
+    - raw_risky_payload
+    - raw_body
+    - credential
+    - token
+    - cookie
+    - secret
+    - local_path
+    - vector_payload
+    - embedding
+    - qdrant_internal
+
+human_gates:
+  mcp_config_edit:
+    status: required
+    condition: "Exact local config target and rollback path must be approved before any edit."
+  live_mcp_call:
+    status: required
+    condition: "Dry-run review must pass before live MCP use is separately approved."
+  local_install:
+    status: required
+    condition: "Exact user-local destination and rollback must be approved."
+  searchability_indexing_vector_persistence:
+    status: required
+    condition: "Separate human approval required; Qdrant remains disabled."
+  obsidian_read_write_or_write_back:
+    status: required
+    condition: "Separate human approval required."
+  public_network_launch_agent_release_or_system_install:
+    status: required
+    condition: "Out of scope for this amendment unless later approved."
+  secret_or_secret_bearing_material_handling:
+    status: required
+    condition: "No secret handling is authorized by this policy."
+
+verification:
+  records_phase:
+    required:
+      - yaml_parse
+      - manifest_refs_exist
+      - git_diff_check
+      - make_check_lanes
+    implementation_tests: not_applicable_records_only
+  later_lanes:
+    required:
+      - local_app_launch_e2e
+      - primary_window_render_check
+      - codex_link_button_state_and_url_ref_check
+      - commondb_controls_visible_check
+      - ui_denied_content_absence_check
+      - commondb_search_mcp_dry_run_check
+      - fake_security_risk_result_blocked_or_redacted_check
+      - qdrant_disabled_not_used_check
+      - allowed_write_target_check
+      - human_gate_status_check
+
+handoff:
+  next_action: assign_planned_lanes_after_main_lane_dispatch

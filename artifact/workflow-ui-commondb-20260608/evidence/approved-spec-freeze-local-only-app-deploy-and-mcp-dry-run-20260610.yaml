@@ -1,0 +1,109 @@
+schema_version: "0.1"
+record_type: approved_spec_freeze
+status: frozen
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-LOCAL-ONLY-APP-DEPLOY-MCP-DRY-RUN-001
+  freeze_id: approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610
+  created_at: "2026-06-10"
+
+approval:
+  approved_by: user_request
+  approval_ref: user_request:2026-06-10-local-only-app-deploy-and-mcp-dry-run
+  approval_scope: "Records-only approved spec amendment, lane map, and implementation policy records for local-only deploy and CommonDB MCP dry-run verification."
+  implementation_authorized_for_main_lane: false
+
+spec_refs:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  amended_spec_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+
+frozen_requirement_ids:
+  - REQ-LD-001
+  - REQ-LD-002
+  - REQ-LD-003
+  - REQ-LD-004
+  - REQ-LD-005
+  - REQ-LD-006
+
+frozen_acceptance_criteria_ids:
+  - AC-LD-001
+  - AC-LD-002
+  - AC-LD-003
+  - AC-LD-004
+  - AC-LD-005
+  - AC-LD-006
+  - AC-LD-007
+  - AC-LD-008
+  - AC-LD-009
+  - AC-LD-010
+  - AC-LD-011
+  - AC-LD-012
+  - AC-LD-013
+  - AC-LD-014
+  - AC-LD-015
+  - AC-LD-016
+  - AC-LD-017
+  - AC-LD-018
+  - AC-LD-019
+  - AC-LD-020
+  - AC-LD-021
+  - AC-LD-022
+  - AC-LD-023
+  - AC-LD-024
+  - AC-LD-025
+  - AC-LD-026
+  - AC-LD-027
+  - AC-LD-028
+  - AC-LD-029
+  - AC-LD-030
+  - AC-LD-031
+
+authority_boundary:
+  behavior_authority: "Approved spec ref only."
+  implementation_policy_role: "HOW guidance for later subagent lanes only."
+  main_lane_role: "Coordinate records and dispatch subagents; do not implement."
+  qdrant_status: disabled_not_used_out_of_scope
+  mcp_initial_scope: commondb.search_dry_run_only
+
+human_gates_remaining:
+  - mcp_config_edit
+  - live_mcp_call
+  - local_install
+  - searchability_or_indexing
+  - qdrant_enablement
+  - obsidian_read_write_or_write_back
+  - public_network_exposure
+  - launch_agent_daemon_login_item_or_auto_start
+  - system_applications_install
+  - release_notarization_distribution
+  - dependency_ci_cd_infrastructure_change
+  - protected_git_merge_or_external_write
+  - secret_or_secret_bearing_material_handling
+
+verification_expectation:
+  records_phase:
+    - yaml_parse
+    - manifest_refs_exist
+    - placeholder_scan
+    - denied_content_scan
+  later_implementation_lanes:
+    - local_app_launch_e2e
+    - primary_window_render_check
+    - codex_link_button_state_and_url_ref_check
+    - commondb_controls_visible_check
+    - ui_denied_content_absence_check
+    - commondb_search_mcp_dry_run_check
+    - fake_security_risk_result_blocked_or_redacted_check
+    - qdrant_disabled_not_used_check
+
+freeze_decision:
+  result: frozen
+  next_action: lane_mapping
+
+residual_risk:
+  - "Freeze is records-only; no app code, MCP config, deploy packaging, local install, E2E, link check, or security dry-run was performed."
+  - "Exact local MCP config target, exact Codex App opaque link shape, and exact local install destination remain open gates for later lane contracts."

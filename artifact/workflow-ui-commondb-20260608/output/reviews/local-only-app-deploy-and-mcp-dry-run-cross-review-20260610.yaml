@@ -1,0 +1,113 @@
+schema_version: "0.1"
+record_type: cross_review_record
+status: rework_required
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  review_id: local-only-app-deploy-and-mcp-dry-run-cross-review-20260610
+  created_at: "2026-06-10"
+  reviewer_role: cross-review_worker
+  effort: low
+
+scope:
+  worktree: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-integration-readiness"
+  allowed_write_targets:
+    - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-mcp-dry-run-cross-review-20260610.yaml
+  write_target_status: satisfied
+  prohibited_actions_observed:
+    code_edit: false
+    config_edit: false
+    existing_record_edit: false
+    live_mcp_call: false
+    deploy_or_install: false
+
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - .agents/skills/security-check/SKILL.md
+  - .agents/skills/deploy-readiness/SKILL.md
+  - artifact/workflow-ui-commondb-20260608/evidence/commondb-mcp-config-audit-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/commondb-mcp-config-audit-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-mcp-dry-run-design-handoff-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/manifest.yaml
+
+checks:
+  - name: secret_and_raw_config_absence
+    result: passed
+    notes: "Reviewed records state metadata-only or redacted config inspection and do not include raw config contents, secret values, tokens, credentials, cookies, raw bodies, vectors, embeddings, or Qdrant internals."
+  - name: config_path_handling
+    result: passed
+    notes: "$HOME/codex.toml is recorded as missing and $HOME/.codex/config.toml as the observed active candidate without claiming more than metadata/redacted structure inspection supports."
+  - name: commondb_search_live_call_consistency
+    result: passed
+    notes: "`commondb.search` is recorded as not configured/not enabled, and the live dry_run MCP call is recorded as blocked/not run."
+  - name: qdrant_claim_boundary
+    result: passed
+    notes: "Config audit carries Qdrant runtime as unknown because no live service/MCP call was made; spec/lane/policy correctly require Qdrant disabled/not used until a later human gate."
+  - name: human_gate_preservation
+    result: passed
+    notes: "Spec, freeze, lane map, policy, and handoff preserve gates for config edit, live MCP call, local install, searchability/indexing/vector persistence, Qdrant, Obsidian, public network, LaunchAgent/daemon/login item/auto-start, system install, release/distribution, dependency/CI/CD/infrastructure changes, protected Git/external writes, and secret handling."
+  - name: local_only_deploy_expectations
+    result: passed
+    notes: "Local-only deploy spec and policy include rollback, E2E launch/render, Codex link check, CommonDB control visibility, dry_run security expectations, and no public network exposure."
+  - name: lane_map_compatibility_and_bounds
+    result: passed
+    notes: "`make check-lanes` passed; lane allowed_write_targets are bounded to the relevant app/artifact/manifest surfaces for planned lanes."
+  - name: manifest_lists_new_records
+    result: failed
+    notes: "Manifest lists the local-only spec, spec review, freeze, implementation policy, and design handoff, but does not list the CommonDB MCP config audit evidence/review records included in this review scope."
+
+findings:
+  - id: XR-MANIFEST-001
+    severity: rework
+    title: "Manifest omits CommonDB MCP config audit records"
+    evidence:
+      - artifact/workflow-ui-commondb-20260608/manifest.yaml
+      - artifact/workflow-ui-commondb-20260608/evidence/commondb-mcp-config-audit-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/commondb-mcp-config-audit-20260610.yaml
+    finding: "The manifest's existing refs resolve, but the new config audit evidence and review records are not listed under the artifact manifest sections."
+    required_action: "Add evidence/commondb-mcp-config-audit-20260610.yaml and output/reviews/commondb-mcp-config-audit-20260610.yaml to artifact/workflow-ui-commondb-20260608/manifest.yaml in an authorized manifest-fix lane."
+
+decision:
+  result: rework
+  rationale: "Security/deploy/config-boundary checks passed, and lane-map compatibility passed, but manifest completeness fails for the config audit records. This reviewer is not authorized to edit the manifest."
+
+verification:
+  - check: yaml_parse_reviewed_yaml_refs
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "Parsed 8 reviewed YAML refs with PyYAML."
+  - check: manifest_refs_existence
+    command: "python3 - <<'PY' ..."
+    result: passed
+    notes: "All refs currently listed in artifact/workflow-ui-commondb-20260608/manifest.yaml exist relative to the artifact root."
+  - check: required_scope_refs_listed_in_manifest
+    command: "python3 - <<'PY' ..."
+    result: failed
+    notes: "Missing from manifest: evidence/commondb-mcp-config-audit-20260610.yaml and output/reviews/commondb-mcp-config-audit-20260610.yaml."
+  - check: make_check_lanes
+    command: make check-lanes
+    result: passed
+    notes: "lane map check: passed (7 lane-map files, 2 workflow files)."
+  - check: git_diff_check
+    command: git diff --check
+    result: passed
+    notes: "No whitespace errors were reported after writing this review record."
+
+unverified_surfaces:
+  - "No live MCP call, Qdrant runtime check, local app launch, Codex link E2E, local install, deploy packaging, or config edit was performed in this records-only cross-review."
+  - "Exact MCP config target, Codex App opaque link/ref shape, and local user install destination remain later human-gated decisions."
+
+residual_risk:
+  - "Qdrant runtime state remains unknown; later lanes must verify without exposing internals or enabling Qdrant without approval."
+  - "Future config edits, live MCP calls, local install, searchability/indexing, Obsidian access, public exposure, system install, LaunchAgent/auto-start, protected Git actions, and secret handling remain human-gated."
+  - "Manifest completeness remains incomplete until the two config audit records are listed by an authorized lane."
+
+next_action: manifest_fix_for_config_audit_records_then_recheck

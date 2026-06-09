@@ -1,0 +1,132 @@
+schema_version: "0.1"
+record_type: config_audit_evidence
+status: completed
+project_id: workflow-ui-commondb-20260608
+worker: config-audit
+created_at: "2026-06-10"
+scope:
+  worktree: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-integration-readiness"
+  intent:
+    - "Audit before enabling commondb.search MCP."
+    - "Do not edit main_lane or local Codex config."
+    - "Do not display or record secrets."
+source_refs:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - .agents/skills/security-check/SKILL.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+  - artifact/workflow-ui-commondb-20260608/output/docs/commondb-context-adapter-contract.md
+allowed_write_targets_confirmed:
+  - artifact/workflow-ui-commondb-20260608/evidence/commondb-mcp-config-audit-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/commondb-mcp-config-audit-20260610.yaml
+git_status_before_write:
+  observed_untracked_unrelated:
+    - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+  conflict_risk: low
+config_location_check:
+  home_codex_toml:
+    path_ref: "$HOME/codex.toml"
+    status: missing
+  codex_config_toml:
+    path_ref: "$HOME/.codex/config.toml"
+    status: exists
+    type: regular_file
+    mode_observed: "rw-------"
+    size_bytes_observed: 4011
+    mtime_observed: "2026-06-09 00:46:56 local"
+    raw_contents_printed: false
+redacted_structure_check:
+  method: "Printed section names and key names only; all values replaced with <redacted>."
+  observed_mcp_servers:
+    - serena
+    - context7
+    - node_repl
+  commondb_search_match:
+    status: not_found
+    notes: "Only a project trust entry containing Obsidian-commondb matched the term; no mcp_servers commondb.search entry was observed."
+  qdrant_match:
+    status: not_found_in_config_structure
+    enabled_state: unknown
+    notes: "No qdrant key or section was observed in the redacted config structure. No live service or MCP call was made."
+minimal_config_action_if_approved:
+  status: needed
+  action: "Add a redacted commondb.search MCP server entry to $HOME/.codex/config.toml after human approval and with owner-supplied non-secret command shape."
+  constraints:
+    - "Do not use $HOME/codex.toml unless the operator intentionally creates or migrates to it."
+    - "Do not record token values, env values, raw command arguments containing secrets, or local corpus/Qdrant internals."
+    - "Keep Qdrant disabled unless a later explicit human gate approves enabling/indexing/searchability."
+safe_dry_run_security_risk_query_shape:
+  transport: "commondb.search MCP, only after configured and explicitly dry_run/no-secret."
+  request_boundary:
+    dry_run: true
+    task_query: "fake security-risk marker lookup for current workflow scope"
+    source_refs:
+      - "workflow-ui-commondb-20260608"
+      - "fake-security-risk"
+    requested_artifact_types:
+      - "sanitized_context_result"
+    limits:
+      max_snippets: 0
+      max_refs: 3
+    denied_context_categories:
+      - raw_memo_bodies
+      - raw_thread_bodies
+      - vault_paths
+      - local_paths
+      - corpus_internals
+      - qdrant_internals
+      - vectors
+      - embeddings
+      - raw_logs
+      - browser_sessions
+      - credentials
+      - tokens
+      - secrets
+  expected_result:
+    status: "blocked_or_error"
+    visible_to_agent: false
+    allowed_fields:
+      - status
+      - sanitized_source_refs
+      - non_secret_error_code
+      - non_secret_boundary_note
+    forbidden_fields:
+      - raw_body
+      - local_path
+      - qdrant_collection
+      - vector_payload
+      - embedding
+      - token
+      - secret
+verification:
+  commands:
+    - name: "metadata-only config location check"
+      result: passed
+      secrets_printed: false
+    - name: "redacted config structure check"
+      result: passed
+      secrets_printed: false
+    - name: "live commondb.search dry_run"
+      result: blocked
+      reason: "commondb.search MCP is not configured/enabled and no live MCP call was authorized."
+  yaml_parse: passed
+security_check:
+  verdict: blocked
+  risk_area:
+    - secret
+    - agent_context
+    - deployment
+  boundary: "Local Codex MCP configuration and future CommonDB context lookup."
+  checked_scope:
+    - "$HOME/codex.toml metadata/existence only"
+    - "$HOME/.codex/config.toml redacted structure only"
+    - "dry_run request shape only"
+  required_fix: "Configure commondb.search through the real Codex config path with human-approved redacted command shape, then run only dry_run/no-secret MCP validation."
+residual_risk:
+  - "Qdrant runtime state remains unknown because no live service or MCP call was made."
+  - "Exact commondb.search command/package shape is not asserted to avoid guessing or recording secret-bearing arguments."
+  - "Dry_run behavior is a plan only until the MCP server is configured and exposes a safe dry_run contract."
