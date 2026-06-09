@@ -27,8 +27,12 @@ commands:
     notes: "Pure model source typechecks after adding Foundation import for UUID."
   - command: "swift build --build-path <tmp>"
     cwd: app/PersonalWorkflowApp
-    result: carried_risk
-    notes: "SwiftPM macOS UI framework compilation did not complete within local timebox in the active Command Line Tools environment. Minimal SwiftUI also stalled, so this is recorded as environment/toolchain residual risk rather than claimed pass."
+    result: failed_environment
+    notes: "With active developer directory set to /Library/Developer/CommandLineTools, SwiftPM macOS UI framework compilation did not complete within the local timebox."
+  - command: "DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --build-path /tmp/personal-workflow-xcode-build"
+    cwd: app/PersonalWorkflowApp
+    result: passed
+    notes: "Full SwiftPM build completed successfully with the installed Xcode toolchain selected."
   - command: "make check-fast"
     cwd: "."
     result: passed
@@ -43,6 +47,6 @@ scope_checks:
 
 residual_risk:
   - id: RISK-UI-BUILD-001
-    severity: medium
-    summary: "Full SwiftPM build for macOS UI app is not proven in this local CLT environment."
-    next_check: "Run `swift build` or open as an Xcode macOS app package after full Xcode toolchain is selected."
+    severity: resolved
+    summary: "Full SwiftPM build for macOS UI app passes when Xcode developer directory is selected."
+    next_check: "Use `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build` or switch xcode-select to full Xcode before local UI builds."

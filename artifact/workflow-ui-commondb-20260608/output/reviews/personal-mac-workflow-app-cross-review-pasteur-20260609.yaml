@@ -88,4 +88,4 @@ verdict:
   status: rework_required
   reason: "Proceed after untracked files are committed and record/scope inconsistencies are fixed or explicitly carried."
   residual_risk_refs:
-    - RISK-UI-BUILD-001
+    - INC-007

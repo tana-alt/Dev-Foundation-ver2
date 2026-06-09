@@ -104,10 +104,10 @@ coverage:
     - requirement_id: NFR-UI-001
       verification_refs:
         - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
-      result: carried_risk
-      blocked_reason: "Full SwiftPM macOS UI build did not complete in the local CLT environment."
+      result: passed
+      blocked_reason: ""
       residual_risk:
-        - RISK-UI-BUILD-001
+        - "Local builds must select the installed Xcode developer directory when active xcode-select points at Command Line Tools."
   exception_cases:
     - case_id: EXC-RAW-BODY-BOUNDARY
       evidence_refs:

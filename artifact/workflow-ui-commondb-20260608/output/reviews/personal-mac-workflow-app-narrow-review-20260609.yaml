@@ -37,13 +37,13 @@ findings:
   - id: REV-001
     severity: medium
     type: verification
-    summary: "Full SwiftPM app build is not proven; local macOS UI framework compilation stalled in the CLT environment."
+    summary: "Full SwiftPM app build requires the installed Xcode developer directory rather than the active Command Line Tools directory."
     related_ids:
       - INC-001
       - RISK-UI-BUILD-001
     source_refs:
       - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
-    recommendation: "Carry as residual risk unless the next workflow installs/selects full Xcode and verifies `swift build` or an Xcode project build."
+    recommendation: "Resolved by running `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --build-path /tmp/personal-workflow-xcode-build`."
   - id: REV-002
     severity: low
     type: correctness
@@ -68,6 +68,6 @@ findings:
 
 verdict:
   status: pass_with_risk
-  reason: "The native mock UI shell covers the requested frontend/state-management surface and preserves trust boundaries, but full macOS app build remains unverified in the current toolchain."
+  reason: "The native mock UI shell builds with the Xcode toolchain and preserves trust boundaries. Remaining risk is mock-shell scope and detailed UI parity."
   residual_risk_refs:
-    - RISK-UI-BUILD-001
+    - INC-007

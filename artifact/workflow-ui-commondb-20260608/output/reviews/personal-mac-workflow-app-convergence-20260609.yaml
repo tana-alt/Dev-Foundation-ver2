@@ -16,7 +16,6 @@ inputs:
   verification_refs:
     - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
   residual_risk_refs:
-    - RISK-UI-BUILD-001
     - INC-007
 
 coverage:
@@ -37,9 +36,9 @@ open_items:
   critical_inc: 0
   high_inc: 0
   unresolved_fix: 0
-  unverified_required_checks: 1
+  unverified_required_checks: 0
 
 decision:
   status: complete_with_residual_risk
-  reason: "Mock native Mac UI shell, lane map, cross-review, rework, traceability, and fast checks are complete. Full macOS UI build is explicitly carried because the local CLT environment did not complete SwiftPM UI framework compilation; detailed Direction B parity is deferred beyond this shell slice."
+  reason: "Mock native Mac UI shell, lane map, cross-review, rework, traceability, full Xcode-toolchain SwiftPM build, and fast checks are complete. Detailed Direction B parity is deferred beyond this shell slice."
   next_action: human_review_required

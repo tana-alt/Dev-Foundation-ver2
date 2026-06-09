@@ -11,15 +11,15 @@ identity:
 items:
   - id: INC-001
     severity: medium
-    status: carried_risk
+    status: resolved
     owner_lane: appkit-shell
-    summary: "SwiftPM full build for the native macOS UI shell did not complete in the current Command Line Tools environment."
+    summary: "SwiftPM full build for the native macOS UI shell did not complete with the active Command Line Tools environment, but passed after selecting the installed Xcode toolchain."
     evidence_refs:
       - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
     rework:
-      status: completed_with_residual_risk
-      summary: "Reworked from SwiftUI to explicit AppKit shell and verified source parse plus model typecheck; full app build remains a toolchain validation gate."
-    next_decision_path: "Human review can accept mock UI shell with this residual risk, or request full Xcode project scaffolding and Xcode-based verification."
+      status: completed
+      summary: "Verified full app build with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build --build-path /tmp/personal-workflow-xcode-build`."
+    next_decision_path: "Use full Xcode developer directory for subsequent macOS UI builds."
   - id: INC-002
     severity: low
     status: resolved
@@ -89,11 +89,11 @@ items:
 handoff:
   critical_open: 0
   high_open: 0
-  medium_carried_risk:
-    - INC-001
+  medium_carried_risk: []
   low_carried_risk:
     - INC-007
   resolved:
+    - INC-001
     - INC-002
     - INC-004
     - INC-005

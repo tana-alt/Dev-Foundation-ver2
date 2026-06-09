@@ -22,10 +22,10 @@ inputs:
 
 fix_resolution:
   - fix_id: INC-001
-    status: carried_risk
+    status: resolved
     evidence_refs:
       - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
-    notes: "Reworked implementation approach and verified parse/model typecheck; full SwiftPM build remains a medium residual risk."
+    notes: "Full SwiftPM build passed after selecting the installed Xcode developer directory."
   - fix_id: INC-002
     status: resolved
     evidence_refs:

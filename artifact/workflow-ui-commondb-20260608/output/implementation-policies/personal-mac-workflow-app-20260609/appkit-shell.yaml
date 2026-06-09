@@ -14,7 +14,7 @@ spec_refs:
 
 policy:
   stack: "Native AppKit macOS shell in Swift Package form for current tool availability."
-  reason: "Personal Mac integration favors a native macOS app. Initial SwiftUI and AppKit SwiftPM builds stalled in the current Command Line Tools environment, so the implemented shell uses explicit AppKit views and verification records carry full app build as residual risk."
+  reason: "Personal Mac integration favors a native macOS app. Initial builds stalled while the active developer directory pointed at Command Line Tools; the same package builds with the installed Xcode developer directory selected."
   constraints:
     - "Use mock data only for first shell."
     - "No live Codex App Server operations."
@@ -26,7 +26,7 @@ verification:
   required:
     - "swiftc parse for app/PersonalWorkflowApp source."
     - "swiftc typecheck for pure model source."
-    - "swift build from app/PersonalWorkflowApp when local macOS UI framework compilation can complete."
+    - "DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build from app/PersonalWorkflowApp."
     - "Inspect code for raw body/secret/runtime-state markers."
     - "make check-fast before PR update."
 
