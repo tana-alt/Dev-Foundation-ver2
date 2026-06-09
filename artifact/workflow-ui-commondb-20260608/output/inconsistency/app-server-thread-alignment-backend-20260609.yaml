@@ -1,0 +1,50 @@
+schema_version: "0.1"
+record_type: inconsistency_register
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  register_id: inconsistency-app-server-thread-alignment-backend-20260609
+  created_at: "2026-06-09"
+
+scope:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609.yaml
+  source_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+
+items:
+  - id: INC-BE-001
+    type: implementation_vs_trust_boundary
+    severity: high
+    status: closed
+    summary: "App Server JSON-RPC completion prerequisite claims could influence completion guard projection."
+    requirement_ids:
+      - REQ-BE-003
+      - REQ-BE-004
+      - REQ-BE-006
+    affected_lanes:
+      - backend
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-20260609.yaml#REV-BE-001
+      - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml#FIX-BE-001
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml#rework_resolution
+    required_resolution: "Ignore external completion prerequisite claims and force App Server completion events through the blocked authority-preserved guard."
+    owner_lane: backend
+    human_decision_required: false
+    rework_ref: artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+    closure:
+      resolved_by_refs:
+        - src/workflow_adapters/codex_app_server_adapter.py
+        - tests/workflow_adapters/test_codex_app_server_adapter.py
+        - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+      verification_ref: artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml#rework_resolution
+      residual_risk:
+        - "Full suite remains a main-lane release-readiness check; no live App Server or CommonDB integration was in scope."
+
+handoff:
+  open_critical_or_high: false
+  next_action: review

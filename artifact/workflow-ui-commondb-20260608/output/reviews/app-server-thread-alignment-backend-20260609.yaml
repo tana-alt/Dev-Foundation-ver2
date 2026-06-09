@@ -1,0 +1,185 @@
+schema_version: "0.1"
+record_type: narrow_review_record
+status: rework_required
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  review_id: review-app-server-thread-alignment-backend-20260609
+  reviewer_id: review_worker
+  review_mode: narrow
+  created_at: "2026-06-09T00:00:00Z"
+
+inputs:
+  source_refs:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - .agents/skills/review-fix-convergence-governance/SKILL.md
+    - templates/narrow-review-record.yaml
+    - artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+    - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+    - src/workflow_adapters/codex_app_server_adapter.py
+    - tests/workflow_adapters/test_codex_app_server_adapter.py
+  changed_paths_reviewed:
+    - src/workflow_adapters/codex_app_server_adapter.py
+    - tests/workflow_adapters/test_codex_app_server_adapter.py
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609.yaml
+  requirement_ids:
+    - REQ-BE-001
+    - REQ-BE-002
+    - REQ-BE-003
+    - REQ-BE-004
+    - REQ-BE-005
+    - REQ-BE-006
+  context_expansion:
+    - ref: templates/app-server-thread-link.yaml
+      reason: "Nearby targeted test asserts template evidence limits."
+    - ref: templates/app-server-run-event.yaml
+      reason: "Nearby targeted test asserts template evidence limits."
+
+acceptance_trace:
+  AC-BE-001: pass
+  AC-BE-002: pass
+  AC-BE-003: pass
+  AC-BE-004: pass
+  AC-BE-005: pass
+  AC-BE-006: pass
+  AC-BE-007: pass
+  AC-BE-008: pass
+  AC-BE-009: pass
+  AC-BE-010: rework_required
+  AC-BE-011: rework_required
+  AC-BE-012: rework_required
+  AC-BE-013: pass
+  AC-BE-014: pass
+  AC-BE-015: pass
+  AC-BE-016: pass
+  AC-BE-017: pass
+  AC-BE-018: rework_required
+  AC-BE-019: pass
+
+findings:
+  - id: REV-BE-001
+    severity: high
+    type: authority_boundary
+    summary: "App Server JSON-RPC payload can assert Workflow Core completion prerequisites and bypass the explicit blocked completion guard."
+    related_ids:
+      - REQ-BE-003
+      - REQ-BE-004
+      - REQ-BE-006
+      - AC-BE-010
+      - AC-BE-011
+      - AC-BE-012
+      - AC-BE-018
+    source_refs:
+      - src/workflow_adapters/codex_app_server_adapter.py:257
+      - src/workflow_adapters/codex_app_server_adapter.py:259
+      - src/workflow_adapters/codex_app_server_adapter.py:357
+      - tests/workflow_adapters/test_codex_app_server_adapter.py:135
+    evidence:
+      - "map_run_event only blocks completion when requested_next_state == complete."
+      - "map_jsonrpc_notification sets workflow_core_completion_prerequisites_met from params_data.get('workflow_core_completion_prerequisites_met', False)."
+      - "Probe command output: completion_requested observed unknown not_applicable False."
+    impact: "A completion_requested event received from the App Server can be projected as observed with completion_claim_guard=not_applicable when requested_next_state is omitted, or as observed_authority_preserved when the external payload sets workflow_core_completion_prerequisites_met=true. That lets an App Server observation carry a Workflow Core prerequisite claim instead of requiring an authoritative Workflow Core record."
+    recommendation: "Do not trust workflow_core_completion_prerequisites_met from App Server event payloads. Completion-related event kinds should remain blocked or explicitly observation-only until a trusted Workflow Core input/evidence path supplies completion prerequisites. Add tests for completion_requested JSON-RPC with omitted requested_next_state and with workflow_core_completion_prerequisites_met=true."
+
+positive_observations:
+  - id: REV-BE-POS-001
+    summary: "Thread and project link records use opaque refs, bounded summaries, Workflow Core state_authority markers, and explicit non-storage booleans."
+    related_ids:
+      - REQ-BE-001
+      - REQ-BE-002
+      - AC-BE-001
+      - AC-BE-002
+      - AC-BE-004
+      - AC-BE-005
+  - id: REV-BE-POS-002
+    summary: "Unsupported event kinds/statuses, unbounded summaries, invalid external refs, and invalid evidence refs are rejected through local mapping paths."
+    related_ids:
+      - REQ-BE-003
+      - REQ-BE-006
+      - AC-BE-007
+      - AC-BE-008
+      - AC-BE-017
+      - AC-BE-019
+  - id: REV-BE-POS-003
+    summary: "No live App Server bridge, CommonDB live indexing/search, Obsidian write-back, protected Git action, merge, deploy, external write, raw bodies, raw artifact contents, raw logs, browser sessions, credentials, tokens, secrets, or local runtime state storage was found in the reviewed paths."
+    related_ids:
+      - REQ-BE-005
+      - REQ-BE-006
+      - AC-BE-014
+      - AC-BE-015
+      - AC-BE-016
+      - AC-BE-017
+
+verification:
+  - check_name: targeted_adapter_tests
+    command: uv run pytest tests/workflow_adapters/test_codex_app_server_adapter.py -q
+    result: passed
+    summary: "12 passed in 0.11s."
+  - check_name: lane_map_check
+    command: make check-lanes
+    result: passed
+    summary: "lane map check: passed (5 lane-map files, 2 workflow files)."
+  - check_name: diff_whitespace
+    command: git diff --check
+    result: passed
+    summary: "No whitespace errors reported."
+  - check_name: protected_surface_scan
+    command: "rg denied/protected markers in reviewed adapter, tests, lane-map, and build-result refs"
+    result: passed
+    summary: "Matches were explicit non-storage markers, human-gate assertions, or scope/evidence text; no implementation or execution of live/protected surfaces was found."
+  - check_name: completion_guard_probe
+    command: "uv run python -c <completion_requested without requested_next_state>"
+    result: failed
+    summary: "Returned: completion_requested observed unknown not_applicable False."
+
+build_result_residual_risk_review:
+  lane_map_next_action_review: accepted
+  targeted_tests_rerun: passed
+  check_lanes_rerun: passed
+  diff_check_rerun: passed
+  remaining_from_build_result: "Full-suite verification remains outside this narrow review."
+
+human_gate_status:
+  live_app_server_writes: not_approved_not_performed
+  common_db_live_search_or_indexing: not_approved_not_performed
+  obsidian_write_back: not_approved_not_performed
+  protected_git_merge_deploy_release: not_approved_not_performed
+  external_writes: not_performed
+  dependency_or_infrastructure_change: not_performed
+
+denied_storage_review:
+  raw_thread_bodies: not_found
+  raw_artifact_contents: not_found
+  raw_terminal_logs: not_found
+  browser_sessions: not_found
+  credentials_tokens_secrets: not_found
+  local_runtime_state: not_found
+
+required_rework:
+  - id: FIX-BE-001
+    finding_id: REV-BE-001
+    must_fix:
+      - "Remove or ignore workflow_core_completion_prerequisites_met when it comes from App Server JSON-RPC params."
+      - "Ensure completion_requested/completion_blocked events cannot project observed_authority_preserved from App Server-provided data."
+      - "Add regression tests covering completion_requested JSON-RPC with omitted requested_next_state and with workflow_core_completion_prerequisites_met=true."
+    must_not_change:
+      - "Do not add live App Server bridge execution, CommonDB live integration, Obsidian write-back, protected Git, merge, deploy, raw body/log/artifact storage, browser session storage, or secret handling."
+      - "Do not redefine approved requirements or acceptance criteria."
+
+residual_risk:
+  - "Review was narrow and source-ref bounded; broad repository scan and full test suite were not run."
+  - "Typed Literal fields are still runtime-checked only on mapped event fields; unrelated caller misuse outside reviewed paths was not exhaustively assessed."
+
+verdict:
+  status: rework
+  reason: "Most requirements are traceable, and the user-specified residual build checks now pass, but the completion guard accepts or omits authority-sensitive state from App Server event input. This leaves AC-BE-010, AC-BE-011, AC-BE-012, and AC-BE-018 not fully satisfied."
+  residual_risk_refs:
+    - REV-BE-001

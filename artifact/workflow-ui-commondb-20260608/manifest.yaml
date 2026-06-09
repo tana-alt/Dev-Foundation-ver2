@@ -9,6 +9,9 @@ sections:
     - evidence/spec-review-codexapp-vertical-20260609.yaml
     - evidence/human-approval-codexapp-vertical-20260609.yaml
     - evidence/approved-spec-freeze-codexapp-vertical-20260609.yaml
+    - evidence/spec-review-app-server-thread-alignment-backend-20260609.yaml
+    - evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+    - evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
     - evidence/build-result-codexapp-vertical-ui-20260609.yaml
     - evidence/spec-draft-notes-personal-mac-workflow-app-20260609.yaml
     - evidence/ui-concept-selection-personal-mac-workflow-app-20260609.yaml
@@ -22,9 +25,17 @@ sections:
     - output/docs/commondb-context-adapter-contract.md
     - output/specs/codex-app-vertical-integration-spec.md
     - output/specs/personal-mac-workflow-app-spec.md
+    - output/specs/app-server-thread-alignment-backend-spec.md
     - output/workflows/codex-app-vertical-integration-20260609.yaml
+    - output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml
     - output/implementation-policies/personal-mac-workflow-app-20260609/appkit-shell.yaml
+    - output/inconsistency/app-server-thread-alignment-backend-20260609.yaml
     - output/inconsistency/personal-mac-workflow-app-20260609.yaml
+    - output/reviews/app-server-thread-alignment-backend-20260609.yaml
+    - output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+    - output/reviews/app-server-thread-alignment-backend-convergence-20260609.yaml
+    - output/reviews/app-server-thread-alignment-backend-final-handoff-20260609.yaml
+    - output/traceability/app-server-thread-alignment-backend-20260609.yaml
     - output/reviews/personal-mac-workflow-app-narrow-review-20260609.yaml
     - output/reviews/personal-mac-workflow-app-cross-review-pasteur-20260609.yaml
     - output/reviews/personal-mac-workflow-app-fix-review-20260609.yaml

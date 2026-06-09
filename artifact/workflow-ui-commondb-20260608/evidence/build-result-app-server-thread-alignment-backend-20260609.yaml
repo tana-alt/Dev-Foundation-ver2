@@ -1,0 +1,228 @@
+schema_version: "0.1"
+record_type: build_result
+status: complete_with_residual_risk
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  lane: backend
+  created_at: "2026-06-09"
+
+source_refs:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - docs/reference/packet-evidence-and-rework-reference.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+  - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml
+  - src/workflow_adapters/codex_app_server_adapter.py
+  - tests/workflow_adapters/test_codex_app_server_adapter.py
+
+skill_refs_used:
+  - .agents/skills/backend-implementation/SKILL.md
+  - .agents/skills/scope-routing-governance/SKILL.md
+
+branch_worktree:
+  worktree: /Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-integration-readiness
+  current_branch: agent/workflow-ui-commondb-20260608/integration-readiness/merge-readiness
+  lane_map_branch_target: agent/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609/backend/build
+  lane_map_worktree_target: /Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609-backend
+  note: "User task explicitly directed this worktree; no protected Git, merge, deploy, push, or branch mutation was performed."
+
+changed_paths:
+  - src/workflow_adapters/codex_app_server_adapter.py
+  - tests/workflow_adapters/test_codex_app_server_adapter.py
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+
+allowed_write_target_check:
+  result: passed
+  allowed_write_targets:
+    - src/workflow_adapters/codex_app_server_adapter.py
+    - tests/workflow_adapters/test_codex_app_server_adapter.py
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+  observed_preexisting_unowned_changes:
+    - artifact/workflow-ui-commondb-20260608/manifest.yaml
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-review-app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/implementation-policies/app-server-thread-alignment-backend-20260609/
+    - artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+  conflict_note: "Unowned changes were not reverted or edited."
+
+implementation_summary:
+  - "Added canonical App Server event kinds while preserving the existing event kinds."
+  - "Added sanitized event contract projection fields: previous_state, requested_next_state, actor_category, source_surface, human_gate_status, and evidence_refs."
+  - "Added observation-only authority markers showing App Server events do not establish approval, verification, handoff, scope amendment, or completion."
+  - "Added a completion claim guard: requested_next_state=complete is projected as blocked_authority_preserved unless Workflow Core completion prerequisites are present."
+  - "Expanded link/event records to state that raw thread bodies, raw terminal logs, credentials, browser sessions, and local runtime state are not stored."
+
+requirement_coverage:
+  REQ-BE-001:
+    status: implemented
+    evidence_refs:
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+  REQ-BE-002:
+    status: implemented
+    evidence_refs:
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+  REQ-BE-003:
+    status: implemented
+    evidence_refs:
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+  REQ-BE-004:
+    status: implemented
+    evidence_refs:
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+  REQ-BE-005:
+    status: implemented_mock_safe
+    evidence_refs:
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+  REQ-BE-006:
+    status: implemented
+    evidence_refs:
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+
+verification_results:
+  - check_name: targeted_adapter_tests_initial
+    command: uv run pytest tests/workflow_adapters/test_codex_app_server_adapter.py -q
+    result: passed
+    evidence_ref: command:uv-run-pytest-codex-app-server-adapter-initial
+    summary: "12 passed."
+    unverified_surfaces: []
+    residual_risk: none
+    next_action: continue
+  - check_name: check_fast_initial
+    command: make check-fast
+    result: failed
+    evidence_ref: command:make-check-fast-initial
+    summary: "Stopped at format-check; only the two allowed edited files needed formatting."
+    unverified_surfaces:
+      - full_check_fast_after_initial_format_failure
+    residual_risk: "Resolved by formatting only allowed edited files."
+    next_action: rerun_after_format
+  - check_name: targeted_format
+    command: uv run ruff format src/workflow_adapters/codex_app_server_adapter.py tests/workflow_adapters/test_codex_app_server_adapter.py
+    result: passed
+    evidence_ref: command:uv-run-ruff-format-targeted
+    summary: "2 files reformatted; both were allowed write targets."
+    unverified_surfaces: []
+    residual_risk: none
+    next_action: rerun_tests
+  - check_name: targeted_adapter_tests_after_format
+    command: uv run pytest tests/workflow_adapters/test_codex_app_server_adapter.py -q
+    result: passed
+    evidence_ref: command:uv-run-pytest-codex-app-server-adapter-after-format
+    summary: "12 passed."
+    unverified_surfaces: []
+    residual_risk: none
+    next_action: continue
+  - check_name: check_fast_after_format
+    command: make check-fast
+    result: failed
+    evidence_ref: command:make-check-fast-after-format
+    summary: "format-check, ruff check, shell syntax checks, and check-agent scripts passed; check-lanes failed because the provided lane map has handoff.next_action=build, while the checker allows complete, continue, review, or rework."
+    unverified_surfaces:
+      - check-lanes completion
+      - any make check-fast steps after check-lanes
+    residual_risk: "Lane map is a named source ref but not an allowed write target in this user task, so it was not edited."
+    next_action: "Main lane or lane-map owner should repair the lane-map value or approve a lane-map edit, then rerun make check-fast."
+  - check_name: denied_marker_rg
+    command: "rg denied/protected markers in adapter and test paths"
+    result: passed
+    evidence_ref: command:rg-denied-marker-adapter-test
+    summary: "Matches are explicit false storage markers or tests asserting false; no raw body, raw artifact, raw terminal log, browser session, credential, token, secret, local runtime state, live bridge, CommonDB, Obsidian, merge, or deploy implementation was added."
+    unverified_surfaces: []
+    residual_risk: none
+    next_action: continue
+  - check_name: diff_whitespace
+    command: git diff --check -- src/workflow_adapters/codex_app_server_adapter.py tests/workflow_adapters/test_codex_app_server_adapter.py
+    result: passed
+    evidence_ref: command:git-diff-check-adapter-test
+    summary: "No whitespace errors reported for edited code/test paths."
+    unverified_surfaces: []
+    residual_risk: none
+    next_action: continue
+
+rework_resolution:
+  finding_id: REV-BE-001
+  fix_id: FIX-BE-001
+  rework_worker_id: rework_worker
+  completed_at: "2026-06-09T07:17:15Z"
+  changed_paths:
+    - src/workflow_adapters/codex_app_server_adapter.py
+    - tests/workflow_adapters/test_codex_app_server_adapter.py
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+  summary:
+    - "JSON-RPC/App Server params can no longer assert workflow_core_completion_prerequisites_met."
+    - "completion_requested and completion_blocked are blocked by the completion guard even when requested_next_state is omitted."
+    - "App Server event projection no longer returns observed_authority_preserved for completion claims."
+  verification_results:
+    - check_name: rework_targeted_adapter_tests
+      command: uv run pytest tests/workflow_adapters/test_codex_app_server_adapter.py -q
+      result: passed
+      evidence_ref: command:uv-run-pytest-codex-app-server-adapter-rework
+      summary: "14 passed in 0.08s."
+      unverified_surfaces: []
+      residual_risk: none
+      next_action: continue
+    - check_name: rework_diff_whitespace
+      command: git diff --check
+      result: passed
+      evidence_ref: command:git-diff-check-rework
+      summary: "No whitespace errors reported."
+      unverified_surfaces: []
+      residual_risk: none
+      next_action: continue
+    - check_name: rework_check_lanes
+      command: make check-lanes
+      result: passed
+      evidence_ref: command:make-check-lanes-rework
+      summary: "lane map check: passed (5 lane-map files, 2 workflow files)."
+      unverified_surfaces: []
+      residual_risk: none
+      next_action: review
+
+human_gate_status:
+  live_app_server_writes: not_approved_not_performed
+  common_db_live_search_or_indexing: not_approved_not_performed
+  obsidian_write_back: not_approved_not_performed
+  protected_git_merge_deploy_release: not_approved_not_performed
+  external_writes: not_performed
+  dependency_or_infrastructure_change: not_performed
+
+common_db_live_integration_status: absent_not_implemented
+
+denied_context_and_storage:
+  raw_thread_bodies: not_stored
+  raw_artifact_contents: not_stored
+  raw_terminal_logs: not_stored
+  browser_sessions: not_stored
+  credentials_tokens_secrets: not_stored
+  local_runtime_state: not_stored
+
+facts:
+  - "App Server thread/project/event records are projected as sanitized dictionaries with workflow_core as state authority."
+  - "App Server event projection now includes event contract fields and observation-only authority markers."
+  - "A requested_next_state=complete event is blocked when Workflow Core completion prerequisites are absent."
+  - "App Server JSON-RPC params cannot set workflow_core_completion_prerequisites_met to true."
+  - "completion_requested and completion_blocked are blocked even when requested_next_state is omitted."
+  - "No live App Server bridge, CommonDB live indexing/search, Obsidian write-back, protected Git operation, merge, deploy, or external write was implemented or executed."
+
+inferences:
+  - "Because authority markers and completion guard are explicit in returned records, reviewers can inspect that App Server observations did not seize Workflow Core authority."
+
+residual_risk:
+  - "The user-directed worktree differs from the lane map's backend worktree target; no branch or protected Git action was taken to change it."
+  - "Only the targeted adapter tests, git diff whitespace check, and make check-lanes were run for this rework; full-suite verification remains for main lane or release readiness."
+
+next_action: review

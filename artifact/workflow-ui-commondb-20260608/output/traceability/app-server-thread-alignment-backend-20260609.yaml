@@ -1,0 +1,203 @@
+schema_version: "0.1"
+record_type: requirement_traceability_matrix
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  spec_id: SPEC-APP-SERVER-THREAD-ALIGNMENT-BACKEND-001
+  created_at: "2026-06-09"
+
+sources:
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609.yaml
+  inconsistency_register_ref: artifact/workflow-ui-commondb-20260608/output/inconsistency/app-server-thread-alignment-backend-20260609.yaml
+
+coverage:
+  functional_requirements:
+    - requirement_id: REQ-BE-001
+      acceptance_criteria:
+        - ac_id: AC-BE-001
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-002
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-003
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+    - requirement_id: REQ-BE-002
+      acceptance_criteria:
+        - ac_id: AC-BE-004
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-005
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-006
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+    - requirement_id: REQ-BE-003
+      acceptance_criteria:
+        - ac_id: AC-BE-007
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-008
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-009
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-010
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+    - requirement_id: REQ-BE-004
+      acceptance_criteria:
+        - ac_id: AC-BE-011
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-012
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-013
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+    - requirement_id: REQ-BE-005
+      acceptance_criteria:
+        - ac_id: AC-BE-014
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-015
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:make-check-lanes-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-016
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:make-check-lanes-rework]
+          result: passed
+          residual_risk: [none]
+    - requirement_id: REQ-BE-006
+      acceptance_criteria:
+        - ac_id: AC-BE-017
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-018
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+        - ac_id: AC-BE-019
+          lanes: [backend]
+          implementation_refs: [src/workflow_adapters/codex_app_server_adapter.py]
+          test_refs: [tests/workflow_adapters/test_codex_app_server_adapter.py]
+          evidence_refs: [artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml]
+          verification_refs: [command:uv-run-pytest-codex-app-server-adapter-rework]
+          result: passed
+          residual_risk: [none]
+  non_functional_requirements:
+    - requirement_id: NFR-BE-001
+      verification_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+      result: passed
+      blocked_reason: ""
+      residual_risk:
+        - "Live App Server, CommonDB live integration, Obsidian write-back, and protected Git remain out of scope/human-gated."
+  exception_cases:
+    - case_id: EXC-BE-001
+      test_refs:
+        - tests/workflow_adapters/test_codex_app_server_adapter.py
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+      result: passed
+      blocked_reason: ""
+      residual_risk:
+        - none
+
+handoff:
+  open_critical_or_high: false
+  next_action: convergence_check

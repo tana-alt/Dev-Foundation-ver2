@@ -1,0 +1,83 @@
+schema_version: "0.1"
+record_type: specification_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-APP-SERVER-THREAD-ALIGNMENT-BACKEND-001
+  review_id: spec-review-app-server-thread-alignment-backend-20260609
+  created_at: "2026-06-09"
+
+sources:
+  source_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-007
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-009
+    - artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md#REQ-008
+    - artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md#REQ-009
+    - src/workflow_adapters/codex_app_server_adapter.py
+    - tests/workflow_adapters/test_codex_app_server_adapter.py
+    - docs/reference/specification-workflow-reference.md
+    - docs/reference/packet-evidence-and-rework-reference.md
+
+checks:
+  - name: requirement_traceability
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md#requirements
+    notes: "REQ-BE-001 through REQ-BE-006 trace to personal Mac REQ-007/REQ-009 and vertical integration REQ-008/REQ-009."
+  - name: observable_acceptance_criteria
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md#requirements
+    notes: "AC-BE-001 through AC-BE-019 state observable record contents, rejection behavior, authority boundaries, and gate behavior."
+  - name: implementation_policy_leakage
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+    notes: "Specification avoids file layout, class/function names, library choice, branch strategy, and test command selection. Existing source refs are used as source evidence, not HOW authority."
+  - name: trust_and_side_effect_boundaries
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md#out-of-scope
+    notes: "Live App Server writes, CommonDB live integration, Obsidian write-back, merge/deploy/protected Git, raw bodies, logs, secrets, and runtime state remain out of scope or human-gated."
+  - name: main_lane_alignment
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md#authority-model
+    notes: "Main lane alignment is defined as observable App Server records that do not seize approved goal, contract, verification, handoff, scope-amendment, or completion authority from Workflow Core."
+  - name: verification_expectation
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md#verification-expectations
+    notes: "Verification expectations cover sanitized records, rejection paths, authority preservation, human gates, and CommonDB absence."
+
+observations:
+  facts:
+    - "The personal Mac workflow spec requires a project-scoped Codex App Server link layer that cannot override Workflow Core state, approvals, contracts, verification, or completion status."
+    - "The personal Mac workflow spec requires completion integrity against approved goal, acceptance criteria, verification expectations, and human gates."
+    - "The vertical integration spec requires project link management with opaque refs and bounded event summary."
+    - "The vertical integration spec requires scope amendment before expanded or shifted goals can count as complete."
+    - "The existing backend source ref describes a mock-safe App Server adapter boundary and keeps the real bridge human-gated."
+    - "The existing backend test ref covers sanitized thread, project, event, panel, and human-gate behavior."
+  inferences:
+    - "The backend slice can proceed without live CommonDB integration because the required behavior is observable through sanitized App Server records and Workflow Core authority markers."
+    - "CommonDB live indexing/search remains a later contract because this spec only requires absence and gate preservation for those protected surfaces."
+  decisions:
+    - "Decision: approve the specification for human review and freeze under the current user request."
+    - "Decision: route implementation through one backend lane with separate implementation policy."
+
+unresolved_questions:
+  - id: OQ-BE-001
+    status: carried
+    question: "Which exact Codex App deep-link shapes will be approved for live navigation in a later slice?"
+  - id: OQ-BE-002
+    status: carried
+    question: "Which App Server operations are read-only link inspection versus external writes requiring a separate human gate?"
+  - id: OQ-BE-003
+    status: carried
+    question: "What separate contract will authorize CommonDB live search, indexing, or searchable migration?"
+
+human_gate:
+  required: true
+  status: approved_by_user_request_for_mock_safe_backend_spec_freeze
+  reason: "The user explicitly requested spec creation, spec review, approved freeze, backend lane map, and implementation policy for the mock-safe backend slice on 2026-06-09."
+
+decision:
+  result: approved_for_human_review
+  rework_required: []
+  next_action: approved_spec_freeze

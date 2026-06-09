@@ -1,0 +1,43 @@
+schema_version: "0.1"
+record_type: convergence_decision_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  created_at: "2026-06-09T07:30:00Z"
+
+inputs:
+  traceability_matrix_ref: "artifact/workflow-ui-commondb-20260608/output/traceability/app-server-thread-alignment-backend-20260609.yaml"
+  review_refs:
+    - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+  verification_refs:
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+  residual_risk_refs:
+    - artifact/workflow-ui-commondb-20260608/output/inconsistency/app-server-thread-alignment-backend-20260609.yaml
+
+coverage:
+  req_covered: true
+  ac_verified_or_gap_recorded: true
+  nfr_checked_or_carried: true
+  exc_checked_or_carried: true
+  sec_checked_or_carried: true
+  data_api_checked_or_carried: true
+
+reviews:
+  narrow_review_status: complete
+  wide_review_status: not_applicable
+  security_review_status: not_applicable
+  fix_review_status: complete
+
+open_items:
+  critical_inc: 0
+  high_inc: 0
+  unresolved_fix: 0
+  unverified_required_checks: 0
+
+decision:
+  status: complete_with_residual_risk
+  reason: "Mock-safe App Server thread alignment backend is implemented and reviewed. REV-BE-001 was reworked and closed; all REQ-BE and AC-BE items trace to implementation, targeted tests, and evidence. Live App Server, CommonDB live integration, Obsidian write-back, merge, deployment, protected Git, dependencies, infrastructure, and external writes remain out of scope or human-gated."
+  next_action: human_review_required

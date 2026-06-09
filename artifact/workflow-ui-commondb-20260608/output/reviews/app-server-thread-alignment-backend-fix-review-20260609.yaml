@@ -1,0 +1,87 @@
+schema_version: "0.1"
+record_type: fix_review_record
+status: pass_with_risk
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  review_id: fix-review-app-server-thread-alignment-backend-20260609
+  review_mode: fix
+  reviewer_id: rework_worker
+  created_at: "2026-06-09T07:17:15Z"
+
+inputs:
+  fix_handoff_ref: artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-20260609.yaml#FIX-BE-001
+  source_refs:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+    - src/workflow_adapters/codex_app_server_adapter.py
+    - tests/workflow_adapters/test_codex_app_server_adapter.py
+  changed_paths:
+    - src/workflow_adapters/codex_app_server_adapter.py
+    - tests/workflow_adapters/test_codex_app_server_adapter.py
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+
+fix_resolution:
+  - fix_id: FIX-BE-001
+    finding_id: REV-BE-001
+    status: resolved
+    evidence_refs:
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml#rework_resolution
+    notes:
+      - "map_jsonrpc_notification ignores external workflow_core_completion_prerequisites_met params and emits false."
+      - "map_run_event blocks completion_requested and completion_blocked regardless of requested_next_state."
+      - "completion_claim_guard remains blocked_authority_preserved for App Server completion events."
+
+acceptance_trace:
+  AC-BE-010: pass
+  AC-BE-011: pass
+  AC-BE-012: pass
+  AC-BE-018: pass
+
+verification:
+  - check_name: targeted_adapter_tests
+    command: uv run pytest tests/workflow_adapters/test_codex_app_server_adapter.py -q
+    result: passed
+    summary: "14 passed in 0.08s."
+  - check_name: diff_whitespace
+    command: git diff --check
+    result: passed
+    summary: "No whitespace errors reported."
+  - check_name: lane_map_check
+    command: make check-lanes
+    result: passed
+    summary: "lane map check: passed (5 lane-map files, 2 workflow files)."
+
+new_risk_check:
+  new_requirement_violation: none_found
+  new_security_surface: none_found
+  new_scope_leak: none_found
+  neighboring_lane_impact: none_found
+  over_mocked_or_false_test: none_found
+
+new_findings: []
+
+human_gate_status:
+  live_app_server_writes: not_approved_not_performed
+  common_db_live_search_or_indexing: not_approved_not_performed
+  obsidian_write_back: not_approved_not_performed
+  protected_git_merge_deploy_release: not_approved_not_performed
+  external_writes: not_performed
+  dependency_or_infrastructure_change: not_performed
+
+residual_risk:
+  - "Review stayed bounded to REV-BE-001 and named source refs; broad repository scan and full test suite were not run."
+  - "The user-directed worktree differs from the lane map's backend worktree target; no branch or protected Git action was taken."
+
+verdict:
+  status: pass_with_risk
+  reason: "REV-BE-001 is closed by ignoring external completion prerequisite claims and forcing App Server completion events through the blocked authority-preserved guard."

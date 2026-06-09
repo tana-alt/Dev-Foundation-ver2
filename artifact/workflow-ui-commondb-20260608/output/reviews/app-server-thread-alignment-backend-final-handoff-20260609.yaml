@@ -1,0 +1,62 @@
+schema_version: "0.1"
+record_type: final_handoff_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  created_at: "2026-06-09T07:30:00Z"
+
+summary: "Completed mock-safe Codex App Server thread/project/event backend alignment for main lane inspection while preserving Workflow Core authority."
+changed_paths:
+  - src/workflow_adapters/codex_app_server_adapter.py
+  - tests/workflow_adapters/test_codex_app_server_adapter.py
+  - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/manifest.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/inconsistency/app-server-thread-alignment-backend-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/traceability/app-server-thread-alignment-backend-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-convergence-20260609.yaml
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - docs/reference/specification-workflow-reference.md
+  - docs/reference/packet-evidence-and-rework-reference.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+context_scope_ref: "not_applicable"
+change_impact_ref: "artifact/workflow-ui-commondb-20260608/output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml"
+traceability_matrix_ref: "artifact/workflow-ui-commondb-20260608/output/traceability/app-server-thread-alignment-backend-20260609.yaml"
+convergence_decision_ref: "artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-convergence-20260609.yaml"
+audit_trail_index_ref: "not_applicable"
+review_refs:
+  - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-fix-review-20260609.yaml
+verification_refs:
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+
+completion:
+  decision: complete_with_residual_risk
+  reason: "Backend slice is complete for mock-safe App Server thread alignment and main lane authority preservation. CommonDB live integration is intentionally deferred to the next approved contract."
+
+human_gate:
+  required: true
+  status: required_for_next_live_integration
+  reason: "CommonDB live integration, live Codex App Server bridge use, Obsidian write-back, protected Git, merge, deploy, release, dependency, infrastructure, and external write actions remain human-gated."
+
+carryover:
+  residual_risk_ref: "artifact/workflow-ui-commondb-20260608/output/inconsistency/app-server-thread-alignment-backend-20260609.yaml"
+  next_goal_seed:
+    problem: "Prepare a separate CommonDB live integration contract once the backend alignment slice is accepted."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-convergence-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#REQ-006
+  recommended_next_action: human_review_required
+
+unverified_surfaces:
+  - "Full foundation gate was not run; main-lane check-fast verification passed."
+  - "Live Codex App Server bridge, CommonDB live search/indexing, Obsidian write-back, merge, deployment, protected Git, dependency, and infrastructure surfaces were not exercised."

@@ -32,6 +32,8 @@ def test_thread_link_maps_external_ref_without_state_authority_shift() -> None:
     assert record["transport"] == "stdio"
     assert record["stores_raw_thread_body"] is False
     assert record["stores_credentials"] is False
+    assert record["stores_browser_sessions"] is False
+    assert record["stores_local_runtime_state"] is False
 
 
 def test_project_link_maps_codex_app_navigation_without_raw_contents() -> None:
@@ -54,6 +56,8 @@ def test_project_link_maps_codex_app_navigation_without_raw_contents() -> None:
     assert record["stores_raw_thread_body"] is False
     assert record["stores_artifact_contents"] is False
     assert record["stores_credentials"] is False
+    assert record["stores_browser_sessions"] is False
+    assert record["stores_local_runtime_state"] is False
 
 
 def test_project_link_rejects_unapproved_artifact_ref() -> None:
@@ -86,6 +90,145 @@ def test_run_event_rejects_unbounded_summary() -> None:
         )
 
 
+def test_run_event_projects_canonical_contract_fields_as_observation() -> None:
+    record = map_run_event(
+        AppServerRunEvent(
+            project_id="workflow-ui-commondb-20260608",
+            execution_run_id="RUN-demo-001",
+            event_id="EVT-demo-001",
+            kind="conversation_linked",
+            status="observed",
+            summary="Conversation link observed.",
+            external_event_ref="app-server-event:conversation-linked",
+            previous_state="ready",
+            requested_next_state="running",
+            actor_category="agent",
+            source_surface="codex_app_server",
+            human_gate_status="required",
+            evidence_refs=("artifact/workflow-ui-commondb-20260608/evidence/demo.yaml",),
+        )
+    )
+
+    assert record["kind"] == "conversation_linked"
+    assert record["previous_state"] == "ready"
+    assert record["requested_next_state"] == "running"
+    assert record["actor_category"] == "agent"
+    assert record["source_surface"] == "codex_app_server"
+    assert record["human_gate_status"] == "required"
+    assert record["evidence_refs"] == ["artifact/workflow-ui-commondb-20260608/evidence/demo.yaml"]
+    assert record["authority_boundary"] == "observation_only"
+    assert record["approval_authority"] == "workflow_core"
+    assert record["verification_authority"] == "workflow_core"
+    assert record["handoff_authority"] == "workflow_core"
+    assert record["scope_amendment_authority"] == "workflow_core"
+    assert record["completion_authority"] == "workflow_core"
+    assert record["establishes_approval"] is False
+    assert record["establishes_verification"] is False
+    assert record["establishes_handoff"] is False
+    assert record["establishes_scope_amendment"] is False
+    assert record["establishes_completion"] is False
+    assert record["stores_raw_terminal_log"] is False
+    assert record["stores_browser_sessions"] is False
+    assert record["stores_local_runtime_state"] is False
+
+
+def test_completion_request_is_blocked_without_workflow_core_prerequisites() -> None:
+    record = map_run_event(
+        AppServerRunEvent(
+            project_id="workflow-ui-commondb-20260608",
+            execution_run_id="RUN-demo-001",
+            event_id="EVT-demo-002",
+            kind="completion_requested",
+            status="observed",
+            summary="Completion was requested from the App Server surface.",
+            external_event_ref="app-server-event:completion-requested",
+            previous_state="handoff",
+            requested_next_state="complete",
+            actor_category="agent",
+            source_surface="codex_app_server",
+            human_gate_status="required",
+        )
+    )
+
+    assert record["status"] == "blocked"
+    assert record["requested_next_state"] == "complete"
+    assert record["completion_claim_guard"] == "blocked_authority_preserved"
+    assert record["workflow_core_completion_prerequisites_met"] is False
+    assert record["establishes_completion"] is False
+    assert record["state_authority"] == "workflow_core"
+
+
+def test_jsonrpc_completion_prerequisites_claim_is_ignored_and_blocked() -> None:
+    event = map_jsonrpc_notification(
+        {
+            "jsonrpc": "2.0",
+            "method": "app_server.event",
+            "params": {
+                "event_id": "EVT-demo-003",
+                "kind": "completion_requested",
+                "status": "observed",
+                "summary": "Completion was requested with external prerequisite claim.",
+                "external_event_ref": "app-server-event:completion-claimed",
+                "requested_next_state": "complete",
+                "workflow_core_completion_prerequisites_met": True,
+            },
+        },
+        project_id="workflow-ui-commondb-20260608",
+        execution_run_id="RUN-demo-001",
+    )
+
+    record = map_run_event(event)
+
+    assert event.workflow_core_completion_prerequisites_met is False
+    assert record["status"] == "blocked"
+    assert record["completion_claim_guard"] == "blocked_authority_preserved"
+    assert record["completion_claim_guard"] != "observed_authority_preserved"
+    assert record["workflow_core_completion_prerequisites_met"] is False
+    assert record["establishes_completion"] is False
+
+
+def test_jsonrpc_completion_request_without_requested_next_state_is_blocked() -> None:
+    event = map_jsonrpc_notification(
+        {
+            "jsonrpc": "2.0",
+            "method": "app_server.event",
+            "params": {
+                "event_id": "EVT-demo-004",
+                "kind": "completion_requested",
+                "status": "observed",
+                "summary": "Completion was requested without an explicit next state.",
+                "external_event_ref": "app-server-event:completion-no-next-state",
+            },
+        },
+        project_id="workflow-ui-commondb-20260608",
+        execution_run_id="RUN-demo-001",
+    )
+
+    record = map_run_event(event)
+
+    assert record["requested_next_state"] == "unknown"
+    assert record["status"] == "blocked"
+    assert record["completion_claim_guard"] == "blocked_authority_preserved"
+    assert record["workflow_core_completion_prerequisites_met"] is False
+    assert record["establishes_completion"] is False
+
+
+def test_run_event_rejects_invalid_evidence_ref() -> None:
+    with pytest.raises(ValueError, match="evidence ref"):
+        map_run_event(
+            AppServerRunEvent(
+                project_id="workflow-ui-commondb-20260608",
+                execution_run_id="RUN-demo-001",
+                event_id="EVT-demo-001",
+                kind="artifact_reviewed",
+                status="observed",
+                summary="Artifact review observed.",
+                external_event_ref="app-server-event:artifact-reviewed",
+                evidence_refs=("file:///tmp/raw-log.txt",),
+            )
+        )
+
+
 def test_jsonrpc_notification_maps_to_sanitized_run_event() -> None:
     event = map_jsonrpc_notification(
         {
@@ -97,6 +240,12 @@ def test_jsonrpc_notification_maps_to_sanitized_run_event() -> None:
                 "status": "blocked",
                 "summary": "Approval is required before the bridge can run.",
                 "external_event_ref": "app-server-event:approval-requested",
+                "previous_state": "ready",
+                "requested_next_state": "running",
+                "actor_category": "agent",
+                "source_surface": "codex_app_server",
+                "human_gate_status": "required",
+                "evidence_refs": ["artifact/workflow-ui-commondb-20260608/evidence/demo.yaml"],
             },
         },
         project_id="workflow-ui-commondb-20260608",
@@ -108,6 +257,12 @@ def test_jsonrpc_notification_maps_to_sanitized_run_event() -> None:
     assert record["kind"] == "approval_requested"
     assert record["status"] == "blocked"
     assert record["external_event_ref"] == "app-server-event:approval-requested"
+    assert record["previous_state"] == "ready"
+    assert record["requested_next_state"] == "running"
+    assert record["actor_category"] == "agent"
+    assert record["source_surface"] == "codex_app_server"
+    assert record["human_gate_status"] == "required"
+    assert record["evidence_refs"] == ["artifact/workflow-ui-commondb-20260608/evidence/demo.yaml"]
     assert record["stores_raw_terminal_log"] is False
 
 
@@ -146,6 +301,12 @@ def test_app_server_ui_panel_projects_events_without_state_authority_shift() -> 
                 status="observed",
                 summary="Thread link observed.",
                 external_event_ref="app-server-event:thread-linked",
+                previous_state="ready",
+                requested_next_state="linked",
+                actor_category="agent",
+                source_surface="codex_app_server",
+                human_gate_status="not_applicable",
+                evidence_refs=("test:thread-link-observed",),
             ),
         ),
     )
@@ -161,6 +322,14 @@ def test_app_server_ui_panel_projects_events_without_state_authority_shift() -> 
             "status": "observed",
             "summary": "Thread link observed.",
             "external_event_ref": "app-server-event:thread-linked",
+            "previous_state": "ready",
+            "requested_next_state": "linked",
+            "actor_category": "agent",
+            "source_surface": "codex_app_server",
+            "human_gate_status": "not_applicable",
+            "evidence_refs": ["test:thread-link-observed"],
+            "completion_claim_guard": "not_applicable",
+            "authority_boundary": "observation_only",
         }
     ]
 

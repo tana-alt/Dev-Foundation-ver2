@@ -1,0 +1,91 @@
+schema_version: "0.1"
+record_type: implementation_policy_record
+status: active
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  lane: backend
+  policy_id: app-server-thread-alignment-backend-20260609-backend
+  created_at: "2026-06-09"
+
+scope:
+  behavior_authority_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+  requirement_ids:
+    - REQ-BE-001
+    - REQ-BE-002
+    - REQ-BE-003
+    - REQ-BE-004
+    - REQ-BE-005
+    - REQ-BE-006
+  implementation_policy_refs:
+    - src/workflow_adapters/codex_app_server_adapter.py
+    - tests/workflow_adapters/test_codex_app_server_adapter.py
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+  denied_context:
+    - unrelated_spec_sections
+    - unrelated_project_logs
+    - broad_repo_scan
+    - runtime_state
+    - secrets
+    - raw_thread_bodies
+    - raw_artifact_contents
+    - raw_terminal_logs
+    - browser_sessions
+
+authority_boundary:
+  behavior_authority: approved_spec_ref_only
+  policy_role: how_guidance_only
+  must_not_redefine:
+    - requirement_statement
+    - acceptance_criteria
+    - user_visible_behavior
+    - public_contract
+    - data_contract
+    - trust_boundary
+    - human_gate
+    - out_of_scope_surface
+
+policy:
+  coding_conventions:
+    - "Follow the nearby backend adapter and test style."
+    - "Keep records structured, deterministic, and easy to inspect from tests."
+    - "Prefer explicit blocked/skipped statuses for gated surfaces over implicit success."
+  allowed_choices:
+    - "Extend the existing mock-safe App Server record mapping when needed to satisfy the approved requirement IDs."
+    - "Add or update nearby targeted tests for sanitized refs, bounded summaries, rejection paths, authority preservation, and human-gate behavior."
+    - "Represent App Server observations as refs, statuses, booleans, and bounded summaries only."
+  forbidden_choices:
+    - "Do not run or add live Codex App Server writes."
+    - "Do not add CommonDB live search, CommonDB indexing, searchable migration, or vector payload handling in this lane."
+    - "Do not add Obsidian write-back."
+    - "Do not store raw thread bodies, raw artifact contents, raw terminal logs, browser sessions, credentials, tokens, secrets, or local runtime state."
+    - "Do not let App Server events approve contracts, satisfy verification, approve handoff, approve scope amendments, or mark completion."
+    - "Do not change the approved specification through implementation policy."
+
+verification:
+  required:
+    - "Run the smallest targeted backend test covering Codex App Server adapter behavior."
+    - "Inspect changed paths for denied raw/protected content and live-integration side effects."
+    - "Confirm allowed write targets were not exceeded."
+    - "Record skipped or blocked verification with reason and residual risk."
+  evidence_required:
+    - changed_paths
+    - verification_results
+    - allowed_write_target_check
+    - human_gate_status
+    - common_db_live_integration_status
+    - residual_risk
+
+human_gates:
+  live_app_server_writes: required
+  common_db_live_search_or_indexing: required
+  obsidian_write_back: required
+  merge_deploy_or_protected_git: required
+  dependency_or_infrastructure_change: required
+
+handoff:
+  next_action: build

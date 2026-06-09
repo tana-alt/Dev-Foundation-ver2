@@ -1,0 +1,102 @@
+schema_version: "0.1"
+record_type: parallel_lane_map
+status: active
+
+identity:
+  work_id: workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609
+  project_id: workflow-ui-commondb-20260608
+  created_at: "2026-06-09"
+
+governance:
+  map_owner: agent
+  update_rule: "Main lane coordinates backend build/review through records. This map is not a runtime queue, lock ledger, scheduler, worker heartbeat, dashboard, or worktree inventory."
+  context_budget:
+    required_source_refs_per_lane_max: 6
+    deny_broad_repo_scan: true
+
+git_scope:
+  mode: parallel
+  base_ref: origin/main
+  merge_target: origin/main
+  conflict_policy: explicitly_scoped
+  sibling_branch_refs: []
+
+spec_scope:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-app-server-thread-alignment-backend-20260609.yaml
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+  requirement_ids:
+    - REQ-BE-001
+    - REQ-BE-002
+    - REQ-BE-003
+    - REQ-BE-004
+    - REQ-BE-005
+    - REQ-BE-006
+
+lanes:
+  - lane: backend
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609/backend/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-app-server-thread-alignment-backend-20260609-backend"
+    task_intent: "Complete the mock-safe App Server thread/project/event backend alignment surface so main lane can inspect Codex App Server observations without ceding Workflow Core authority."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/app-server-thread-alignment-backend-spec.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-app-server-thread-alignment-backend-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+    requirement_ids:
+      - REQ-BE-001
+      - REQ-BE-002
+      - REQ-BE-003
+      - REQ-BE-004
+      - REQ-BE-005
+      - REQ-BE-006
+    coverage_note: "Backend lane is limited to mock-safe/sanitized/opaque refs and authority-alignment behavior. CommonDB live integration, live App Server writes, Obsidian write-back, merge/deploy/protected Git, and external writes are outside this lane."
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml
+    allowed_write_targets:
+      - src/workflow_adapters/codex_app_server_adapter.py
+      - tests/workflow_adapters/test_codex_app_server_adapter.py
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-app-server-thread-alignment-backend-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/app-server-thread-alignment-backend-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/inconsistency/app-server-thread-alignment-backend-20260609.yaml
+    denied_context:
+      - secrets
+      - raw_thread_bodies
+      - raw_artifact_contents
+      - raw_terminal_logs
+      - browser_sessions
+      - local_runtime_state
+      - unrelated_project_logs
+      - broad_repo_scan
+    expected_outputs:
+      - "Backend changes, if needed, limited to mock-safe App Server thread/project/event mapping and authority-alignment behavior."
+      - "Targeted tests or updated nearby tests proving sanitized refs, bounded summaries, rejection paths, human gates, Workflow Core authority preservation, and CommonDB-live absence."
+      - "Build result evidence with changed paths, allowed-write-target check, verification result, human-gate status, and residual risk."
+    verification_required:
+      - "Run the closest targeted backend test covering Codex App Server adapter behavior."
+      - "Inspect changed records for raw body, raw artifact, raw terminal log, browser session, credential, token, secret, and local runtime-state leakage."
+      - "Confirm live App Server bridge, CommonDB live indexing/search, Obsidian write-back, merge/deploy/protected Git, and external writes were not performed."
+      - "Record skipped or blocked checks explicitly if the environment cannot run them."
+    handoff_evidence_required:
+      - source_refs
+      - changed_paths
+      - allowed_write_target_check
+      - verification_results
+      - human_gate_status
+      - common_db_live_integration_status
+      - residual_risk
+
+handoff:
+  evidence_required:
+    - source_refs
+    - changed_paths
+    - allowed_write_target_check
+    - branch_worktree_ownership
+    - verification_results
+    - review_results
+    - human_gate_status
+    - residual_risk
+  next_action: review
