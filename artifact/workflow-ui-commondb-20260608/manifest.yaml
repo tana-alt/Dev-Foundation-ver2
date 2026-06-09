@@ -11,6 +11,7 @@ sections:
     - output/docs/workflow-core-state-model.md
     - output/docs/app-server-ui-adapter-design.md
     - output/docs/commondb-context-adapter-contract.md
+    - output/specs/codex-app-vertical-integration-spec.md
     - output/demos/demo-foundation-overview/README.md
     - output/demos/demo-foundation-overview/outline.yaml
     - output/demos/demo-codex-sdk-run/README.md
