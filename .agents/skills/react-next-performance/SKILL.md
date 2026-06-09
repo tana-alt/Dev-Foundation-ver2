@@ -33,6 +33,9 @@ useful evidence available.
 
 ## Review Areas
 
+- Priority order: async waterfalls and bundle size first, then server behavior,
+  client data fetching, re-render control, rendering work, JavaScript hot paths,
+  and advanced patterns only when evidence points there.
 - Server/client component boundaries and serialized props.
 - Data fetching, request deduplication, caching, invalidation, and waterfalls.
 - Suspense, streaming, loading states, and perceived responsiveness.
@@ -41,6 +44,9 @@ useful evidence available.
 - Render frequency, derived state, memoization, expensive lists, and event
   handlers.
 - CSS, images, fonts, SVGs, and long-list rendering behavior.
+
+Use external Vercel-style rule taxonomies as optional review prompts, not as a
+local rule database. Do not import broad rule payloads into this compact repo.
 
 ## Do Not Use When
 
