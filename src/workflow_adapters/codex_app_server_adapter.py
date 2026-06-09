@@ -7,7 +7,7 @@ external refs into workflow UI records.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal, cast
 
 
 class HumanGateRequired(RuntimeError):
@@ -26,6 +26,18 @@ EventKind = Literal[
     "verification_recorded",
     "handoff_recorded",
 ]
+EVENT_KINDS: set[str] = {
+    "thread_linked",
+    "turn_started",
+    "event_received",
+    "approval_requested",
+    "user_input_requested",
+    "blocked",
+    "error",
+    "verification_recorded",
+    "handoff_recorded",
+}
+EVENT_STATUSES = {"observed", "blocked", "skipped"}
 
 
 @dataclass(frozen=True)
@@ -72,6 +84,10 @@ def map_thread_link(link: AppServerThreadLink) -> dict[str, object]:
 
 
 def map_run_event(event: AppServerRunEvent) -> dict[str, object]:
+    if event.kind not in EVENT_KINDS:
+        raise ValueError("unsupported app server event kind")
+    if event.status not in EVENT_STATUSES:
+        raise ValueError("unsupported app server event status")
     if len(event.summary) > 160:
         raise ValueError("event summary must stay bounded")
     return {
@@ -92,5 +108,74 @@ def map_run_event(event: AppServerRunEvent) -> dict[str, object]:
     }
 
 
+def map_jsonrpc_notification(
+    payload: dict[str, Any],
+    *,
+    project_id: str,
+    execution_run_id: str,
+) -> AppServerRunEvent:
+    if payload.get("jsonrpc") != "2.0":
+        raise ValueError("jsonrpc notification must declare version 2.0")
+    if payload.get("method") != "app_server.event":
+        raise ValueError("unsupported app server notification method")
+    params = payload.get("params")
+    if not isinstance(params, dict):
+        raise ValueError("jsonrpc notification params must be a mapping")
+    params_data = cast(dict[str, Any], params)
+
+    kind = _required_param(params_data, "kind")
+    status = _required_param(params_data, "status")
+    if kind not in EVENT_KINDS:
+        raise ValueError("unsupported app server event kind")
+    if status not in EVENT_STATUSES:
+        raise ValueError("unsupported app server event status")
+
+    return AppServerRunEvent(
+        project_id=project_id,
+        execution_run_id=execution_run_id,
+        event_id=_required_param(params_data, "event_id"),
+        kind=cast(EventKind, kind),
+        status=cast(
+            Literal["observed", "blocked", "skipped"],
+            status,
+        ),
+        summary=_required_param(params_data, "summary"),
+        external_event_ref=_required_param(params_data, "external_event_ref"),
+    )
+
+
+def build_app_server_ui_panel(
+    link: AppServerThreadLink,
+    events: tuple[AppServerRunEvent, ...],
+) -> dict[str, object]:
+    mapped_link = map_thread_link(link)
+    mapped_events = [map_run_event(event) for event in events]
+    return {
+        "thread_ref": mapped_link["app_server_thread_ref"],
+        "transport": mapped_link["transport"],
+        "gate_status": "required",
+        "real_smoke_status": "skipped_human_gate_required",
+        "events": [
+            {
+                "event_id": event["event_id"],
+                "kind": event["kind"],
+                "status": event["status"],
+                "summary": event["summary"],
+                "external_event_ref": event["external_event_ref"],
+            }
+            for event in mapped_events
+        ],
+    }
+
+
 def connect_real_app_server() -> None:
     raise HumanGateRequired("Real App Server bridge requires explicit human approval.")
+
+
+def _required_param(params: dict[str, Any], key: str) -> str:
+    value = params.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{key} must be a non-empty string")
+    if "\n" in value or "\r" in value:
+        raise ValueError(f"{key} must be a single line")
+    return value

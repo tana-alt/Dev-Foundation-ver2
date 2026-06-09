@@ -55,9 +55,11 @@ Approval prompts and user-input requests are workflow events. They are not
 implicit state transitions. Workflow Core must still record the resulting
 approval decision before any execution action that requires approval.
 
-## Local Mock Console
+## Local HTML Console
 
-The local console renders sanitized fixtures only. It supports these screens:
+The local console renders sanitized fixtures only. It supports text output for
+terminal inspection and static HTML output for a browser-visible workflow UI.
+It supports these screens:
 
 - work queue
 - proposal review
@@ -69,6 +71,33 @@ The local console renders sanitized fixtures only. It supports these screens:
 The console is suitable for static tests and local inspection. It must not read
 local runtime ledgers, browser sessions, App Server logs, or raw Codex thread
 bodies.
+
+The static HTML output is generated with:
+
+```sh
+uv run python scripts/run-workflow-console.py --format html --output /tmp/workflow-console.html
+```
+
+The page renders Workflow Core fields beside an App Server panel that contains
+only opaque thread/event refs, transport, gate status, smoke status, and bounded
+event summaries. Dynamic fixture text is HTML-escaped before rendering.
+
+## Mock Notification Projection
+
+The adapter accepts a local mock JSON-RPC notification shape for tests:
+
+- `jsonrpc: "2.0"`
+- `method: "app_server.event"`
+- `params.event_id`
+- `params.kind`
+- `params.status`
+- `params.summary`
+- `params.external_event_ref`
+
+The projection validates the event kind, status, bounded summary, and opaque
+external refs before the UI consumes the event. This is not a real App Server
+protocol claim; it is a local integration contract used to keep the UI and
+adapter testable until the real bridge gate is approved.
 
 ## Real Bridge Gate
 
