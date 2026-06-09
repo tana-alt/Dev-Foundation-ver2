@@ -1,0 +1,37 @@
+schema_version: "0.1"
+record_type: implementation_policy
+status: active
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609
+  policy_id: appkit-shell
+  created_at: "2026-06-09"
+
+spec_refs:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  ui_reference_ref: artifact/workflow-ui-commondb-20260608/output/designs/personal-mac-workflow-app-direction-b.png
+
+policy:
+  stack: "Native AppKit macOS shell in Swift Package form for current tool availability."
+  reason: "Personal Mac integration favors a native macOS app. Initial SwiftUI and AppKit SwiftPM builds stalled in the current Command Line Tools environment, so the implemented shell uses explicit AppKit views and verification records carry full app build as residual risk."
+  constraints:
+    - "Use mock data only for first shell."
+    - "No live Codex App Server operations."
+    - "No CommonDB indexing or Obsidian write-back."
+    - "Do not store raw thread bodies, raw memo bodies, secrets, browser sessions, or local runtime state."
+    - "Direction B visual reference should drive layout: pro-tool interface, segmented toolbar, lane map, bottom gate strip, right inspector."
+
+verification:
+  required:
+    - "swiftc parse for app/PersonalWorkflowApp source."
+    - "swiftc typecheck for pure model source."
+    - "swift build from app/PersonalWorkflowApp when local macOS UI framework compilation can complete."
+    - "Inspect code for raw body/secret/runtime-state markers."
+    - "make check-fast before PR update."
+
+human_gates:
+  live_app_server_bridge: required
+  common_db_indexing: required
+  obsidian_write_back: required
+  app_distribution_or_notarization: required

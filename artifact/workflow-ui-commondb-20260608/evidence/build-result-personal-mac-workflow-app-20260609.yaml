@@ -1,0 +1,48 @@
+schema_version: "0.1"
+record_type: build_result_evidence
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609
+  evidence_id: build-result-personal-mac-workflow-app-20260609
+  created_at: "2026-06-09"
+
+source_refs:
+  - app/PersonalWorkflowApp/Package.swift
+  - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/PersonalWorkflowApp.swift
+  - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+  - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+  - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  - artifact/workflow-ui-commondb-20260608/output/designs/personal-mac-workflow-app-direction-b.png
+
+commands:
+  - command: "swiftc -parse Sources/PersonalWorkflowApp/*.swift"
+    cwd: app/PersonalWorkflowApp
+    result: passed
+    notes: "All Swift source files parse successfully."
+  - command: "swiftc -typecheck Sources/PersonalWorkflowApp/WorkflowModels.swift"
+    cwd: app/PersonalWorkflowApp
+    result: passed
+    notes: "Pure model source typechecks after adding Foundation import for UUID."
+  - command: "swift build --build-path <tmp>"
+    cwd: app/PersonalWorkflowApp
+    result: carried_risk
+    notes: "SwiftPM macOS UI framework compilation did not complete within local timebox in the active Command Line Tools environment. Minimal SwiftUI also stalled, so this is recorded as environment/toolchain residual risk rather than claimed pass."
+  - command: "make check-fast"
+    cwd: "."
+    result: passed
+    notes: "Ruff, shell syntax checks, lane-map check, and focused pytest suite passed."
+
+scope_checks:
+  no_build_artifacts_committed: true
+  live_app_server_write: false
+  live_commondb_indexing: false
+  obsidian_write_back: false
+  protected_git_action: false
+
+residual_risk:
+  - id: RISK-UI-BUILD-001
+    severity: medium
+    summary: "Full SwiftPM build for macOS UI app is not proven in this local CLT environment."
+    next_check: "Run `swift build` or open as an Xcode macOS app package after full Xcode toolchain is selected."

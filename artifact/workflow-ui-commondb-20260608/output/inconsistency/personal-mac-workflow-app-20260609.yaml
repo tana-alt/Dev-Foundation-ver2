@@ -1,0 +1,102 @@
+schema_version: "0.1"
+record_type: inconsistency_register
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609
+  register_id: personal-mac-workflow-app-20260609
+  created_at: "2026-06-09"
+
+items:
+  - id: INC-001
+    severity: medium
+    status: carried_risk
+    owner_lane: appkit-shell
+    summary: "SwiftPM full build for the native macOS UI shell did not complete in the current Command Line Tools environment."
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+    rework:
+      status: completed_with_residual_risk
+      summary: "Reworked from SwiftUI to explicit AppKit shell and verified source parse plus model typecheck; full app build remains a toolchain validation gate."
+    next_decision_path: "Human review can accept mock UI shell with this residual risk, or request full Xcode project scaffolding and Xcode-based verification."
+  - id: INC-002
+    severity: low
+    status: resolved
+    owner_lane: appkit-shell
+    summary: "Model source initially missed Foundation import for UUID."
+    evidence_refs:
+      - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+    rework:
+      status: completed
+      summary: "Added Foundation import and reran model typecheck successfully."
+  - id: INC-003
+    severity: high
+    status: resolved
+    owner_lane: main_lane
+    summary: "App shell and records were untracked during cross-review."
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/reviews/personal-mac-workflow-app-cross-review-pasteur-20260609.yaml
+    rework:
+      status: completed
+      summary: "Main lane staged the app shell and workflow records for the same PR-branch commit as this register."
+  - id: INC-004
+    severity: high
+    status: resolved
+    owner_lane: main_lane
+    summary: "Cross-review initially could not see required build/review/inconsistency records."
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/personal-mac-workflow-app-narrow-review-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/personal-mac-workflow-app-fix-review-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/traceability/personal-mac-workflow-app-20260609.yaml
+    rework:
+      status: completed
+      summary: "Added explicit evidence, review, fix review, inconsistency, traceability, and convergence records."
+  - id: INC-005
+    severity: medium
+    status: resolved
+    owner_lane: main_lane
+    summary: "Spec packet status conflicted with approved freeze status."
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-personal-mac-workflow-app-20260609.yaml
+    rework:
+      status: completed
+      summary: "Updated spec status to approved_for_mock_ui_shell and refreshed freeze hash."
+  - id: INC-006
+    severity: medium
+    status: resolved
+    owner_lane: main_lane
+    summary: "Implementation lane overclaimed full REQ coverage for a mock shell."
+    evidence_refs:
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609.yaml
+      - artifact/workflow-ui-commondb-20260608/output/traceability/personal-mac-workflow-app-20260609.yaml
+    rework:
+      status: completed
+      summary: "Narrowed implementation lane coverage note and marked product behaviors as prototype, gap-recorded, boundary-only, or carried risk."
+  - id: INC-007
+    severity: low
+    status: carried_risk
+    owner_lane: appkit-shell
+    summary: "Direction B detailed parity is not complete."
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/reviews/personal-mac-workflow-app-cross-review-pasteur-20260609.yaml
+    rework:
+      status: deferred
+      summary: "Current scope is a mock shell. Detailed inspector tabs, scope gauge, run controls, and bottom console detail are deferred to the next UI iteration."
+
+handoff:
+  critical_open: 0
+  high_open: 0
+  medium_carried_risk:
+    - INC-001
+  low_carried_risk:
+    - INC-007
+  resolved:
+    - INC-002
+    - INC-004
+    - INC-005
+    - INC-006
+  resolved_by_git_commit:
+    - INC-003

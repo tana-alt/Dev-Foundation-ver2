@@ -1,0 +1,73 @@
+schema_version: "0.1"
+record_type: narrow_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609
+  review_id: personal-mac-workflow-app-narrow-review-20260609
+  reviewer_id: main_lane
+  review_mode: narrow
+  created_at: "2026-06-09T00:00:00Z"
+
+inputs:
+  source_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/designs/personal-mac-workflow-app-direction-b.png
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609.yaml
+    - artifact/workflow-ui-commondb-20260608/output/implementation-policies/personal-mac-workflow-app-20260609/appkit-shell.yaml
+  changed_paths:
+    - app/PersonalWorkflowApp
+    - artifact/workflow-ui-commondb-20260608/evidence
+    - artifact/workflow-ui-commondb-20260608/output/implementation-policies
+    - Plan/workflow-ui-commondb-20260608/lane-maps
+  requirement_ids:
+    - REQ-001
+    - REQ-002
+    - REQ-003
+    - REQ-004
+    - REQ-005
+    - REQ-006
+    - REQ-007
+    - REQ-008
+    - REQ-009
+  context_expansion: []
+
+findings:
+  - id: REV-001
+    severity: medium
+    type: verification
+    summary: "Full SwiftPM app build is not proven; local macOS UI framework compilation stalled in the CLT environment."
+    related_ids:
+      - INC-001
+      - RISK-UI-BUILD-001
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+    recommendation: "Carry as residual risk unless the next workflow installs/selects full Xcode and verifies `swift build` or an Xcode project build."
+  - id: REV-002
+    severity: low
+    type: correctness
+    summary: "Model source needed Foundation import for UUID."
+    related_ids:
+      - INC-002
+    source_refs:
+      - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+    recommendation: "Resolved by adding Foundation import and rerunning model typecheck."
+  - id: REV-003
+    severity: low
+    type: scope
+    summary: "The current app is a mock UI shell, not the complete product behavior defined by the approved spec."
+    related_ids:
+      - REQ-002
+      - REQ-006
+      - REQ-007
+      - REQ-008
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    recommendation: "Keep live Codex App Server, CommonDB indexing, Obsidian write-back, and external writes behind later human-approved contracts."
+
+verdict:
+  status: pass_with_risk
+  reason: "The native mock UI shell covers the requested frontend/state-management surface and preserves trust boundaries, but full macOS app build remains unverified in the current toolchain."
+  residual_risk_refs:
+    - RISK-UI-BUILD-001

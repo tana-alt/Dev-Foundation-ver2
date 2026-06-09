@@ -1,0 +1,63 @@
+schema_version: "0.1"
+record_type: specification_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-PERSONAL-MAC-WORKFLOW-001
+  review_id: spec-review-personal-mac-workflow-app-20260609
+  created_at: "2026-06-09"
+
+sources:
+  source_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/designs/personal-mac-workflow-app-direction-b.png
+    - artifact/workflow-ui-commondb-20260608/evidence/ui-concept-selection-personal-mac-workflow-app-20260609.yaml
+
+checks:
+  - name: requirement_traceability
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    notes: "REQ-001 through REQ-009 define observable Mac app behavior and acceptance criteria."
+  - name: observable_acceptance_criteria
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    notes: "Acceptance criteria cover goal setup, Codex App links, artifact review, approvals, contracts, CommonDB controls, App Server project links, Obsidian optionality, and completion integrity."
+  - name: implementation_policy_leakage
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    notes: "Spec states Mac-integrated product behavior but does not choose framework or file layout."
+  - name: open_question_carryover
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md#open-questions
+    notes: "OQ-001 through OQ-006 are not blockers for a mock-data native macOS shell; live bridge, indexing, and write-back stay gated."
+
+observations:
+  decisions:
+    - "Direction B is confirmed as the UI reference."
+    - "Native macOS shell is the implementation policy for this slice; AppKit is used after SwiftUI build attempts stalled in the local Command Line Tools environment."
+    - "Implementation is limited to mock-data UI shell and does not run live App Server, CommonDB indexing, or Obsidian write-back."
+
+unresolved_questions:
+  - id: OQ-001
+    status: carried
+  - id: OQ-002
+    status: carried
+  - id: OQ-003
+    status: carried
+  - id: OQ-004
+    status: carried
+  - id: OQ-005
+    status: carried
+  - id: OQ-006
+    status: carried
+
+human_gate:
+  required: true
+  status: approved_for_mock_ui_shell
+  reason: "Human requested main_lane execution with subagents, cross-review, and rework for the UI/frontend workflow."
+
+decision:
+  result: approved_for_human_review
+  rework_required: []
+  next_action: approved_spec_freeze

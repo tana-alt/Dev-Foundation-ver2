@@ -12,6 +12,9 @@ sections:
     - evidence/build-result-codexapp-vertical-ui-20260609.yaml
     - evidence/spec-draft-notes-personal-mac-workflow-app-20260609.yaml
     - evidence/ui-concept-selection-personal-mac-workflow-app-20260609.yaml
+    - evidence/spec-review-personal-mac-workflow-app-20260609.yaml
+    - evidence/approved-spec-freeze-personal-mac-workflow-app-20260609.yaml
+    - evidence/build-result-personal-mac-workflow-app-20260609.yaml
   output:
     - output/docs/external-facing-overview.md
     - output/docs/workflow-core-state-model.md
@@ -20,6 +23,13 @@ sections:
     - output/specs/codex-app-vertical-integration-spec.md
     - output/specs/personal-mac-workflow-app-spec.md
     - output/workflows/codex-app-vertical-integration-20260609.yaml
+    - output/implementation-policies/personal-mac-workflow-app-20260609/appkit-shell.yaml
+    - output/inconsistency/personal-mac-workflow-app-20260609.yaml
+    - output/reviews/personal-mac-workflow-app-narrow-review-20260609.yaml
+    - output/reviews/personal-mac-workflow-app-cross-review-pasteur-20260609.yaml
+    - output/reviews/personal-mac-workflow-app-fix-review-20260609.yaml
+    - output/reviews/personal-mac-workflow-app-convergence-20260609.yaml
+    - output/traceability/personal-mac-workflow-app-20260609.yaml
     - output/designs/personal-mac-workflow-app-direction-b.png
     - output/demos/demo-foundation-overview/README.md
     - output/demos/demo-foundation-overview/outline.yaml

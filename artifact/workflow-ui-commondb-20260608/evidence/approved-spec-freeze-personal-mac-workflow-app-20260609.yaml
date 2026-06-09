@@ -1,0 +1,74 @@
+schema_version: "0.1"
+record_type: approved_spec_freeze
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-PERSONAL-MAC-WORKFLOW-001
+  freeze_id: approved-spec-freeze-personal-mac-workflow-app-20260609
+  work_id: workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609
+  created_at: "2026-06-09"
+
+sources:
+  goal_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  spec_packet_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-personal-mac-workflow-app-20260609.yaml
+  human_approval_ref: artifact/workflow-ui-commondb-20260608/evidence/ui-concept-selection-personal-mac-workflow-app-20260609.yaml
+
+authority:
+  behavior_authority: approved_spec_ref_only
+  behavior_authority_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  implementation_policy_role: how_guidance_only
+
+freeze:
+  content_hash: sha256:7fa2833a4b1c6d07818e0571d934d54c9fedc9d668863815cd9cdf6dbe3ce0d4
+  requirement_ids:
+    - REQ-001
+    - REQ-002
+    - REQ-003
+    - REQ-004
+    - REQ-005
+    - REQ-006
+    - REQ-007
+    - REQ-008
+    - REQ-009
+  acceptance_criteria_ids:
+    - AC-001
+    - AC-002
+    - AC-003
+    - AC-004
+    - AC-005
+    - AC-006
+    - AC-007
+    - AC-008
+    - AC-009
+    - AC-010
+    - AC-011
+    - AC-012
+    - AC-013
+    - AC-014
+    - AC-015
+    - AC-016
+    - AC-017
+    - AC-018
+    - AC-019
+    - AC-020
+    - AC-021
+    - AC-022
+    - AC-023
+    - AC-024
+    - AC-025
+    - AC-026
+    - AC-027
+    - AC-028
+    - AC-029
+    - AC-030
+
+change_policy:
+  direct_edit_after_freeze: prohibited
+  allowed_change_path: spec_amendment_record
+  human_approval_required: true
+
+handoff:
+  next_action: lane_mapping

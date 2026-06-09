@@ -1,0 +1,118 @@
+schema_version: "0.1"
+record_type: parallel_lane_map
+status: active
+
+identity:
+  work_id: workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609
+  project_id: workflow-ui-commondb-20260608
+  created_at: "2026-06-09"
+
+governance:
+  map_owner: agent
+  update_rule: "Main lane coordinates implementation and review through records. This map is not a runtime queue, lock ledger, scheduler, worker heartbeat, dashboard, or worktree inventory."
+  context_budget:
+    required_source_refs_per_lane_max: 6
+    deny_broad_repo_scan: true
+
+git_scope:
+  mode: parallel
+  base_ref: origin/main
+  merge_target: origin/main
+  conflict_policy: explicitly_scoped
+  sibling_branch_refs: []
+
+spec_scope:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-personal-mac-workflow-app-20260609.yaml
+  requirement_ids:
+    - REQ-001
+    - REQ-002
+    - REQ-003
+    - REQ-004
+    - REQ-005
+    - REQ-006
+    - REQ-007
+    - REQ-008
+    - REQ-009
+
+lanes:
+  - lane: appkit-shell
+    status: complete
+    owner: subagent
+    branch_target: "agent/workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609/appkit-shell/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609-appkit-shell"
+    task_intent: "Implement Direction B native macOS mock app shell with representative state-management surfaces. SwiftUI was replaced by AppKit after local SwiftPM UI-framework build attempts stalled in this CLT environment."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+      - artifact/workflow-ui-commondb-20260608/output/designs/personal-mac-workflow-app-direction-b.png
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/personal-mac-workflow-app-20260609/appkit-shell.yaml
+    requirement_ids:
+      - REQ-001
+      - REQ-002
+      - REQ-005
+      - REQ-006
+      - REQ-007
+      - REQ-009
+    coverage_note: "Requirement IDs here are UI-shell representation targets only. Real workflow state transitions, candidate execution approval, Codex App deep links, CommonDB indexing, Obsidian write-back, and completion enforcement remain outside this implementation lane."
+    allowed_write_targets:
+      - app/PersonalWorkflowApp
+      - artifact/workflow-ui-commondb-20260608/evidence
+    denied_context:
+      - secrets
+      - raw_thread_bodies
+      - raw_memo_bodies
+      - browser_sessions
+      - local_runtime_state
+    expected_outputs:
+      - "SwiftPM-backed native macOS mock shell matching Direction B at shell-structure level with mock workflow data."
+      - "Build result evidence."
+    verification_required:
+      - "swiftc parse and model typecheck from app/PersonalWorkflowApp"
+      - "swift build from app/PersonalWorkflowApp when local toolchain can complete macOS UI framework compilation."
+      - "Targeted inspection for denied context markers."
+      - make check-fast
+
+  - lane: cross-review
+    status: complete
+    owner: subagent
+    branch_target: "agent/workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609/cross-review/review"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609-cross-review"
+    task_intent: "Review native shell for spec coverage, trust boundaries, visual direction, and build evidence."
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+      - artifact/workflow-ui-commondb-20260608/output/designs/personal-mac-workflow-app-direction-b.png
+      - app/PersonalWorkflowApp
+    requirement_ids:
+      - REQ-001
+      - REQ-002
+      - REQ-003
+      - REQ-004
+      - REQ-005
+      - REQ-006
+      - REQ-007
+      - REQ-008
+      - REQ-009
+    coverage_note: "Cross-review covers all approved requirements for overclaim, gaps, and residual risk; it does not mean the mock app implements every product behavior."
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/output/reviews
+      - artifact/workflow-ui-commondb-20260608/output/inconsistency
+    denied_context:
+      - secrets
+      - raw_thread_bodies
+      - raw_memo_bodies
+      - unrelated_history
+    expected_outputs:
+      - "Review record and inconsistency register if findings exist."
+    verification_required:
+      - "Inspect changed native app files."
+      - "Inspect build evidence."
+
+handoff:
+  evidence_required:
+    - source_refs
+    - changed_paths
+    - verification_results
+    - review_results
+    - rework_results
+    - residual_risk
+  next_action: review

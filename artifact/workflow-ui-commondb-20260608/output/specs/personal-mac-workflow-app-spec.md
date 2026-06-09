@@ -1,7 +1,7 @@
 ---
 schema_version: "0.1"
 record_type: specification_packet
-status: draft
+status: approved_for_mock_ui_shell
 project_id: workflow-ui-commondb-20260608
 spec_id: SPEC-PERSONAL-MAC-WORKFLOW-001
 created_at: "2026-06-09"
@@ -27,8 +27,9 @@ Codex App remains the owner of conversation and artifact review. The custom app
 does not replace Codex App chat, does not become a static HTML artifact, and does
 not store raw thread bodies or secrets.
 
-This specification is a draft for main_lane review. It does not authorize app
-implementation, live Codex App Server writes, CommonDB indexing, Obsidian
+This specification is approved for a mock native Mac UI shell after human
+selection of Direction B and the request to execute the UI/front-end workflow.
+It does not authorize live Codex App Server writes, CommonDB indexing, Obsidian
 write-back, protected Git operations, merge, deployment, or external side
 effects.
 

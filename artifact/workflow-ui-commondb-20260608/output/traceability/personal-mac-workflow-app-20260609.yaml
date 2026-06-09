@@ -1,0 +1,122 @@
+schema_version: "0.1"
+record_type: requirement_traceability_matrix
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609
+  spec_id: SPEC-PERSONAL-MAC-WORKFLOW-001
+  created_at: "2026-06-09"
+
+sources:
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-personal-mac-workflow-app-20260609.yaml
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-personal-mac-workflow-app-20260609.yaml
+  inconsistency_register_ref: artifact/workflow-ui-commondb-20260608/output/inconsistency/personal-mac-workflow-app-20260609.yaml
+
+coverage:
+  functional_requirements:
+    - requirement_id: REQ-001
+      acceptance_criteria: [AC-001, AC-002, AC-003, AC-004]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: prototype_visual_surface
+      residual_risk: ["State transitions are mock UI only; no persistence or live workflow engine."]
+    - requirement_id: REQ-002
+      acceptance_criteria: [AC-005, AC-006, AC-007]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: prototype_visual_surface_with_boundary
+      residual_risk: ["Direct Codex App navigation is represented by a mock action only."]
+    - requirement_id: REQ-003
+      acceptance_criteria: [AC-008, AC-009, AC-010]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: gap_recorded
+      residual_risk: ["Detailed artifact review state/actions are not implemented in this shell; future work must add artifact refs, review items, and Codex App artifact links."]
+    - requirement_id: REQ-004
+      acceptance_criteria: [AC-011, AC-012, AC-013]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: gap_recorded
+      residual_risk: ["Candidate selection and execution-contract approval separation are not implemented beyond representative lane cards."]
+    - requirement_id: REQ-005
+      acceptance_criteria: [AC-014, AC-015, AC-016]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: prototype_visual_surface_with_boundary
+      residual_risk: ["Contract approve/edit workflow is not persisted and performs no external side effect."]
+    - requirement_id: REQ-006
+      acceptance_criteria: [AC-017, AC-018, AC-019, AC-020, AC-021]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: prototype_visual_surface_with_boundary
+      residual_risk: ["CommonDB indexing/searchability is not live and remains human-gated."]
+    - requirement_id: REQ-007
+      acceptance_criteria: [AC-022, AC-023, AC-024]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: prototype_visual_surface_with_boundary
+      residual_risk: ["Codex App Server link layer is represented as mock link status only."]
+    - requirement_id: REQ-008
+      acceptance_criteria: [AC-025, AC-026, AC-027]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowModels.swift
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: boundary_only
+      residual_risk: ["No Obsidian write-back is implemented in this slice."]
+    - requirement_id: REQ-009
+      acceptance_criteria: [AC-028, AC-029, AC-030]
+      lanes: [appkit-shell, cross-review]
+      implementation_refs:
+        - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+        - artifact/workflow-ui-commondb-20260608/output/reviews/personal-mac-workflow-app-narrow-review-20260609.yaml
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: prototype_visual_surface_with_residual_risk
+      residual_risk: ["Completion integrity is visible in review/gate UI but not enforced by a runtime state machine."]
+  non_functional_requirements:
+    - requirement_id: NFR-UI-001
+      verification_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: carried_risk
+      blocked_reason: "Full SwiftPM macOS UI build did not complete in the local CLT environment."
+      residual_risk:
+        - RISK-UI-BUILD-001
+  exception_cases:
+    - case_id: EXC-RAW-BODY-BOUNDARY
+      evidence_refs:
+        - artifact/workflow-ui-commondb-20260608/evidence/build-result-personal-mac-workflow-app-20260609.yaml
+      result: passed
+      blocked_reason: ""
+      residual_risk:
+        - none
+
+handoff:
+  open_critical_or_high: false
+  next_action: convergence_check
