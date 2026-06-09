@@ -1,0 +1,37 @@
+schema_version: "0.1"
+record_type: ui_concept_selection
+status: selected
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  selection_id: ui-concept-selection-personal-mac-workflow-app-20260609
+  created_at: "2026-06-09"
+
+source_refs:
+  - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-draft-notes-personal-mac-workflow-app-20260609.yaml
+
+selected_direction:
+  id: direction_b
+  name: "Pro Tool / Workflow Terminal"
+  image_ref: artifact/workflow-ui-commondb-20260608/output/designs/personal-mac-workflow-app-direction-b.png
+  rationale: "Selected because workflow map management can be represented as a Workflow Core state projection through the App Server project layer while main_lane derives the flow from approved spec and contract records. This preserves state authority and makes the lane-map/pro-tool UI feasible without turning App Server into the canonical workflow store."
+
+fallback_direction:
+  id: direction_a
+  name: "Operations Cockpit"
+  use_when: "Use as the lighter visual variant if Direction B feels too dense for daily personal use."
+
+implementation_boundary:
+  selected_stack_candidate: SwiftUI macOS app
+  main_lane_contract: "Main lane coordinates spec, review, lane mapping, and convergence; implementation is delegated to scoped workers after approval."
+  app_server_role: "Project link and projection layer, not workflow state authority."
+  workflow_core_role: "Canonical state authority for goal, contract, workflow map, verification, and handoff records."
+
+human_gate_status:
+  ui_concept_selection: confirmed_direction_b
+  implementation_start: pending_main_lane_review
+
+residual_risk:
+  - "Exact Codex App deep-link format remains unresolved before live bridge implementation."
+  - "Direction B density should be checked against daily-use comfort during SwiftUI prototype review."

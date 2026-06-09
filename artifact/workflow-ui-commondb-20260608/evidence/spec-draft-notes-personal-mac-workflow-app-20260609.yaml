@@ -1,0 +1,75 @@
+schema_version: "0.1"
+record_type: spec_draft_notes
+status: draft
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-PERSONAL-MAC-WORKFLOW-001
+  notes_id: spec-draft-notes-personal-mac-workflow-app-20260609
+  created_at: "2026-06-09"
+
+scope:
+  role: subagent_spec_drafter_behind_main_lane
+  allowed_write_targets:
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-draft-notes-personal-mac-workflow-app-20260609.yaml
+  implementation_code_changed: false
+
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - docs/reference/specification-workflow-reference.md
+  - .agents/skills/spec-authority-governance/SKILL.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  - artifact/workflow-ui-commondb-20260608/manifest.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-review-codexapp-vertical-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-codexapp-vertical-20260609.yaml
+  - user_request:2026-06-09-personal-mac-workflow-app-direction
+
+draft_decisions:
+  - "Reframed the product as a personal Mac-integrated workflow app instead of static HTML."
+  - "Kept Codex App as the conversation and artifact review owner."
+  - "Assigned the personal app to goal setup, workflow state transitions, approvals, contracts, CommonDB controls, and direct Codex App links."
+  - "Specified Codex App Server project links as an external product integration requirement, not workflow state authority."
+  - "Limited CommonDB searchable records to useful_source and approved_memo."
+  - "Made Obsidian backup/write-back optional and explicit."
+  - "Required scope expansion to use specification amendment or contract revision."
+  - "Required completion checks to reject goal drift."
+
+privacy_and_storage_notes:
+  raw_thread_bodies_stored: false
+  raw_memo_bodies_stored: false
+  secrets_stored: false
+  runtime_state_stored: false
+  notes: "This record contains only sanitized refs, draft decisions, and verification notes."
+
+verification:
+  result: passed
+  checks_run:
+    - name: yaml_parse
+      result: passed
+      evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+      notes: "Spec frontmatter and evidence YAML parse as YAML."
+    - name: whitespace_check
+      result: passed
+      evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+      notes: "No whitespace errors reported by git diff --check --no-index."
+    - name: allowed_path_check
+      result: passed
+      evidence_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-draft-notes-personal-mac-workflow-app-20260609.yaml
+      notes: "Changed paths are limited to the two allowed artifact paths."
+    - name: behavior_boundary_review
+      result: passed
+      evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+      notes: "Draft keeps implementation choices out except for external platform integration requirements."
+
+human_gate:
+  required: true
+  status: pending
+  reason: "Main_lane and human review are required before this draft becomes approved behavior authority."
+
+residual_risk:
+  - "Open questions remain for exact Codex App deep-link shape and Codex App Server read/write gate split."
+  - "This draft intentionally does not authorize implementation."

@@ -32,3 +32,5 @@ plan_ref: Plan/workflow-ui-commondb-20260608/plans/Plan_N0001.md
 - Resolved implementation-blocking OQs with project-scoped App Server management links, direct custom UI to Codex App navigation, optional Obsidian backup/write-back, CommonDB useful-source and approved-memo searchability, and a spec-amendment guard for scope expansion.
 - Created spec review, sanitized human approval evidence, approved spec freeze, and active workflow run records for `codex-app-vertical-integration-20260609`.
 - Executed the mock-safe workflow slice: custom UI now renders goal setup state, Codex App project links, CommonDB useful-source/approved-memo controls, and scope guard state; adapter now maps project-level Codex App links without raw contents.
+- Reframed the next UI direction as a personal macOS-integrated app and drafted `artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md`.
+- Ran an image-first UI concept gate and selected Direction B, `Pro Tool / Workflow Terminal`, as the confirmed reference for the SwiftUI app direction.
