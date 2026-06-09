@@ -25,6 +25,8 @@ EventKind = Literal[
     "error",
     "verification_recorded",
     "handoff_recorded",
+    "spec_amendment_requested",
+    "spec_amendment_approved",
 ]
 EVENT_KINDS: set[str] = {
     "thread_linked",
@@ -36,6 +38,8 @@ EVENT_KINDS: set[str] = {
     "error",
     "verification_recorded",
     "handoff_recorded",
+    "spec_amendment_requested",
+    "spec_amendment_approved",
 }
 EVENT_STATUSES = {"observed", "blocked", "skipped"}
 
@@ -59,12 +63,59 @@ class AppServerRunEvent:
     external_event_ref: str
 
 
+@dataclass(frozen=True)
+class AppServerProjectLink:
+    project_id: str
+    workflow_id: str
+    app_server_thread_ref: str
+    codex_app_link_ref: str
+    artifact_refs: tuple[str, ...]
+    link_status: Literal["linked", "missing", "gated"]
+    latest_event_summary: str
+    transport: Transport = "stdio"
+
+
 def _require_opaque_ref(value: str, prefix: str) -> str:
     if not value.startswith(prefix):
         raise ValueError(f"external ref must start with {prefix}")
     if "\n" in value or "\r" in value:
         raise ValueError("external ref must be a single line")
     return value
+
+
+def _require_allowed_artifact_ref(value: str) -> str:
+    allowed_prefixes = ("codex-app-artifact:", "github-pr:")
+    if not value.startswith(allowed_prefixes):
+        raise ValueError("artifact ref must be a supported opaque ref")
+    if "\n" in value or "\r" in value:
+        raise ValueError("artifact ref must be a single line")
+    return value
+
+
+def map_project_link(link: AppServerProjectLink) -> dict[str, object]:
+    if len(link.latest_event_summary) > 160:
+        raise ValueError("latest event summary must stay bounded")
+    return {
+        "record_type": "app_server_project_link",
+        "project_id": link.project_id,
+        "workflow_id": link.workflow_id,
+        "app_server_thread_ref": _require_opaque_ref(
+            link.app_server_thread_ref,
+            "app-server-thread:",
+        ),
+        "codex_app_link_ref": _require_opaque_ref(
+            link.codex_app_link_ref,
+            "codex-app-link:",
+        ),
+        "artifact_refs": [_require_allowed_artifact_ref(ref) for ref in link.artifact_refs],
+        "link_status": link.link_status,
+        "latest_event_summary": link.latest_event_summary,
+        "transport": link.transport,
+        "state_authority": "workflow_core",
+        "stores_raw_thread_body": False,
+        "stores_artifact_contents": False,
+        "stores_credentials": False,
+    }
 
 
 def map_thread_link(link: AppServerThreadLink) -> dict[str, object]:

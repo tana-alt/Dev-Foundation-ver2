@@ -37,6 +37,9 @@ merge automation.
   generated files, diffs, PRs, verification output, and handoff summaries.
 - Codex App Server: transport that links Codex App conversation/action events to
   Workflow Core records through opaque thread/event references.
+- Codex App Server project management layer: project-scoped registry that links
+  workflow/project IDs to Codex App threads and artifact surfaces without
+  becoming the workflow state authority.
 - Workflow Core: canonical state authority for goals, proposal candidates,
   approvals, contracts, execution state, verification, and handoff.
 - Custom workflow UI: state transition management surface for goal setup,
@@ -83,6 +86,8 @@ Custom Workflow UI
 - Codex App artifact review as the primary surface for files, diffs, PRs,
   generated HTML, verification output, and handoff records.
 - State records that connect Codex App actions to Workflow Core transitions.
+- Project-scoped Codex App Server management links between the custom workflow
+  UI and Codex App.
 
 ### Out Of Scope
 
@@ -96,6 +101,8 @@ Custom Workflow UI
   surfaces without the existing human gates.
 - Choosing a frontend framework, transport library, persistence engine, or file
   layout.
+- Expanding task scope by treating goal drift, related ideas, or Out of Scope
+  items as complete work without a specification amendment.
 
 ## Required Product Screens
 
@@ -149,7 +156,10 @@ external surface, not as embedded raw chat state.
 
 Required behavior:
 
+- show project-level Codex App Server link status,
 - show opaque `app_server_thread_ref`,
+- provide a direct navigation affordance from the custom workflow UI to the
+  linked Codex App conversation or artifact surface,
 - show bounded latest-event summaries,
 - show available conversation actions derived from Workflow Core state,
 - avoid storing or rendering raw thread bodies,
@@ -195,7 +205,10 @@ Required sections:
 Observable behavior:
 
 - Search permission allows bounded source refs and snippets for the current goal.
-- Search permission does not authorize indexing or durable migration.
+- CommonDB may make useful sources and approved memos searchable after the
+  required approval exists.
+- Search permission does not authorize durable migration unless the source is
+  already an approved memo/useful source within the approved destination scope.
 - Searchable migration approval is a separate action.
 - Searchable migration approval shows a preview of source refs, inclusion
   policy, exclusion policy, and destination scope before approval.
@@ -240,6 +253,7 @@ The workflow must support these externally observable states:
 | `artifact_review` | Human reviews outputs and evidence. | Codex App |
 | `verification_review` | Verification result is visible for review. | Codex App / Custom workflow UI |
 | `handoff_ready` | Final handoff is ready for human acceptance. | Codex App / Custom workflow UI |
+| `spec_amendment_required` | Requested scope expansion must change the spec before work expands. | Custom workflow UI |
 | `blocked` | Human gate, missing evidence, or failed verification blocks progress. | Custom workflow UI |
 
 ## Allowed State Transitions
@@ -265,6 +279,7 @@ The workflow must support these externally observable states:
 | `artifact_review` | `changes_requested` | Human requests edits from artifacts. |
 | `artifact_review` | `verification_review` | Human marks artifacts reviewed. |
 | `verification_review` | `handoff_ready` | Verification evidence is accepted. |
+| Any state | `spec_amendment_required` | Agent or human requests task scope expansion beyond the approved spec. |
 | Any nonterminal state | `blocked` | Gate, evidence, permission, or verification blocks progress. |
 
 ## Event Contract
@@ -297,6 +312,8 @@ Required event kinds:
 - `commondb_search_permission_approved`,
 - `commondb_searchable_migration_requested`,
 - `commondb_searchable_migration_approved`,
+- `spec_amendment_requested`,
+- `spec_amendment_approved`,
 - `execution_started`,
 - `artifact_reviewed`,
 - `verification_recorded`,
@@ -307,11 +324,22 @@ Required event kinds:
 
 - Workflow Core may store opaque Codex App refs, bounded summaries, state IDs,
   contract refs, source refs, and verification refs.
+- Workflow Core or Codex App Server may manage thread/workflow references when
+  those references are needed for active workflow operation and are not being
+  used as local repo backup.
 - Workflow Core must not store raw Codex thread bodies, raw terminal logs,
   browser sessions, credentials, local runtime state, raw Obsidian note bodies,
   vector payloads, or secret-bearing material.
 - CommonDB context results must be source-ref based and snippet-bounded.
-- Search permission and searchable migration approval must be separate records.
+- CommonDB searchable destinations are limited to useful source records and
+  approved memo records unless a future spec amendment expands the destination
+  scope.
+- Search permission and searchable migration approval must be separate records
+  unless the source is already approved for searchability under the current
+  destination scope.
+- Obsidian backup/write-back is optional and must be tied to an explicit backup,
+  memo-writing, or source-review intent. Routine thread/workflow management does
+  not require local repo backup into Obsidian.
 - Obsidian writes, CommonDB indexing, GitHub writes, pushes, merges,
   deployments, and protected actions remain human-gated unless explicitly
   approved by a later work contract.
@@ -422,6 +450,40 @@ Acceptance criteria:
   approval.
 - AC-014: Merge and deployment remain human-only.
 
+### REQ-008 Project Link Management
+
+The system must expose a project-scoped Codex App Server management layer that
+links the custom workflow UI directly to Codex App conversation and artifact
+surfaces.
+
+Observable outcome: the custom workflow UI can show the Codex App project link
+state and open the relevant Codex App surface without becoming the chat UI.
+
+Acceptance criteria:
+
+- AC-015: Project link state includes project ID, workflow ID, Codex App thread
+  ref, artifact surface refs when present, link status, and bounded latest
+  event summary.
+- AC-016: Link records store opaque refs only and do not store raw conversation
+  bodies or artifact contents.
+
+### REQ-009 Scope Amendment Guard
+
+The system must allow task scope to expand only through an explicit
+specification amendment or approved contract revision.
+
+Observable outcome: the agent cannot mark shifted goals, Out of Scope work, or
+unbounded expansion as complete work.
+
+Acceptance criteria:
+
+- AC-017: A requested expansion beyond the approved spec moves the workflow to
+  `spec_amendment_required` or `changes_requested`.
+- AC-018: Completion checks reject work that satisfies a shifted goal while
+  leaving the approved goal or acceptance criteria unmet.
+- AC-019: Out of Scope items remain blocked unless a human-approved spec
+  amendment brings them into scope.
+
 ## Verification Expectations
 
 Before implementation is accepted, verification should prove:
@@ -433,24 +495,38 @@ Before implementation is accepted, verification should prove:
 - custom workflow UI can display state and action availability from records,
 - Codex App refs are opaque and bounded,
 - artifact review state can be linked back to Codex App surfaces,
-- invalid state transitions are rejected.
+- invalid state transitions are rejected,
+- scope expansion requires a spec amendment or approved contract revision,
+- completion cannot be claimed through goal drift.
+
+## Resolved Questions
+
+- RQ-001: The first implementation should include an App Server
+  project-management layer and direct custom workflow UI links to Codex App.
+- RQ-002: The minimum Codex App link shape is project ID, workflow ID, opaque
+  thread ref, optional artifact refs, link status, and bounded latest-event
+  summary.
+- RQ-003: Obsidian write-back is not mandatory for routine thread/workflow
+  management. It is used when there is an explicit backup, memo-writing, or
+  source-review intent.
+- RQ-004: CommonDB searchable destinations are useful source records and
+  approved memo records.
+- RQ-005: Scope expansion is allowed only through spec amendment or approved
+  contract revision; goal drift, Out of Scope work, and unbounded expansion must
+  not be treated as completion.
 
 ## Open Questions
 
-- OQ-001: Which Codex App Server transport and event names are approved for the
-  first real bridge?
-- OQ-002: What is the minimum artifact ref shape required to deep-link from the
-  custom workflow UI into Codex App artifact review?
-- OQ-003: Should Obsidian write-back create source candidates, task candidates,
-  or both?
-- OQ-004: What CommonDB destination scopes are allowed for searchable migration?
-- OQ-005: Which approval actions require a second confirmation when multiple
-  repos or external writes are in scope?
+- OQ-006: Which exact Codex App deep-link format should be used for local app
+  navigation once the real App Server bridge is approved?
+- OQ-007: Which App Server project-management operations are read-only and which
+  are external writes requiring a separate human gate?
 
 ## Human Gate Status
 
 - Specification review: required.
-- Real Codex App Server bridge: required.
+- Real Codex App Server bridge: required for live transport beyond mock-safe
+  project/thread refs.
 - CommonDB searchable migration/indexing: required.
 - Obsidian write-back: required.
 - External push/PR update: allowed only on owned review branches with clear

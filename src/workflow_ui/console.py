@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from html import escape
 
 from src.workflow_ui.fixtures import (
@@ -50,12 +50,32 @@ def build_console_snapshot(runs: Iterable[WorkflowRun] | None = None) -> dict[st
 
 def _app_server_panel(run: WorkflowRun) -> AppServerUiPanel:
     panel = run["app_server"]
+    if not panel["codex_app_link_ref"].startswith("codex-app-link:"):
+        raise ValueError("codex app link ref must be opaque")
     if not panel["thread_ref"].startswith("app-server-thread:"):
         raise ValueError("app server thread ref must be opaque")
+    for artifact_ref in panel["artifact_refs"]:
+        if not (
+            artifact_ref.startswith("codex-app-artifact:") or artifact_ref.startswith("github-pr:")
+        ):
+            raise ValueError("artifact ref must be an approved opaque ref")
     for event in panel["events"]:
         if not event["external_event_ref"].startswith("app-server-event:"):
             raise ValueError("app server event ref must be opaque")
     return panel
+
+
+def _validate_workflow_controls(run: WorkflowRun) -> None:
+    if run["commondb"]["stores_raw_body"]:
+        raise ValueError("commondb controls must not store raw bodies")
+    allowed_destinations = {"useful_source", "approved_memo"}
+    for destination in run["commondb"]["searchable_destinations"]:
+        if destination not in allowed_destinations:
+            raise ValueError("commondb destination is outside approved scope")
+    if run["scope_guard"]["status"] == "spec_amendment_required":
+        return
+    if "goal drift" not in run["scope_guard"]["completion_policy"].lower():
+        raise ValueError("scope guard must reject goal drift completion")
 
 
 def render_console(runs: Iterable[WorkflowRun] | None = None) -> str:
@@ -66,17 +86,25 @@ def render_console(runs: Iterable[WorkflowRun] | None = None) -> str:
 
     lines = ["Workflow Console", "Real App Server smoke: skipped"]
     for run in selected_runs:
+        _validate_workflow_controls(run)
         app_server = _app_server_panel(run)
         latest_event = app_server["events"][-1] if app_server["events"] else None
         lines.extend(
             [
                 "",
+                f"Goal: {run['goal']['statement']}",
                 f"Work queue: {run['issue_id']} - {run['title']}",
                 f"Proposal review: {run['proposal_summary']}",
+                f"Selected candidate: {run['candidates'][0]['candidate_id']}",
                 f"Approved contract: {run['approved_contract_ref']}",
                 f"Execution run: {run['execution_status']} via {run['runner']}",
-                f"App Server: {app_server['thread_ref']} via {app_server['transport']}",
+                f"Codex App link: {app_server['codex_app_link_ref']}",
+                f"App Server project: {app_server['project_id']} / {app_server['workflow_id']}",
+                f"App Server thread: {app_server['thread_ref']} via {app_server['transport']}",
                 f"App Server gate: {app_server['gate_status']}",
+                f"CommonDB search: {run['commondb']['search_permission']}",
+                f"CommonDB searchable: {', '.join(run['commondb']['searchable_destinations'])}",
+                f"Scope guard: {run['scope_guard']['status']}",
                 f"Verification: {run['verification_result']}",
                 f"Handoff: {run['handoff_status']}",
             ]
@@ -220,6 +248,24 @@ def render_html_console(runs: Iterable[WorkflowRun] | None = None) -> str:
       margin-top: 3px;
       overflow-wrap: anywhere;
     }}
+    .stack {{
+      display: grid;
+      gap: 12px;
+    }}
+    .section-title {{
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }}
+    ul.compact {{
+      margin: 0;
+      padding-left: 18px;
+    }}
+    .link-ref {{
+      color: var(--accent);
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }}
     @media (max-width: 820px) {{
       main {{
         width: min(100vw - 20px, 680px);
@@ -262,30 +308,82 @@ def render_html_console(runs: Iterable[WorkflowRun] | None = None) -> str:
 
 
 def _render_run_card(run: WorkflowRun) -> str:
+    _validate_workflow_controls(run)
     app_server = _app_server_panel(run)
     events = "\n".join(_render_event(event) for event in app_server["events"])
     return f"""<section class="run" aria-label="{escape(run["issue_id"])}">
-  <article class="panel">
-    <h2>{escape(run["title"])}</h2>
-    <dl>
-      <dt>Issue</dt>
-      <dd>{escape(run["issue_id"])}</dd>
-      <dt>Proposal</dt>
-      <dd>{escape(run["proposal_summary"])}</dd>
-      <dt>Contract</dt>
-      <dd>{escape(run["approved_contract_ref"])}</dd>
-      <dt>Execution</dt>
-      <dd><span class="status">{escape(run["execution_status"])}</span>
-        via {escape(run["runner"])}</dd>
-      <dt>Verification</dt>
-      <dd>{escape(run["verification_result"])}</dd>
-      <dt>Handoff</dt>
-      <dd>{escape(run["handoff_status"])}</dd>
-    </dl>
+  <article class="panel stack">
+    <div>
+      <div class="section-title">Goal setup</div>
+      <h2>{escape(run["goal"]["statement"])}</h2>
+      <dl>
+        <dt>Outcome</dt>
+        <dd>{escape(run["goal"]["desired_outcome"])}</dd>
+        <dt>CommonDB</dt>
+        <dd>{escape(run["goal"]["commondb_preference"])}</dd>
+        <dt>Success</dt>
+        <dd>{_render_list(run["goal"]["success_criteria"])}</dd>
+        <dt>Non-goals</dt>
+        <dd>{_render_list(run["goal"]["non_goals"])}</dd>
+      </dl>
+    </div>
+    <div>
+      <div class="section-title">Proposal candidate</div>
+      <dl>
+        <dt>Issue</dt>
+        <dd>{escape(run["issue_id"])}</dd>
+        <dt>Selected</dt>
+        <dd>{escape(run["candidates"][0]["candidate_id"])}
+          - {escape(run["candidates"][0]["title"])}</dd>
+        <dt>Proposal</dt>
+        <dd>{escape(run["proposal_summary"])}</dd>
+        <dt>Codex App</dt>
+        <dd class="link-ref">{escape(run["candidates"][0]["codex_app_ref"])}</dd>
+        <dt>Contract</dt>
+        <dd>{escape(run["approved_contract_ref"])}</dd>
+        <dt>Execution</dt>
+        <dd><span class="status">{escape(run["execution_status"])}</span>
+          via {escape(run["runner"])}</dd>
+      </dl>
+    </div>
+    <div>
+      <div class="section-title">CommonDB controls</div>
+      <dl>
+        <dt>Search</dt>
+        <dd>{escape(run["commondb"]["search_permission"])}</dd>
+        <dt>Searchable</dt>
+        <dd>{_render_list(run["commondb"]["searchable_destinations"])}</dd>
+        <dt>Sources</dt>
+        <dd>{_render_list(run["commondb"]["source_refs"])}</dd>
+        <dt>Approved memos</dt>
+        <dd>{_render_list(run["commondb"]["approved_memo_refs"])}</dd>
+        <dt>Migration</dt>
+        <dd>{escape(run["commondb"]["migration_approval"])}</dd>
+      </dl>
+    </div>
+    <div>
+      <div class="section-title">Scope guard</div>
+      <dl>
+        <dt>Status</dt>
+        <dd>{escape(run["scope_guard"]["status"])}</dd>
+        <dt>Policy</dt>
+        <dd>{escape(run["scope_guard"]["expansion_policy"])}</dd>
+        <dt>Completion</dt>
+        <dd>{escape(run["scope_guard"]["completion_policy"])}</dd>
+      </dl>
+    </div>
   </article>
   <aside class="panel" aria-label="App Server integration">
-    <h3>App Server</h3>
+    <h3>Codex App Project Link</h3>
     <dl>
+      <dt>Project</dt>
+      <dd>{escape(app_server["project_id"])}</dd>
+      <dt>Workflow</dt>
+      <dd>{escape(app_server["workflow_id"])}</dd>
+      <dt>Codex App</dt>
+      <dd class="link-ref">{escape(app_server["codex_app_link_ref"])}</dd>
+      <dt>Status</dt>
+      <dd>{escape(app_server["link_status"])}</dd>
       <dt>Thread</dt>
       <dd>{escape(app_server["thread_ref"])}</dd>
       <dt>Transport</dt>
@@ -294,6 +392,8 @@ def _render_run_card(run: WorkflowRun) -> str:
       <dd>{escape(app_server["gate_status"])}</dd>
       <dt>Smoke</dt>
       <dd>{escape(app_server["real_smoke_status"])}</dd>
+      <dt>Artifacts</dt>
+      <dd>{_render_list(app_server["artifact_refs"])}</dd>
     </dl>
     <h3>Events</h3>
     <ol class="event-list">
@@ -301,6 +401,11 @@ def _render_run_card(run: WorkflowRun) -> str:
     </ol>
   </aside>
 </section>"""
+
+
+def _render_list(values: Sequence[str]) -> str:
+    items = "".join(f"<li>{escape(value)}</li>" for value in values)
+    return f'<ul class="compact">{items}</ul>'
 
 
 def _render_event(event: WorkflowRunEvent) -> str:

@@ -29,3 +29,6 @@ plan_ref: Plan/workflow-ui-commondb-20260608/plans/Plan_N0001.md
 - Browser rendering check was attempted through the available Node REPL, but Playwright was not installed in the environment; static HTML generation and tests passed.
 - Drafted the Codex App vertical integration spec at `artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md`.
 - The spec shifts conversation and artifact review to Codex App, keeps Workflow Core as state authority, and narrows the custom workflow UI to goal setup, state transitions, contracts, and CommonDB approval controls.
+- Resolved implementation-blocking OQs with project-scoped App Server management links, direct custom UI to Codex App navigation, optional Obsidian backup/write-back, CommonDB useful-source and approved-memo searchability, and a spec-amendment guard for scope expansion.
+- Created spec review, sanitized human approval evidence, approved spec freeze, and active workflow run records for `codex-app-vertical-integration-20260609`.
+- Executed the mock-safe workflow slice: custom UI now renders goal setup state, Codex App project links, CommonDB useful-source/approved-memo controls, and scope guard state; adapter now maps project-level Codex App links without raw contents.

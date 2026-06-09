@@ -4,12 +4,14 @@ import pytest
 import yaml
 
 from src.workflow_adapters.codex_app_server_adapter import (
+    AppServerProjectLink,
     AppServerRunEvent,
     AppServerThreadLink,
     HumanGateRequired,
     build_app_server_ui_panel,
     connect_real_app_server,
     map_jsonrpc_notification,
+    map_project_link,
     map_run_event,
     map_thread_link,
 )
@@ -30,6 +32,43 @@ def test_thread_link_maps_external_ref_without_state_authority_shift() -> None:
     assert record["transport"] == "stdio"
     assert record["stores_raw_thread_body"] is False
     assert record["stores_credentials"] is False
+
+
+def test_project_link_maps_codex_app_navigation_without_raw_contents() -> None:
+    record = map_project_link(
+        AppServerProjectLink(
+            project_id="workflow-ui-commondb-20260608",
+            workflow_id="codex-app-vertical-integration-20260609",
+            app_server_thread_ref="app-server-thread:demo-thread",
+            codex_app_link_ref="codex-app-link:workflow-ui-commondb-demo",
+            artifact_refs=("codex-app-artifact:workflow-console-html", "github-pr:19"),
+            link_status="linked",
+            latest_event_summary="Project link is available.",
+        )
+    )
+
+    assert record["record_type"] == "app_server_project_link"
+    assert record["state_authority"] == "workflow_core"
+    assert record["codex_app_link_ref"] == "codex-app-link:workflow-ui-commondb-demo"
+    assert record["artifact_refs"] == ["codex-app-artifact:workflow-console-html", "github-pr:19"]
+    assert record["stores_raw_thread_body"] is False
+    assert record["stores_artifact_contents"] is False
+    assert record["stores_credentials"] is False
+
+
+def test_project_link_rejects_unapproved_artifact_ref() -> None:
+    with pytest.raises(ValueError, match="artifact ref"):
+        map_project_link(
+            AppServerProjectLink(
+                project_id="workflow-ui-commondb-20260608",
+                workflow_id="codex-app-vertical-integration-20260609",
+                app_server_thread_ref="app-server-thread:demo-thread",
+                codex_app_link_ref="codex-app-link:workflow-ui-commondb-demo",
+                artifact_refs=("file:///tmp/raw.html",),
+                link_status="linked",
+                latest_event_summary="Unsafe artifact ref.",
+            )
+        )
 
 
 def test_run_event_rejects_unbounded_summary() -> None:

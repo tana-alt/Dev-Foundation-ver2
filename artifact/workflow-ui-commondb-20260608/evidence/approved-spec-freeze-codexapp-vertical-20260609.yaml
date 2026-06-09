@@ -1,0 +1,63 @@
+schema_version: "0.1"
+record_type: approved_spec_freeze
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-CODEXAPP-VERTICAL-001
+  freeze_id: approved-spec-freeze-codexapp-vertical-20260609
+  work_id: codex-app-vertical-integration-20260609
+  created_at: "2026-06-09"
+
+sources:
+  goal_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  spec_packet_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-codexapp-vertical-20260609.yaml
+  human_approval_ref: artifact/workflow-ui-commondb-20260608/evidence/human-approval-codexapp-vertical-20260609.yaml
+
+authority:
+  behavior_authority: approved_spec_ref_only
+  behavior_authority_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  implementation_policy_role: how_guidance_only
+
+freeze:
+  content_hash: sha256:f9758045a3cc9925242a83a82fbf3ae2b48a7af6b41040f1c93b7f0bf29ea73f
+  requirement_ids:
+    - REQ-001
+    - REQ-002
+    - REQ-003
+    - REQ-004
+    - REQ-005
+    - REQ-006
+    - REQ-007
+    - REQ-008
+    - REQ-009
+  acceptance_criteria_ids:
+    - AC-001
+    - AC-002
+    - AC-003
+    - AC-004
+    - AC-005
+    - AC-006
+    - AC-007
+    - AC-008
+    - AC-009
+    - AC-010
+    - AC-011
+    - AC-012
+    - AC-013
+    - AC-014
+    - AC-015
+    - AC-016
+    - AC-017
+    - AC-018
+    - AC-019
+
+change_policy:
+  direct_edit_after_freeze: prohibited
+  allowed_change_path: spec_amendment_record
+  human_approval_required: true
+
+handoff:
+  next_action: lane_mapping

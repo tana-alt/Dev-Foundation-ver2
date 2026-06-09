@@ -1,0 +1,28 @@
+schema_version: "0.1"
+record_type: human_approval_evidence
+status: approved
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  approval_id: human-approval-codexapp-vertical-20260609
+  created_at: "2026-06-09"
+
+approved_scope:
+  spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-codexapp-vertical-20260609.yaml
+  approval_summary: "Resolve OQs and execute the workflow with Codex App as conversation/artifact surface, custom UI as state manager, Workflow Core as state authority, CommonDB as useful-source and approved-memo searchability surface, and explicit scope-amendment guards."
+
+evidence_limits:
+  stores_raw_thread_body: false
+  stores_raw_terminal_log: false
+  stores_credentials: false
+  stores_browser_session: false
+  stores_local_runtime_state: false
+
+human_gates_preserved:
+  real_app_server_bridge: required
+  commondb_indexing_or_migration: required
+  obsidian_write_back: required
+  merge: human_only
+  deployment: human_only
+  protected_writes: human_only

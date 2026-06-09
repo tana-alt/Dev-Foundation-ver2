@@ -1,0 +1,49 @@
+schema_version: "0.1"
+record_type: build_result
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: codex-app-vertical-integration-20260609
+  build_result_id: build-result-codexapp-vertical-ui-20260609
+  created_at: "2026-06-09"
+
+source_refs:
+  - artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-codexapp-vertical-20260609.yaml
+  - artifact/workflow-ui-commondb-20260608/output/workflows/codex-app-vertical-integration-20260609.yaml
+
+changed_surfaces:
+  - src/workflow_ui/fixtures.py
+  - src/workflow_ui/console.py
+  - src/workflow_adapters/codex_app_server_adapter.py
+  - tests/workflow_ui/test_console.py
+  - tests/workflow_adapters/test_codex_app_server_adapter.py
+
+implemented_scope:
+  - "Goal setup state rendered in the custom workflow UI."
+  - "Codex App project/thread/artifact link state rendered through opaque refs."
+  - "CommonDB useful-source and approved-memo controls rendered without raw bodies."
+  - "Scope guard state rendered to block goal drift and require spec amendment for expansion."
+  - "Mock-safe App Server project link adapter added."
+
+human_gates_preserved:
+  real_app_server_bridge: required
+  commondb_indexing_or_migration: required
+  obsidian_write_back: required
+  merge: human_only
+
+verification:
+  - command: "uv run pytest tests/workflow_ui tests/workflow_adapters/test_codex_app_server_adapter.py -q"
+    result: passed
+    notes: "16 passed."
+  - command: "uv run mypy"
+    result: passed
+    notes: "No issues found in 23 source files."
+  - command: "uv run python scripts/run-workflow-console.py --format html --output /tmp/workflow-console.html"
+    result: passed
+    notes: "Generated static HTML state-management UI."
+
+residual_risk:
+  - "Real Codex App Server bridge and exact deep-link format remain gated and carried in OQ-006/OQ-007."
+  - "Browser rendering check remains limited by local Playwright availability unless a browser tool is available."

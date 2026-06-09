@@ -1,0 +1,67 @@
+schema_version: "0.1"
+record_type: workflow_run_record
+status: active
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: codex-app-vertical-integration-20260609
+  goal_id: codex-app-vertical-integration
+  created_at: "2026-06-09"
+
+phase:
+  current: build_result
+  next_action: verification_review
+
+record_refs:
+  goal_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-codexapp-vertical-20260609.yaml
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-codexapp-vertical-20260609.yaml
+  lane_map_ref: ""
+  work_contract_refs: []
+  build_result_refs:
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-codexapp-vertical-ui-20260609.yaml
+  review_record_refs: []
+  integration_review_refs: []
+  inconsistency_register_ref: ""
+  rework_refs: []
+  convergence_check_ref: ""
+  final_handoff_ref: ""
+
+communication_rules:
+  human_interface: main_lane_only
+  subagent_to_human_direct: prohibited
+  subagent_to_subagent_direct: prohibited
+  state_authority: record_refs_not_conversation
+
+human_gates:
+  spec_approval:
+    required: true
+    status: approved
+    evidence_ref: artifact/workflow-ui-commondb-20260608/evidence/human-approval-codexapp-vertical-20260609.yaml
+  real_app_server_bridge:
+    required: true
+    status: required
+    evidence_ref: ""
+  commondb_indexing_or_migration:
+    required: true
+    status: required
+    evidence_ref: ""
+  final_merge:
+    required: true
+    status: required
+    evidence_ref: ""
+
+open_questions:
+  - id: OQ-006
+    carryover_to: real_app_server_bridge
+  - id: OQ-007
+    carryover_to: real_app_server_bridge
+
+blocked_reasons: []
+residual_risk:
+  - "Real Codex App Server bridge remains gated; execute mock-safe UI/state work first."
+  - "CommonDB indexing/migration remains gated; implement approval state before live indexing."
+
+handoff:
+  next_action: verification_review

@@ -6,12 +6,17 @@ status: draft
 sections:
   evidence:
     - evidence/merge-readiness-20260609.yaml
+    - evidence/spec-review-codexapp-vertical-20260609.yaml
+    - evidence/human-approval-codexapp-vertical-20260609.yaml
+    - evidence/approved-spec-freeze-codexapp-vertical-20260609.yaml
+    - evidence/build-result-codexapp-vertical-ui-20260609.yaml
   output:
     - output/docs/external-facing-overview.md
     - output/docs/workflow-core-state-model.md
     - output/docs/app-server-ui-adapter-design.md
     - output/docs/commondb-context-adapter-contract.md
     - output/specs/codex-app-vertical-integration-spec.md
+    - output/workflows/codex-app-vertical-integration-20260609.yaml
     - output/demos/demo-foundation-overview/README.md
     - output/demos/demo-foundation-overview/outline.yaml
     - output/demos/demo-codex-sdk-run/README.md

@@ -1,0 +1,61 @@
+schema_version: "0.1"
+record_type: specification_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-CODEXAPP-VERTICAL-001
+  review_id: spec-review-codexapp-vertical-20260609
+  created_at: "2026-06-09"
+
+sources:
+  source_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+    - Plan/workflow-ui-commondb-20260608/plans/Plan_N0001.md
+    - docs/reference/specification-workflow-reference.md
+
+checks:
+  - name: requirement_traceability
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+    notes: "REQ-001 through REQ-009 define observable behavior and acceptance criteria."
+  - name: observable_acceptance_criteria
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+    notes: "AC-001 through AC-019 cover goal setup, conversation delegation, approvals, CommonDB controls, artifact review, project links, and scope guard behavior."
+  - name: implementation_policy_leakage
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+    notes: "Spec does not choose framework, transport library, persistence engine, branch strategy, or file layout."
+  - name: human_gate_readiness
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/codex-app-vertical-integration-spec.md
+    notes: "Real App Server bridge, CommonDB indexing, Obsidian write-back, merge, deployment, and protected writes remain gated."
+
+observations:
+  facts:
+    - "Codex App is specified as the stable conversation and artifact review surface."
+    - "Custom workflow UI is specified as the goal, state transition, contract, and CommonDB control surface."
+    - "CommonDB searchable destinations are limited to useful source records and approved memo records."
+  inferences:
+    - "The remaining open questions are implementation-level bridge details and do not block mock-safe workflow execution."
+  decisions:
+    - "Approved for workflow execution after OQ resolution."
+
+unresolved_questions:
+  - id: OQ-006
+    status: carried
+    reason: "Exact Codex App deep-link format is needed before real bridge work, not before mock-safe state/UI work."
+  - id: OQ-007
+    status: carried
+    reason: "Read/write operation split is needed before live App Server project operations, not before local contract/UI work."
+
+human_gate:
+  required: true
+  status: approved
+  reason: "Human requested OQ resolution followed by workflow execution on 2026-06-09."
+
+decision:
+  result: approved_for_human_review
+  rework_required: []
+  next_action: approved_spec_freeze
