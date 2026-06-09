@@ -1,6 +1,5 @@
 import AppKit
 
-@main
 final class PersonalWorkflowApp: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
 
@@ -23,5 +22,17 @@ final class PersonalWorkflowApp: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true
+    }
+}
+
+@main
+enum PersonalWorkflowAppMain {
+    private static let delegate = PersonalWorkflowApp()
+
+    static func main() {
+        let app = NSApplication.shared
+        app.delegate = delegate
+        app.setActivationPolicy(.regular)
+        app.run()
     }
 }
