@@ -1,0 +1,63 @@
+schema_version: "0.1"
+record_type: spec_draft_notes
+status: ready_for_spec_review
+project_id: workflow-ui-commondb-20260608
+created_at: "2026-06-10"
+worktree: /Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-integration-readiness
+task_scope:
+  role: low-effort spec drafter subagent
+  instruction: do not implement app/config/deploy behavior
+  allowed_write_targets:
+    - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-draft-notes-local-only-app-deploy-and-e2e-20260610.yaml
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - docs/reference/specification-workflow-reference.md
+  - .agents/skills/spec-authority-governance/SKILL.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+changed_paths:
+  - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-draft-notes-local-only-app-deploy-and-e2e-20260610.yaml
+not_changed:
+  - manifest
+  - lane maps
+  - source code
+  - config files
+  - deploy scripts
+summary:
+  - Drafted a WHAT-only amendment requiring actual local personal app deploy completion.
+  - Required Codex App deep link verification, Codex config target through CommonDB search dry_run verification, E2E deploy/link checks, and dry_run block verification.
+  - Made "not implemented", placeholder-only, stubbed, skipped, or unevidenced required surfaces completion blockers.
+  - Recorded Qdrant as future planned or optional, not a current blocker.
+  - Preserved human gates for secret-bearing, irreversible, public, live MCP, indexing, Qdrant, Obsidian write-back, release, and infrastructure actions.
+verification:
+  result: passed
+  checks:
+    - name: source-ref local review
+      result: passed
+      note: Required source refs were read before drafting.
+    - name: allowed-write-target check
+      result: passed
+      note: Writes were limited to the two paths listed in task scope.
+    - name: implementation-boundary check
+      result: passed
+      note: No app, config, deploy script, manifest, lane map, or source code edits were made.
+    - name: spec-boundary check
+      result: passed
+      note: Amendment states observable behavior and required external contracts/trust boundaries without selecting implementation mechanics.
+unverified_surfaces:
+  - No implementation verification was run because this task was records-only spec drafting.
+  - No app/package/config/deploy files were inspected beyond existing specs because observable app implementation was not needed for this amendment.
+residual_risk:
+  - Spec reviewer should confirm the exact wording is acceptable before freeze.
+  - Future implementation lanes must supply concrete E2E, link-check, and dry_run block evidence.
+human_gate_status:
+  spec_review: pending
+  implementation: not_started
+  local_config_app_deploy_link_checks: in_scope_after_human_spec_approval
+  secret_bearing_or_irreversible_actions: blocked_until_explicit_human_approval
+next_action: spec review

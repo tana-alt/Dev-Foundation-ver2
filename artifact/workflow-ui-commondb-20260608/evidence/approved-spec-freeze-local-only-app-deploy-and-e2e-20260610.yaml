@@ -1,0 +1,117 @@
+schema_version: "0.1"
+record_type: approved_spec_freeze
+status: frozen
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-LOCAL-ONLY-APP-DEPLOY-E2E-AMENDMENT-20260610
+  freeze_id: approved-spec-freeze-local-only-app-deploy-and-e2e-20260610
+  created_at: "2026-06-10"
+
+approval:
+  approved_by: human
+  approval_ref: user_request:2026-06-10-pass-local-only-app-deploy-and-e2e-amendment
+  approval_scope: "Freeze approved local-only app deploy and E2E amendment and map implementation lanes."
+  implementation_authorized_for_main_lane: false
+
+spec_refs:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-e2e-20260610.yaml
+  amended_spec_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+
+frozen_requirement_ids:
+  - REQ-E2E-001
+  - REQ-E2E-002
+  - REQ-E2E-003
+  - REQ-E2E-004
+  - REQ-E2E-005
+  - REQ-E2E-006
+  - REQ-E2E-007
+
+frozen_acceptance_criteria_ids:
+  - AC-E2E-001
+  - AC-E2E-002
+  - AC-E2E-003
+  - AC-E2E-004
+  - AC-E2E-005
+  - AC-E2E-006
+  - AC-E2E-007
+  - AC-E2E-008
+  - AC-E2E-009
+  - AC-E2E-010
+  - AC-E2E-011
+  - AC-E2E-012
+  - AC-E2E-013
+  - AC-E2E-014
+  - AC-E2E-015
+  - AC-E2E-016
+  - AC-E2E-017
+  - AC-E2E-018
+  - AC-E2E-019
+  - AC-E2E-020
+  - AC-E2E-021
+  - AC-E2E-022
+  - AC-E2E-023
+  - AC-E2E-024
+  - AC-E2E-025
+  - AC-E2E-026
+  - AC-E2E-027
+  - AC-E2E-028
+  - AC-E2E-029
+  - AC-E2E-030
+  - AC-E2E-031
+  - AC-E2E-032
+
+authority_boundary:
+  behavior_authority: approved_spec_ref_only
+  implementation_policy_role: how_guidance_only
+  main_lane_role: coordinate_records_and_dispatch_only
+  qdrant_status: future_optional_not_current_blocker
+  mcp_scope: commondb_search_dry_run_only
+
+local_only_actions_in_scope_after_approval:
+  - local_config_edits
+  - local_user_scoped_app_deploy_or_install
+  - local_launch
+  - codex_app_deep_link_checks
+  - commondb_mcp_dry_run
+  - e2e_deploy_and_link_checks
+  - fake_non_secret_security_risk_redaction_or_block_check
+
+human_gates_remaining:
+  - secret_bearing_or_secret_handling
+  - irreversible_external_action
+  - public_network_exposure
+  - live_mcp_call
+  - searchability_indexing_or_vector_persistence
+  - qdrant_enablement
+  - obsidian_write_back
+  - release_notarization_distribution
+  - production_infrastructure_or_ci_cd_release_change
+  - system_wide_install
+  - launch_agent_daemon_login_item_or_auto_start
+
+freeze_decision:
+  result: frozen
+  next_action: lane_mapping
+
+verification_expectation:
+  records_phase:
+    - yaml_parse
+    - allowed_write_target_check
+    - source_ref_existence_check
+    - denied_content_scan
+  later_implementation_lanes:
+    - local_app_build_install_launch_check
+    - rollback_or_remove_instruction_check
+    - codex_deeplink_link_check
+    - codex_config_to_commondb_dry_run_check
+    - no_live_indexing_search_write_check
+    - fake_security_risk_redaction_or_block_check
+    - e2e_completion_gate_check
+
+residual_risk:
+  - "Freeze is records-only; no app, config, deploy, link, MCP dry_run, or E2E behavior was implemented or verified in this lane."
+  - "Later lanes must record exact local targets, changed paths, rollback/removal instructions, and verification evidence."

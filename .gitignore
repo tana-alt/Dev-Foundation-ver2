@@ -8,3 +8,5 @@ __pycache__/
 archive/
 agent_docs_rebuild_scope_ref/
 Foundation-development/
+app/PersonalWorkflowApp/.build/
+dist/

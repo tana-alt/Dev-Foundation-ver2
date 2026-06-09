@@ -1,0 +1,96 @@
+schema_version: "0.1"
+record_type: implementation_build_result
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  worktree: /Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-integration-readiness
+  created_at: "2026-06-10"
+  rework_scope: local-only reversible config/app deploy/link/MCP dry_run/E2E
+
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - .agents/skills/scope-routing-governance/SKILL.md
+  - user cross-review findings 2026-06-10
+
+changed_paths:
+  - .gitignore
+  - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+  - scripts/check-personal-workflow-app-e2e.sh
+  - scripts/enable-commondb-mcp-local.sh
+  - tests/workflow_adapters/test_commondb_mcp_dry_run.py
+  - templates/codex-config.toml.example
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+
+local_side_effects:
+  codex_config:
+    path: /Users/yamamotokaito/.codex/config.toml
+    status: modified
+    backup_path: /Users/yamamotokaito/.codex/config.toml.bak-20260610070648
+    contents_printed: false
+    block_type: commondb.search dry_run_only
+  app_bundle:
+    path: /Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-integration-readiness/dist/Personal Workflow.app
+    status: installed_repo_local
+    git_status: ignored_by_dist_rule
+
+implementation_summary:
+  - "Codex deep links are restricted to codex:// scheme links in the app and E2E script."
+  - "E2E default config now targets ~/.codex/config.toml unless explicitly overridden."
+  - "Added a local helper that verifies or appends a dry_run-only commondb.search block without printing config contents."
+  - "Focused tests cover public URL rejection and local dry_run block append/block behavior."
+  - "dist/ is ignored so generated app bundles are not committed."
+
+verification:
+  result: passed
+  checks:
+    - name: sh -n scripts/check-personal-workflow-app-e2e.sh scripts/install-personal-workflow-app.sh scripts/enable-commondb-mcp-local.sh
+      result: passed
+    - name: python3 -m py_compile scripts/commondb-mcp-dry-run.py
+      result: passed
+    - name: python3 -m pytest tests/workflow_adapters/test_commondb_mcp_dry_run.py -q
+      result: passed
+      note: "6 passed."
+    - name: swift build --package-path app/PersonalWorkflowApp
+      result: passed
+      note: "Build complete."
+    - name: sh scripts/enable-commondb-mcp-local.sh --dry-run
+      result: passed
+      note: "Reported would_append before modification."
+    - name: sh scripts/enable-commondb-mcp-local.sh --apply
+      result: passed
+      note: "Appended dry_run-only block and created backup."
+    - name: sh scripts/enable-commondb-mcp-local.sh --dry-run
+      result: passed
+      note: "Reported already_present after append."
+    - name: python3 scripts/commondb-mcp-dry-run.py --config ~/.codex/config.toml --json
+      result: passed
+      note: "Config target, dry_run_only, fake_risk_blocked, and sanitized_block_result passed."
+    - name: sh scripts/check-personal-workflow-app-e2e.sh --dry-run --config ~/.codex/config.toml
+      result: passed
+      note: "Dry-run deploy and safe codex scheme checks passed against local config."
+    - name: sh scripts/check-personal-workflow-app-e2e.sh --config ~/.codex/config.toml
+      result: passed
+      note: "Repo-local dist app bundle installed and verified against local config."
+
+human_gate_status:
+  local_config_append: approved_by_user_request
+  repo_local_app_install: approved_by_user_request
+  open_codex_link: not_run
+  app_launch: not_run
+  live_mcp: blocked
+  indexing_search_qdrant: blocked
+  obsidian_write_back: blocked
+  public_exposure: blocked
+  secret_bearing_actions: blocked
+
+unverified_surfaces:
+  - "No live MCP/indexing/search/Qdrant/Obsidian write-back was exercised by design."
+  - "Codex app scheme target availability was not launched in this run; validation covers accepted scheme gating."
+
+residual_risk:
+  - "Existing uncommitted app changes outside the cross-review fixes remain owned by the prior implementation context."

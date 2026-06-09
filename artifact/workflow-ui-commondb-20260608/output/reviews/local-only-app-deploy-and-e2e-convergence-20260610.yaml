@@ -1,0 +1,102 @@
+schema_version: "0.1"
+record_type: convergence_decision_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610
+  created_at: "2026-06-10"
+
+source_refs_used:
+  - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+  - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+
+inputs:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610.yaml
+  implementation_policy_ref: artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+  verification_refs:
+    - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+    - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+  review_refs:
+    - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+
+completion_criteria_coverage:
+  - id: CC-E2E-001
+    status: covered
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+    notes: "Personal app functionality is present in the installed local user app surface."
+  - id: CC-E2E-002
+    status: covered
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+    notes: "Install and rollback commands are recorded for the user-scoped app path."
+  - id: CC-E2E-003
+    status: covered
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+    notes: "Codex deep link gating is implemented and verified for codex:// links while rejecting public URLs."
+  - id: CC-E2E-004
+    status: covered
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+    notes: "Local Codex config target through CommonDB search dry_run is implemented and verified without printing config contents."
+  - id: CC-E2E-005
+    status: covered
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+    notes: "E2E deploy, launch, link, config target, and dry_run checks are part of completion evidence."
+  - id: CC-E2E-006
+    status: covered
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+    notes: "Fake non-secret dry_run risk content is blocked or redacted before agent-visible consumption."
+  - id: CC-E2E-007
+    status: covered
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+    notes: "Final review found no remaining blocker for deploy, deep link, MCP config, dry_run block, E2E/link checks, or app functionality."
+  - id: CC-E2E-008
+    status: covered
+    evidence_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+      - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+    notes: "Qdrant remains future optional and is not a current blocker."
+
+reviews:
+  final_review_status: passed
+  blocking_findings: 0
+  finding_summary: "Cross-review findings were closed by rework; final review noted pass with no blocking findings."
+
+open_items:
+  critical_inc: 0
+  high_inc: 0
+  unresolved_fix: 0
+  unverified_required_checks: 0
+
+decision:
+  status: complete
+  reason: "Implemented local-only app deploy, Codex deep link checks, CommonDB MCP dry_run verification, dry_run security blocking, local install evidence, and review rework cover CC-E2E-001 through CC-E2E-008."
+  next_action: ready_for_main_lane_final_checks
+
+human_gate_status:
+  local_config_app_deploy_and_link_checks: approved_by_spec_scope
+  live_mcp: blocked
+  indexing_search_qdrant_or_vector_persistence: blocked
+  obsidian_write_back: blocked
+  public_distribution_release_notarization_ci_cd_or_infrastructure: blocked
+  secret_bearing_or_irreversible_external_actions: blocked

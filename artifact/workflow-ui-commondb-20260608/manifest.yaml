@@ -4,6 +4,8 @@ record_type: artifact_manifest
 status: draft
 
 sections:
+  lane_maps:
+    - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610.yaml
   evidence:
     - evidence/merge-readiness-20260609.yaml
     - evidence/spec-review-codexapp-vertical-20260609.yaml
@@ -23,6 +25,11 @@ sections:
     - evidence/spec-review-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
     - evidence/approved-spec-freeze-local-only-app-deploy-and-mcp-dry-run-20260610.yaml
     - evidence/commondb-mcp-config-audit-20260610.yaml
+    - evidence/spec-draft-notes-local-only-app-deploy-and-e2e-20260610.yaml
+    - evidence/spec-review-local-only-app-deploy-and-e2e-20260610.yaml
+    - evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+    - evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+    - evidence/local-install-personal-workflow-app-20260610.yaml
   output:
     - output/docs/external-facing-overview.md
     - output/docs/workflow-core-state-model.md
@@ -33,11 +40,13 @@ sections:
     - output/specs/app-server-thread-alignment-backend-spec.md
     - output/specs/obsidian-commondb-contract-integration-spec.md
     - output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+    - output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
     - output/workflows/codex-app-vertical-integration-20260609.yaml
     - output/implementation-policies/app-server-thread-alignment-backend-20260609/backend.yaml
     - output/implementation-policies/personal-mac-workflow-app-20260609/appkit-shell.yaml
     - output/implementation-policies/obsidian-commondb-contract-integration-20260609/contract.yaml
     - output/implementation-policies/local-only-app-deploy-and-mcp-dry-run-20260610/deploy.yaml
+    - output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
     - output/inconsistency/app-server-thread-alignment-backend-20260609.yaml
     - output/inconsistency/personal-mac-workflow-app-20260609.yaml
     - output/inconsistency/obsidian-commondb-contract-integration-20260610.yaml
@@ -64,6 +73,9 @@ sections:
     - output/reviews/local-only-app-deploy-and-mcp-dry-run-cross-review-manifest-fix-20260610.yaml
     - output/reviews/local-only-app-deploy-and-mcp-dry-run-manifest-fix-review-20260610.yaml
     - output/reviews/local-only-app-deploy-and-mcp-dry-run-manifest-completeness-review-20260610.yaml
+    - output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+    - output/reviews/local-only-app-deploy-and-e2e-convergence-20260610.yaml
+    - output/reviews/local-only-app-deploy-and-e2e-final-handoff-20260610.yaml
     - output/traceability/personal-mac-workflow-app-20260609.yaml
     - output/designs/personal-mac-workflow-app-direction-b.png
     - output/demos/demo-foundation-overview/README.md
@@ -77,3 +89,4 @@ sections:
 notes:
   - "Sanitized workflow UI and CommonDB demo artifacts only."
   - "No runtime queue, lock ledger, browser session, raw thread body, local path, or secret-bearing material."
+  - "Local-only app deploy and E2E records include sanitized user-scoped install evidence without config contents or secrets."

@@ -1,0 +1,92 @@
+schema_version: "0.1"
+record_type: final_handoff_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610
+  created_at: "2026-06-10"
+
+summary: "Closed records for the local-only Personal Workflow app install, Codex deep link checks, and CommonDB MCP dry_run workflow."
+
+changed_paths:
+  - .gitignore
+  - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/WorkflowShellView.swift
+  - scripts/check-personal-workflow-app-e2e.sh
+  - scripts/commondb-mcp-dry-run.py
+  - scripts/enable-commondb-mcp-local.sh
+  - scripts/install-personal-workflow-app.sh
+  - templates/codex-config.toml.example
+  - tests/workflow_adapters/test_commondb_mcp_dry_run.py
+  - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-draft-notes-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-convergence-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-final-handoff-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/manifest.yaml
+
+source_refs_used:
+  - AGENTS.md
+  - docs/01-agent-operating-contract.md
+  - docs/02-output-verification-contract.md
+  - docs/03-repo-boundary-and-storage-contract.md
+  - .agents/skills/review-fix-convergence-governance/SKILL.md
+  - .agents/skills/traceability-gate-governance/SKILL.md
+  - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-convergence-20260610.yaml
+
+convergence_decision_ref: artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-convergence-20260610.yaml
+verification_refs:
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/evidence/local-install-personal-workflow-app-20260610.yaml
+
+user_install_and_use:
+  app_path: /Users/yamamotokaito/Applications/Personal Workflow.app
+  install_or_refresh_command: "sh scripts/install-personal-workflow-app.sh"
+  launch_after_install: "Open /Users/yamamotokaito/Applications/Personal Workflow.app from Finder, Spotlight, or the macOS open action."
+  rollback_command: "sh scripts/install-personal-workflow-app.sh --remove"
+  config_boundary: "Use the approved local Codex config target only; do not print or commit config contents."
+  e2e_check_command: "sh scripts/check-personal-workflow-app-e2e.sh --config ~/.codex/config.toml"
+
+completion:
+  decision: complete
+  reason: "CC-E2E-001 through CC-E2E-008 are covered by implementation evidence, local install evidence, review rework, and convergence record."
+  ready_for_main_lane_final_checks: true
+
+human_gate:
+  required: true
+  status: required_for_blocked_or_future_surfaces
+  reason: "Live MCP, indexing/search writes, Qdrant, vector persistence, Obsidian write-back, public distribution, notarization, CI/CD release, infrastructure, system install, launch agents, daemons, login items, auto-start, secret-bearing actions, and irreversible external actions remain blocked unless separately approved."
+
+residual_risks:
+  - id: RISK-E2E-001
+    status: carried
+    summary: "Live MCP search, indexing, Qdrant/vector persistence, and Obsidian write-back were intentionally not exercised."
+    next_action: "Require a separate approved specification before enabling or verifying live integration."
+  - id: RISK-E2E-002
+    status: carried
+    summary: "Local Codex config was used as a target, but config contents remain intentionally unrecorded."
+    next_action: "Keep future records sanitized and verify behavior through safe status output only."
+  - id: RISK-E2E-003
+    status: carried
+    summary: "The installed app is user-scoped and local-only, not a notarized or publicly distributed release artifact."
+    next_action: "Use the rollback command for removal or create a separate release specification for distribution."
+
+unverified_surfaces:
+  - live_mcp_calls
+  - live_indexing_or_searchability
+  - qdrant_or_vector_persistence
+  - obsidian_write_back
+  - public_distribution_release_notarization_or_ci_cd
+  - system_install_launch_agent_daemon_login_item_or_auto_start
+  - secret_bearing_or_irreversible_external_actions
+
+next_action: ready_for_main_lane_final_checks

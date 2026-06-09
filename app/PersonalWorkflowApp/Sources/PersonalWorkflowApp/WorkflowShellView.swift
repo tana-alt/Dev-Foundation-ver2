@@ -47,20 +47,21 @@ final class WorkflowShellView: NSView {
         bar.layer?.backgroundColor = Palette.chrome.cgColor
 
         bar.addArrangedSubview(title("Personal Workflow", size: 14, weight: .semibold))
+        let stageLabels: [String] = WorkflowStage.allCases.map { $0.label }
         let segmented = NSSegmentedControl(
-            labels: WorkflowStage.allCases.map(\.label),
+            labels: stageLabels,
             trackingMode: .selectOne,
             target: nil,
             action: nil
         )
         segmented.selectedSegment = 1
-        segmented.widthAnchor.constraint(equalToConstant: 420).isActive = true
+        segmented.widthAnchor.constraint(equalToConstant: 520).isActive = true
         bar.addArrangedSubview(segmented)
         bar.addArrangedSubview(spacer())
-        bar.addArrangedSubview(pill("CommonDB", "mock", .complete))
+        bar.addArrangedSubview(pill("CommonDB", "dry_run", .complete))
         bar.addArrangedSubview(pill("Scope", "guarded", .active))
 
-        let button = NSButton(title: "Send to Codex App", target: self, action: #selector(mockSendToCodexApp))
+        let button = NSButton(title: "Open Codex Ref", target: self, action: #selector(openCodexApp))
         button.bezelStyle = .rounded
         button.contentTintColor = Palette.blue
         bar.addArrangedSubview(button)
@@ -76,13 +77,28 @@ final class WorkflowShellView: NSView {
         left.widthAnchor.constraint(equalToConstant: 282).isActive = true
         workspace.addArrangedSubview(left)
         workspace.addArrangedSubview(verticalSeparator())
-        workspace.addArrangedSubview(makeLaneMap())
+        workspace.addArrangedSubview(makeCenterTabs())
         workspace.addArrangedSubview(verticalSeparator())
 
         let inspector = makeInspector()
         inspector.widthAnchor.constraint(equalToConstant: 330).isActive = true
         workspace.addArrangedSubview(inspector)
         return workspace
+    }
+
+    private func makeCenterTabs() -> NSView {
+        let tabs = NSTabView()
+        tabs.tabViewType = .topTabsBezelBorder
+        tabs.addTabViewItem(tabItem(label: "Board", view: makeLaneMap()))
+        tabs.addTabViewItem(tabItem(label: "Repository", view: makeRepositoryWorktreeClosePage()))
+        return tabs
+    }
+
+    private func tabItem(label: String, view: NSView) -> NSTabViewItem {
+        let item = NSTabViewItem(identifier: label)
+        item.label = label
+        item.view = view
+        return item
     }
 
     private func makeLeftPanel() -> NSView {
@@ -125,16 +141,89 @@ final class WorkflowShellView: NSView {
         return outer
     }
 
+    private func makeRepositoryWorktreeClosePage() -> NSView {
+        let outer = verticalPanel(background: Palette.content)
+        let header = NSStackView()
+        header.orientation = .horizontal
+        header.alignment = .centerY
+        header.addArrangedSubview(title("Repository", size: 18, weight: .semibold))
+        header.addArrangedSubview(spacer())
+        header.addArrangedSubview(pill("Tab", "Worktree close", .active))
+        outer.addArrangedSubview(header)
+        outer.addArrangedSubview(caption("Close candidates are grouped by repository and gated by PR state, active session, and local-only work."))
+
+        let scroll = NSScrollView()
+        scroll.hasVerticalScroller = true
+        scroll.borderType = .noBorder
+
+        let list = verticalPanel(background: Palette.content)
+        list.spacing = 12
+        fixture.worktreeCloseCandidates.forEach { candidate in
+            list.addArrangedSubview(worktreeCloseCard(candidate))
+        }
+        list.addArrangedSubview(spacer())
+        scroll.documentView = list
+        outer.addArrangedSubview(scroll)
+        return outer
+    }
+
+    private func worktreeCloseCard(_ candidate: WorktreeCloseCandidate) -> NSView {
+        let card = verticalPanel(background: Palette.card)
+        card.layer?.borderColor = statusColor(candidate.closeState).withAlphaComponent(0.55).cgColor
+        card.layer?.borderWidth = 1
+
+        let header = NSStackView()
+        header.orientation = .horizontal
+        header.alignment = .centerY
+        header.addArrangedSubview(title(candidate.repositoryName, size: 14, weight: .semibold))
+        header.addArrangedSubview(spacer())
+        header.addArrangedSubview(pill("Close", candidate.closeState.rawValue, candidate.closeState))
+        card.addArrangedSubview(header)
+
+        card.addArrangedSubview(caption(candidate.worktreePath))
+        card.addArrangedSubview(statusBlock("Pull Request", candidate.pullRequest, .complete))
+        let activeSessionLabel = candidate.activeSession ? "Active" : "None"
+        let activeSessionStatus = statusForActiveSession(candidate.activeSession)
+        let localHeadStatus = statusForLocalPRHead(candidate.localPRHeadStatus)
+        let untrackedStatus = statusForUntrackedPolicy(candidate.untrackedPolicy)
+
+        card.addArrangedSubview(statusBlock("Active Session", activeSessionLabel, activeSessionStatus))
+        card.addArrangedSubview(statusBlock("Local PR Head", candidate.localPRHeadStatus.rawValue, localHeadStatus))
+        card.addArrangedSubview(statusBlock("Untracked", candidate.untrackedPolicy.rawValue, untrackedStatus))
+        card.addArrangedSubview(infoBlock("Close Reason", candidate.closeReason))
+
+        let actions = NSStackView()
+        actions.orientation = .horizontal
+        actions.alignment = .centerY
+        actions.spacing = 8
+        actions.addArrangedSubview(spacer())
+        let review = NSButton(title: "Review Close", target: self, action: #selector(mockReviewClose))
+        review.bezelStyle = .rounded
+        actions.addArrangedSubview(review)
+        let close = NSButton(title: "Close Worktree", target: self, action: #selector(mockReviewClose))
+        close.bezelStyle = .rounded
+        close.isEnabled = candidate.closeState == .ready
+        actions.addArrangedSubview(close)
+        card.addArrangedSubview(actions)
+        return card
+    }
+
     private func makeInspector() -> NSView {
         let panel = verticalPanel(background: Palette.inspector)
         panel.addArrangedSubview(sectionHeader("Approvals / CommonDB"))
         fixture.approvals.forEach { panel.addArrangedSubview(approvalRow($0)) }
+        panel.addArrangedSubview(separator())
+        panel.addArrangedSubview(sectionHeader("Implemented Checks"))
+        fixture.integrationChecks.forEach { check in
+            panel.addArrangedSubview(statusBlock(check.title, check.detail, check.status))
+        }
+        panel.addArrangedSubview(infoBlock("Codex Link Ref", safeCodexLinkDescription()))
         panel.addArrangedSubview(infoBlock("useful_source", fixture.usefulSource))
         panel.addArrangedSubview(infoBlock("approved_memo", fixture.approvedMemo))
         panel.addArrangedSubview(infoBlock("Scope Guard", fixture.scopeGuardItems.joined(separator: "\n")))
         panel.addArrangedSubview(spacer())
 
-        let button = NSButton(title: "Send to Codex App", target: self, action: #selector(mockSendToCodexApp))
+        let button = NSButton(title: "Open Codex Ref", target: self, action: #selector(openCodexApp))
         button.bezelStyle = .rounded
         panel.addArrangedSubview(button)
         return panel
@@ -151,7 +240,7 @@ final class WorkflowShellView: NSView {
         strip.addArrangedSubview(caption("Contract / Verification / Gate"))
         fixture.gateChecks.forEach { strip.addArrangedSubview(pill($0.title, $0.state, $0.status)) }
         strip.addArrangedSubview(spacer())
-        strip.addArrangedSubview(caption("Mock data only. No raw thread bodies or secrets."))
+        strip.addArrangedSubview(caption("Fixture shell plus implemented local checks. No live CommonDB/Qdrant or raw bodies."))
         return strip
     }
 
@@ -180,6 +269,30 @@ final class WorkflowShellView: NSView {
 
     private func sourceRow(_ source: SourceReference) -> NSView {
         statusBlock(source.title, source.detail, source.isAvailable ? .complete : .waiting)
+    }
+
+    private func statusForActiveSession(_ activeSession: Bool) -> WorkItemStatus {
+        activeSession ? .blocked : .complete
+    }
+
+    private func statusForLocalPRHead(_ status: LocalPRHeadStatus) -> WorkItemStatus {
+        switch status {
+        case .matchesPRBranch:
+            return .complete
+        case .localAheadPRBranch:
+            return .blocked
+        case .unknown:
+            return .waiting
+        }
+    }
+
+    private func statusForUntrackedPolicy(_ policy: UntrackedPolicy) -> WorkItemStatus {
+        switch policy {
+        case .none:
+            return .complete
+        case .reviewBeforeClose:
+            return .waiting
+        }
     }
 
     private func approvalRow(_ record: ApprovalRecord) -> NSView {
@@ -296,7 +409,31 @@ final class WorkflowShellView: NSView {
         return view
     }
 
-    @objc private func mockSendToCodexApp() {
+    private func safeCodexLinkDescription() -> String {
+        if isSafeOpaqueCodexURL(fixture.codexDeepLinkURL) {
+            return "Ready: codex scheme with opaque safe ref only."
+        }
+        return "Blocked: link must use a local codex:// ref without secret or raw markers."
+    }
+
+    private func isSafeOpaqueCodexURL(_ url: URL) -> Bool {
+        guard url.scheme == "codex" else {
+            return false
+        }
+        let absolute = url.absoluteString.lowercased()
+        let forbiddenMarkers = ["token", "secret", "password", "raw", "/users/", "file://", "http://", "https://"]
+        return !forbiddenMarkers.contains { absolute.contains($0) }
+    }
+
+    @objc private func openCodexApp() {
+        guard isSafeOpaqueCodexURL(fixture.codexDeepLinkURL) else {
+            NSSound.beep()
+            return
+        }
+        NSWorkspace.shared.open(fixture.codexDeepLinkURL)
+    }
+
+    @objc private func mockReviewClose() {
         NSSound.beep()
     }
 }

@@ -1,0 +1,245 @@
+schema_version: "0.1"
+record_type: parallel_lane_map
+status: active
+
+identity:
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610
+  project_id: workflow-ui-commondb-20260608
+  created_at: "2026-06-10"
+
+governance:
+  map_owner: agent
+  update_rule: "Coordinate later implementation through records. This map is not a runtime queue, lock ledger, scheduler, worker heartbeat, dashboard, or worktree inventory."
+  context_budget:
+    required_source_refs_per_lane_max: 6
+    deny_broad_repo_scan: true
+
+git_scope:
+  mode: parallel
+  base_ref: origin/main
+  merge_target: origin/main
+  conflict_policy: explicitly_scoped
+  sibling_branch_refs: []
+
+spec_scope:
+  approved_spec_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  spec_review_ref: artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-e2e-20260610.yaml
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+  requirement_ids:
+    - REQ-E2E-001
+    - REQ-E2E-002
+    - REQ-E2E-003
+    - REQ-E2E-004
+    - REQ-E2E-005
+    - REQ-E2E-006
+    - REQ-E2E-007
+
+lanes:
+  - lane: mac-app-deploy
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610/mac-app-deploy/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610-mac-app-deploy"
+    task_intent: "Implement and verify personal Mac app functionality, local user app build/install surface, launch path, and rollback/remove instructions."
+    requirement_ids:
+      - REQ-E2E-001
+      - REQ-E2E-002
+      - REQ-E2E-006
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+      - artifact/workflow-ui-commondb-20260608/output/specs/personal-mac-workflow-app-spec.md
+      - app/PersonalWorkflowApp/Package.swift
+      - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+    allowed_write_targets:
+      - app/PersonalWorkflowApp/
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/verification/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - secrets
+      - public_deploy_credentials
+      - browser_sessions
+      - local_runtime_logs
+      - broad_repo_scan
+    expected_outputs:
+      - "Local app artifact or user-scoped app surface evidence, launch evidence, app functionality evidence, and rollback/remove instructions."
+    verification_required:
+      - "Build/install only to local user-scoped surface or local artifact."
+      - "Launch from the accepted local app surface."
+      - "Confirm no public network, system install, release, notarization, launch agent, daemon, login item, auto-start, dependency, CI/CD, or infrastructure change."
+
+  - lane: codex-deeplink
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610/codex-deeplink/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610-codex-deeplink"
+    task_intent: "Implement and verify Codex App deep link wiring using opaque refs and link-check evidence."
+    requirement_ids:
+      - REQ-E2E-003
+      - REQ-E2E-006
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+      - app/PersonalWorkflowApp/Sources/PersonalWorkflowApp/
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+    allowed_write_targets:
+      - app/PersonalWorkflowApp/
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/verification/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - raw_thread_bodies
+      - raw_artifact_bodies
+      - credentials
+      - tokens
+      - cookies
+      - browser_sessions
+      - terminal_logs
+      - broad_repo_scan
+    expected_outputs:
+      - "Codex App deep link evidence with opaque project, workflow, thread, or artifact refs and pending/blocked evidence for unavailable links."
+    verification_required:
+      - "Check implemented link target or state from the personal app surface."
+      - "Confirm raw bodies, credentials, tokens, cookies, browser sessions, and secret-bearing metadata are absent."
+
+  - lane: mcp-config-dry-run
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610/mcp-config-dry-run/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610-mcp-config-dry-run"
+    task_intent: "Implement and verify local Codex config target through CommonDB search dry_run path. Keep Qdrant future/optional and perform no live indexing/search writes."
+    requirement_ids:
+      - REQ-E2E-004
+      - REQ-E2E-007
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-mcp-dry-run-spec.md
+      - artifact/workflow-ui-commondb-20260608/output/specs/obsidian-commondb-contract-integration-spec.md
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/verification/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - secrets
+      - raw_memo_bodies
+      - raw_source_bodies
+      - local_paths
+      - vector_payloads
+      - embeddings
+      - qdrant_internals
+      - broad_repo_scan
+    expected_outputs:
+      - "Evidence naming the human-approved local Codex config target and proving CommonDB search dry_run resolution without live search, indexing, writes, Qdrant, or Obsidian write-back."
+    verification_required:
+      - "Use dry_run only."
+      - "Confirm dry_run output is advisory and not workflow, prompt, verification, or completion authority."
+      - "Confirm no live MCP call, indexing, vector persistence, Qdrant enablement, or Obsidian write-back."
+
+  - lane: e2e-link-security
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610/e2e-link-security/build"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610-e2e-link-security"
+    task_intent: "Run end-to-end launch, link checks, CommonDB dry_run path check, and fake security-risk dry_run redaction/block verification."
+    requirement_ids:
+      - REQ-E2E-005
+      - REQ-E2E-006
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+      - app/PersonalWorkflowApp/
+      - .agents/skills/security-check/SKILL.md
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/verification/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+    denied_context:
+      - real_secrets
+      - raw_risky_payloads
+      - raw_thread_bodies
+      - raw_artifact_bodies
+      - raw_memo_bodies
+      - raw_source_bodies
+      - credentials
+      - tokens
+      - cookies
+      - local_paths
+      - vector_payloads
+      - embeddings
+      - qdrant_internals
+      - broad_repo_scan
+    expected_outputs:
+      - "E2E evidence from the accepted local personal app surface, link-check evidence, dry_run path evidence, and blocked/redacted fake risk evidence."
+    verification_required:
+      - "Launch the personal app from the accepted local user app surface."
+      - "Check primary app functionality, Codex App deep links, MCP dry_run path, and fake non-secret security-risk redaction/blocking."
+      - "Confirm unsafe dry_run output cannot enter prompts, UI raw bodies, workflow authority, handoff authority, or completion evidence."
+
+  - lane: review-convergence
+    status: planned
+    owner: unassigned
+    branch_target: "agent/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610/review-convergence/review"
+    worktree_target: "/Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610-review-convergence"
+    task_intent: "Review lane outputs for frozen spec conformance, completion gates, blocked human gates, verification evidence, and residual risk."
+    requirement_ids:
+      - REQ-E2E-001
+      - REQ-E2E-002
+      - REQ-E2E-003
+      - REQ-E2E-004
+      - REQ-E2E-005
+      - REQ-E2E-006
+      - REQ-E2E-007
+    source_refs:
+      - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+      - artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+      - Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610.yaml
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+    implementation_policy_refs:
+      - artifact/workflow-ui-commondb-20260608/output/implementation-policies/local-only-app-deploy-and-e2e-20260610/deploy.yaml
+    allowed_write_targets:
+      - artifact/workflow-ui-commondb-20260608/evidence/
+      - artifact/workflow-ui-commondb-20260608/verification/
+      - artifact/workflow-ui-commondb-20260608/output/reviews/
+      - artifact/workflow-ui-commondb-20260608/output/inconsistency/
+    denied_context:
+      - secrets
+      - raw_thread_bodies
+      - raw_artifact_bodies
+      - raw_memo_bodies
+      - raw_source_bodies
+      - browser_sessions
+      - terminal_logs
+      - vector_payloads
+      - embeddings
+      - qdrant_internals
+      - broad_repo_scan
+    expected_outputs:
+      - "Convergence record with lane evidence refs, spec verdict, completion blocker verdict, blocked gates, verification results, unverified surfaces, and residual risk."
+    verification_required:
+      - "Validate YAML records and refs."
+      - "Confirm implementation lanes did not exceed local-only reversible scope or allowed write targets."
+      - "Confirm completion is blocked by any missing, stubbed, skipped, or unevidenced deploy, link, MCP dry_run, E2E, or security block result."
+
+handoff:
+  evidence_required:
+    - source_refs
+    - changed_paths
+    - allowed_write_target_check
+    - verification_results
+    - human_gate_status
+    - residual_risk
+  next_action: continue

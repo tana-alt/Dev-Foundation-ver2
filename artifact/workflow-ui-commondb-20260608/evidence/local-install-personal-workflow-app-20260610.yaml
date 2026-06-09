@@ -1,0 +1,35 @@
+schema_version: "0.1"
+record_type: local_install_evidence
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610
+  created_at: "2026-06-10"
+
+source_refs_used:
+  - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  - artifact/workflow-ui-commondb-20260608/evidence/build-result-local-only-app-deploy-and-e2e-20260610.yaml
+  - artifact/workflow-ui-commondb-20260608/output/reviews/local-only-app-deploy-and-e2e-rework-20260610.yaml
+
+local_install:
+  app_path: /Users/yamamotokaito/Applications/Personal Workflow.app
+  install_command: "sh scripts/install-personal-workflow-app.sh"
+  opened_after_install: true
+  result: passed
+  rollback_command: "sh scripts/install-personal-workflow-app.sh --remove"
+
+safe_boundary:
+  user_scoped_app_surface: true
+  public_distribution: false
+  system_applications_install: false
+  notarization_release_or_ci_cd: false
+  public_network_listener_or_tunnel: false
+  launch_agent_daemon_login_item_or_auto_start: false
+  live_mcp_indexing_search_write_qdrant_or_obsidian_write_back: false
+  config_contents_printed: false
+  secrets_or_secret_bearing_material_included: false
+
+notes:
+  - "Records the main_lane result that the personal app was installed and opened from the user's local app surface."
+  - "No Codex config contents, tokens, credentials, raw thread bodies, raw memo bodies, raw source bodies, or raw risky payloads are included."

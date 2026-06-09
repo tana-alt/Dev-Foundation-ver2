@@ -1,0 +1,135 @@
+schema_version: "0.1"
+record_type: specification_review_record
+status: complete
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  spec_id: SPEC-LOCAL-ONLY-APP-DEPLOY-E2E-AMENDMENT-20260610
+  review_id: spec-review-local-only-app-deploy-and-e2e-20260610
+  created_at: "2026-06-10"
+  reviewer_role: low-effort_spec_reviewer_subagent
+  worktree: /Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-integration-readiness
+
+scope:
+  instruction: do not implement app/config/deploy behavior
+  allowed_write_targets:
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-e2e-20260610.yaml
+
+sources:
+  source_refs_used:
+    - AGENTS.md
+    - docs/01-agent-operating-contract.md
+    - docs/02-output-verification-contract.md
+    - docs/03-repo-boundary-and-storage-contract.md
+    - docs/reference/specification-workflow-reference.md
+    - .agents/skills/spec-authority-governance/SKILL.md
+    - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-draft-notes-local-only-app-deploy-and-e2e-20260610.yaml
+  target_refs:
+    - artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    - artifact/workflow-ui-commondb-20260608/evidence/spec-draft-notes-local-only-app-deploy-and-e2e-20260610.yaml
+
+checks:
+  - id: CHECK-001
+    name: readiness_for_human_pass
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    notes: "The amendment is draft_for_spec_review, identifies amended specs, states purpose, requirements, completion criteria, gates, non-goals, and review focus."
+  - id: CHECK-002
+    name: completion_blocks_not_implemented_surfaces
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    notes: "REQ-E2E-001 through REQ-E2E-006 and CC-E2E-001 through CC-E2E-007 make deploy, installability, Codex deep links, MCP config dry_run, E2E/link checks, and dry_run security blocking completion blockers when missing, stubbed, placeholder-only, skipped, or unevidenced."
+  - id: CHECK-003
+    name: qdrant_future_optionality
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    notes: "REQ-E2E-007 and CC-E2E-008 explicitly make Qdrant future planned or optional and not a current blocker."
+  - id: CHECK-004
+    name: observable_and_verifiable_requirements
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    notes: "Each requirement has an observable outcome and acceptance criteria with AC IDs. The criteria define evidence-bearing outcomes rather than broad intent."
+  - id: CHECK-005
+    name: what_how_boundary
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    notes: "The amendment avoids file layout, module names, framework choices, packaging commands, scripts, branch strategy, and test command selection. The named details are external contracts, trust boundaries, safety constraints, or user-visible app surfaces."
+  - id: CHECK-006
+    name: human_gate_scope
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    notes: "After human approval of the spec, local config edits, local user-scoped app deploy/install, local launch, deep-link checks, MCP dry_run, E2E, and link checks are in scope when local-only, reversible, and non-secret-bearing. Secrets, irreversible/public/external writes, live MCP, indexing, Qdrant, release, infrastructure, dependency, and system-wide behavior remain separately gated."
+  - id: CHECK-007
+    name: mcp_tool_output_and_redaction_safety
+    result: passed
+    evidence_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+    notes: "REQ-E2E-004 and REQ-E2E-005 treat dry_run output as untrusted advisory output, require fake non-secret risk content for security verification, and require blocking or redaction before agent consumption."
+
+findings:
+  - id: F-001
+    severity: info
+    result: passed
+    summary: "Ready for human review."
+    detail: "No blocking spec issues found. The amendment is clear enough for a human pass before implementation."
+  - id: F-002
+    severity: info
+    result: passed
+    summary: "Completion cannot be claimed over not-implemented required surfaces."
+    detail: "The explicit completion criteria and acceptance criteria close the prior loopholes for deploy, deep links, MCP config dry_run, E2E/link checks, and dry_run security blocking."
+  - id: F-003
+    severity: info
+    result: passed
+    summary: "Human gates are narrow enough for the intended pass."
+    detail: "The spec preserves gates for secret-bearing, irreversible, public, live, indexing, Qdrant, release, infrastructure, dependency, and system-wide actions while allowing approved local-only reversible implementation work to proceed after human spec approval."
+
+observations:
+  facts:
+    - "The amendment states that personal app deploy completion cannot be claimed while deploy, installability, Codex App deep links, MCP config wiring, E2E checks, link checks, or dry-run security blocking remain not implemented."
+    - "The amendment states Qdrant enablement is out of scope and must not block this pass."
+    - "The amendment requires dry-run output to be treated as untrusted advisory tool output and requires redaction/blocking before agent consumption."
+  inferences:
+    - "Because the spec explicitly allows local config/app deploy/link checks after human spec approval, a future implementation lane should not need another generic implementation-not-approved gate for those local-only reversible actions."
+  decisions:
+    - "approved_for_human_review"
+
+decision:
+  result: approved_for_human_review
+  rework_required: []
+  next_action: human_spec_review
+
+changed_paths:
+  - artifact/workflow-ui-commondb-20260608/evidence/spec-review-local-only-app-deploy-and-e2e-20260610.yaml
+
+not_changed:
+  - app
+  - config
+  - deploy_behavior
+  - source_code
+  - target_spec
+  - draft_notes
+
+verification:
+  result: passed
+  checks:
+    - name: source-ref local review
+      result: passed
+      note: "Reviewed required contracts, specification workflow reference, spec authority skill, target amendment, and draft notes."
+    - name: allowed-write-target check
+      result: passed
+      note: "Only the allowed review record path was written."
+    - name: implementation-boundary check
+      result: passed
+      note: "No app, config, deploy, source, or behavior implementation was changed."
+    - name: yaml shape review
+      result: passed
+      note: "Review record follows the repository specification-review-record shape with decision, checks, findings, changed paths, and verification."
+  unverified_surfaces:
+    - "No implementation behavior was tested because the requested task was spec review only."
+    - "No app/config/deploy files were inspected because implementation review was out of scope."
+  residual_risk:
+    - "Human approval is still required before spec freeze and implementation."
+  human_gate_status:
+    spec_review: ready_for_human_pass
+    implementation: pending_human_spec_approval
+    secret_bearing_or_irreversible_actions: blocked_until_explicit_human_approval

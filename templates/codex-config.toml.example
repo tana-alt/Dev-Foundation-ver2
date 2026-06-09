@@ -10,3 +10,14 @@ args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
 startup_timeout_sec = 20
 command = "npx"
 args = ["-y", "@upstash/context7-mcp@2.2.5"]
+
+# Template fixture only. Use scripts/enable-commondb-mcp-local.sh to append a
+# local dry-run-only block to ~/.codex/config.toml.
+# Do not add credentials, live index paths, Qdrant URLs, or raw source paths here.
+[mcp_servers."commondb.search"]
+startup_timeout_sec = 5
+command = "python3"
+args = ["scripts/commondb-mcp-dry-run.py", "--config", "templates/codex-config.toml.example"]
+dry_run = true
+live_mcp = false
+qdrant = "out_of_scope"

@@ -1,0 +1,57 @@
+schema_version: "0.1"
+record_type: cross_review_rework_result
+status: passed
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  worktree: /Users/yamamotokaito/dev/worktrees/Dev-Foundation-ver2/workflow-ui-commondb-20260608-integration-readiness
+  created_at: "2026-06-10"
+
+findings_closed:
+  - id: CR-1
+    finding: "Deep-link check accepted non-Codex/public URLs."
+    status: closed
+    evidence: "App and E2E now require codex:// and reject public schemes, paths, and secret/raw markers before open."
+  - id: CR-2
+    finding: "E2E defaulted to template config."
+    status: closed
+    evidence: "E2E default config is ~/.codex/config.toml unless overridden."
+  - id: CR-3
+    finding: "Need safe local MCP dry_run config path."
+    status: closed
+    evidence: "Added helper to verify/append dry_run-only commondb.search block without printing config contents."
+  - id: CR-4
+    finding: "Need tests for public URL rejection and local config dry_run behavior."
+    status: closed
+    evidence: "Focused pytest covers public URL rejection, append, already-present, and unsafe existing block rejection."
+  - id: CR-5
+    finding: "Generated dist app bundle should not be committed."
+    status: closed
+    evidence: ".gitignore includes dist/ and git reports dist/ ignored."
+
+local_config:
+  path: /Users/yamamotokaito/.codex/config.toml
+  status: modified
+  backup_path: /Users/yamamotokaito/.codex/config.toml.bak-20260610070648
+  contents_printed: false
+
+verification_summary:
+  result: passed
+  commands:
+    - "sh -n scripts/check-personal-workflow-app-e2e.sh scripts/install-personal-workflow-app.sh scripts/enable-commondb-mcp-local.sh"
+    - "python3 -m py_compile scripts/commondb-mcp-dry-run.py"
+    - "python3 -m pytest tests/workflow_adapters/test_commondb_mcp_dry_run.py -q"
+    - "swift build --package-path app/PersonalWorkflowApp"
+    - "sh scripts/enable-commondb-mcp-local.sh --dry-run"
+    - "sh scripts/enable-commondb-mcp-local.sh --apply"
+    - "python3 scripts/commondb-mcp-dry-run.py --config ~/.codex/config.toml --json"
+    - "sh scripts/check-personal-workflow-app-e2e.sh --dry-run --config ~/.codex/config.toml"
+    - "sh scripts/check-personal-workflow-app-e2e.sh --config ~/.codex/config.toml"
+
+blocked_or_out_of_scope:
+  - live_mcp
+  - live_indexing_or_search
+  - qdrant
+  - obsidian_write_back
+  - public_exposure
+  - secret_bearing_actions

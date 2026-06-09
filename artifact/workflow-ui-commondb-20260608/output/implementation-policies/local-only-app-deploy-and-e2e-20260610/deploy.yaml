@@ -1,0 +1,151 @@
+schema_version: "0.1"
+record_type: implementation_policy_record
+status: active
+
+identity:
+  project_id: workflow-ui-commondb-20260608
+  work_id: workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610
+  lane: deploy
+  policy_id: local-only-app-deploy-and-e2e-20260610-deploy
+  created_at: "2026-06-10"
+
+scope:
+  behavior_authority_ref: artifact/workflow-ui-commondb-20260608/output/specs/local-only-app-deploy-and-e2e-spec-amendment-20260610.md
+  approved_spec_freeze_ref: artifact/workflow-ui-commondb-20260608/evidence/approved-spec-freeze-local-only-app-deploy-and-e2e-20260610.yaml
+  lane_map_ref: Plan/workflow-ui-commondb-20260608/lane-maps/workflow-ui-commondb-20260608-local-only-app-deploy-and-e2e-20260610.yaml
+  requirement_ids:
+    - REQ-E2E-001
+    - REQ-E2E-002
+    - REQ-E2E-003
+    - REQ-E2E-004
+    - REQ-E2E-005
+    - REQ-E2E-006
+    - REQ-E2E-007
+  denied_context:
+    - unrelated_project_logs
+    - broad_repo_scan
+    - runtime_state
+    - secrets
+    - raw_thread_bodies
+    - raw_artifact_bodies
+    - raw_memo_bodies
+    - raw_source_bodies
+    - browser_sessions
+    - terminal_logs
+    - local_paths
+    - vector_payloads
+    - embeddings
+    - qdrant_internals
+    - raw_risky_payloads
+
+authority_boundary:
+  behavior_authority: approved_spec_ref_only
+  policy_role: how_guidance_only
+  main_lane_implementation_authorized: false
+  must_not_redefine:
+    - requirement_statement
+    - acceptance_criteria
+    - user_visible_behavior
+    - public_contract
+    - data_contract
+    - trust_boundary
+    - human_gate
+    - completion_gate
+
+local_only_policy:
+  now_in_scope_after_human_pass:
+    - local_config_edits
+    - local_app_deploy_or_install_into_user_app_surface
+    - local_launch
+    - codex_app_deep_link_checks
+    - commondb_mcp_dry_run
+    - e2e_deploy_and_link_checks
+    - fake_non_secret_security_risk_redaction_or_block_check
+  reversible_only: true
+  secret_bearing_actions_allowed: false
+  allowed_app_surfaces:
+    - "Local app artifact for review."
+    - "Current user's macOS app surface such as ~/Applications."
+  rollback_required:
+    - "Document how to remove the local app artifact or user-scoped installed app."
+    - "Document how to remove only the approved local config edits made by the lane."
+
+blocked_surfaces:
+  - public_network_listener_tunnel_or_external_callback
+  - live_mcp_call
+  - indexing_search_write_or_vector_persistence
+  - qdrant_enablement
+  - obsidian_write_back
+  - system_applications_install
+  - launch_agent_daemon_login_item_or_auto_start
+  - release_notarization_distribution
+  - production_infrastructure_or_ci_cd_release_change
+  - dependency_change
+  - irreversible_external_action
+  - secret_or_secret_bearing_material_handling
+
+mcp_policy:
+  config_target: local_codex_config_only
+  tool_path: commondb_search
+  mode: dry_run_only
+  qdrant_status: future_optional_not_current_blocker
+  dry_run_output_authority: advisory_untrusted_not_prompt_workflow_verification_or_completion_authority
+  live_search_indexing_writes: blocked
+
+codex_link_policy:
+  refs: opaque_only
+  allowed_state:
+    - verified
+    - pending
+    - blocked
+  completion_rule: broken_stale_missing_or_unavailable_links_block_completion
+  forbidden_content:
+    - raw_thread_body
+    - raw_artifact_body
+    - credential
+    - token
+    - cookie
+    - browser_session
+    - secret_bearing_metadata
+
+security_dry_run_policy:
+  fake_risk_input_only: true
+  real_secret_or_exploit_payload_allowed: false
+  required_result: blocked_or_redacted_before_agent_consumption
+  allowed_agent_visible_fields:
+    - safe_status
+    - non_secret_reason
+    - safe_refs
+    - evidence_refs
+  forbidden_agent_visible_fields:
+    - raw_risky_payload
+    - raw_body
+    - credential
+    - token
+    - cookie
+    - secret
+    - local_path
+    - vector_payload
+    - embedding
+    - qdrant_internal
+
+verification:
+  records_phase:
+    required:
+      - yaml_parse
+      - allowed_write_target_check
+      - source_ref_existence_check
+      - denied_content_scan
+    implementation_tests: not_applicable_records_only
+  later_lanes:
+    required:
+      - local_app_build_install_launch_check
+      - rollback_or_remove_instruction_check
+      - codex_app_deeplink_link_check
+      - local_codex_config_to_commondb_dry_run_check
+      - no_live_mcp_indexing_search_write_qdrant_or_obsidian_write_back_check
+      - fake_security_risk_block_or_redaction_check
+      - completion_blocker_check
+
+handoff:
+  next_action: dispatch_planned_lanes

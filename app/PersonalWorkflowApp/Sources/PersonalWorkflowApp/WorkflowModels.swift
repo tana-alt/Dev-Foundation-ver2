@@ -4,6 +4,7 @@ enum WorkflowStage: String, CaseIterable, Identifiable {
     case setup = "Setup"
     case board = "Board"
     case review = "Review"
+    case repository = "Repository"
     case archive = "Archive"
 
     var id: String { rawValue }
@@ -75,6 +76,37 @@ struct ApprovalRecord: Identifiable {
     let state: WorkItemStatus
 }
 
+struct IntegrationCheck: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: WorkItemStatus
+}
+
+enum LocalPRHeadStatus: String {
+    case matchesPRBranch = "Matches PR branch"
+    case localAheadPRBranch = "Local commits outside PR"
+    case unknown = "Unknown"
+}
+
+enum UntrackedPolicy: String {
+    case none = "None"
+    case reviewBeforeClose = "Review before close"
+}
+
+struct WorktreeCloseCandidate: Identifiable {
+    let id = UUID()
+    let repositoryName: String
+    let worktreePath: String
+    let branch: String
+    let pullRequest: String
+    let activeSession: Bool
+    let localPRHeadStatus: LocalPRHeadStatus
+    let untrackedPolicy: UntrackedPolicy
+    let closeState: WorkItemStatus
+    let closeReason: String
+}
+
 struct WorkflowFixture {
     let goals: [GoalNode]
     let sourceReferences: [SourceReference]
@@ -84,6 +116,9 @@ struct WorkflowFixture {
     let usefulSource: String
     let approvedMemo: String
     let scopeGuardItems: [String]
+    let worktreeCloseCandidates: [WorktreeCloseCandidate]
+    let integrationChecks: [IntegrationCheck]
+    let codexDeepLinkURL: URL
 
     static let preview = WorkflowFixture(
         goals: [
@@ -177,6 +212,42 @@ struct WorkflowFixture {
             "Do not touch Python workflow console files",
             "No raw thread bodies or secrets in fixtures",
             "Human gate required before any external write"
-        ]
+        ],
+        worktreeCloseCandidates: [
+            WorktreeCloseCandidate(
+                repositoryName: "Dev-Foundation-ver2",
+                worktreePath: "workflow-ui-commondb-20260608-app-server-ui",
+                branch: "agent/workflow-ui-commondb-20260608/app-server-ui/console-adapter",
+                pullRequest: "PR created",
+                activeSession: false,
+                localPRHeadStatus: .matchesPRBranch,
+                untrackedPolicy: .reviewBeforeClose,
+                closeState: .waiting,
+                closeReason: "PR exists and no active session; untracked files require explicit review before closing."
+            )
+        ],
+        integrationChecks: [
+            IntegrationCheck(
+                title: "Deploy status",
+                detail: "Install script builds the Swift executable into a user-scoped app bundle.",
+                status: .complete
+            ),
+            IntegrationCheck(
+                title: "Codex link status",
+                detail: "Configurable opaque URL is syntax-checked and opened only by user action or E2E.",
+                status: .active
+            ),
+            IntegrationCheck(
+                title: "CommonDB MCP dry_run",
+                detail: "Local dry-run validates config shape and fake blocked/redacted adapter output.",
+                status: .complete
+            ),
+            IntegrationCheck(
+                title: "E2E status",
+                detail: "Local-only script verifies install artifact, link syntax, and dry-run evidence.",
+                status: .active
+            )
+        ],
+        codexDeepLinkURL: URL(string: ProcessInfo.processInfo.environment["PERSONAL_WORKFLOW_CODEX_URL"] ?? "codex://workflow-ui-commondb-20260608/local-only-e2e?ref=artifact.workflow-ui-commondb-20260608")!
     )
 }
