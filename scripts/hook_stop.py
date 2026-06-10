@@ -47,9 +47,7 @@ def main() -> int:
         return 0  # non-spec work: single pass, no loop
 
     tier = os.environ.get("FOUNDATION_GATE_TIER", "check-required")
-    diff = subprocess.run(
-        ["git", "diff", "HEAD"], cwd=root, capture_output=True, text=True
-    ).stdout
+    diff = subprocess.run(["git", "diff", "HEAD"], cwd=root, capture_output=True, text=True).stdout
     diff_hash = "sha256:" + hashlib.sha256(diff.encode("utf-8")).hexdigest()
     completed = subprocess.run(["make", tier], cwd=root, capture_output=True, text=True)
     check = CheckOutcome(command=f"make {tier}", exit_code=completed.returncode)

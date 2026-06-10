@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS raw_runs (
 
 class MetricsStore:
     def __init__(self, path: Path | str) -> None:
+        if str(path) != ":memory:":
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(str(path))
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
