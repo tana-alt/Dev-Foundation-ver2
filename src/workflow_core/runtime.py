@@ -29,7 +29,10 @@ class TrajectoryEvent(StrictModel):
     """One normalized step of an agent run.
 
     Adapters map a runtime-native event onto this shape. Raw bodies, terminal
-    logs, and credentials are never stored here; args are referenced by hash.
+    logs, and credentials are never stored here; the full payload is referenced
+    by ``args_hash``. ``target`` carries only a bounded identifier the action
+    acts on -- a write path, skill name, or command name -- so eval can detect
+    out-of-envelope writes and skill usage without storing content.
     """
 
     ts: str
@@ -37,6 +40,7 @@ class TrajectoryEvent(StrictModel):
     role: str
     kind: EventKind
     tool: str = ""
+    target: str = ""
     args_hash: str = ""
     exit_code: int | None = None
     tokens_in: int = 0
