@@ -46,6 +46,7 @@ pythonpath = ["."]
 python_version = "3.12"
 strict = true
 files = ["tests"]
+mypy_path = "src"
 plugins = ["pydantic.mypy"]
 warn_redundant_casts = true
 warn_unused_configs = true

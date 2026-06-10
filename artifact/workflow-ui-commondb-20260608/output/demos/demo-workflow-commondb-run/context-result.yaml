@@ -1,0 +1,21 @@
+schema_version: "0.1"
+record_type: context_result
+status: ready
+
+result_id: context-result-demo-001
+request_id: context-request-demo-001
+context_status: ok
+source_refs:
+  - "commondb:demo-context:adapter-contract"
+snippets:
+  - source_ref: "commondb:demo-context:adapter-contract"
+    relevance: "Confirms the adapter returns source refs and bounded snippets only."
+    text: "The workflow may consume a stable source reference, a short relevance note, and a bounded summary. Unsafe storage details, private material, vectors, logs, and credentials are excluded."
+error:
+  code:
+  message:
+boundary_check:
+  result: passed
+  notes:
+    - "No local filesystem path values are present."
+    - "No raw bodies, logs, vectors, or credentials are present."

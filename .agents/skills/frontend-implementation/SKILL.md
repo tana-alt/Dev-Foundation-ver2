@@ -15,6 +15,10 @@ the smallest project-native UI change, preserve expected states and
 accessibility, and verify the affected route or component with the closest
 available check.
 
+External visually strong frontend skills may inform craft expectations, but
+ordinary component, form, routing, and data-wiring work stays here when the task
+does not require a new visual direction.
+
 ## Use when
 
 - Adding or changing UI components.
@@ -41,6 +45,13 @@ available check.
 - Basic keyboard and screen-reader accessibility are preserved.
 - Form validation occurs at the appropriate client/server boundaries.
 - Styling follows existing tokens, components, and layout conventions.
+- Reusable component APIs avoid boolean-prop proliferation and one-off mode
+  props; prefer explicit variants, children slots, compound components,
+  provider-owned state, or composition when that matches local patterns.
+- If the project uses source-copied component systems such as shadcn/ui, inspect
+  `components.json`, aliases, existing `components/ui`, and local conventions
+  before adding or modifying components. Route current CLI/API details through
+  `doc-lookup`.
 
 ## Constraints
 

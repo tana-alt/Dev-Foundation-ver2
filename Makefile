@@ -1,6 +1,7 @@
 UV ?= uv
 
-.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-legacy-contracts check-hygiene check-secrets check-cd check-fast check-push check-required check-ci check-foundation
+
+.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-workflow-state check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-hygiene check-secrets check-cd check-fast check-push check-required check-ci check-foundation
 
 help:
 	@printf '%s\n' \
@@ -18,7 +19,9 @@ help:
 		'  make check-doc-consistency Run doc consistency tests' \
 		'  make check-hooks           Run shell syntax checks on hooks/scripts' \
 		'  make check-shell           Run ShellCheck on tracked shell hooks/scripts' \
-		'  make check-lanes           Validate legacy/optional parallel lane maps' \
+
+		'  make check-lanes           Validate parallel lane-map templates and records' \
+		'  make check-workflow-state  Validate Workflow Core state template' \
 		'  make check-skill-routes    Validate operational skill routes and budgets' \
 		'  make check-context-scope   Validate context-scope and budget records' \
 		'  make check-result-envelope Validate checker result envelopes' \
@@ -69,7 +72,7 @@ check-toolchain:
 	@gitleaks version | sed 's/^/ok: gitleaks /'
 
 check-contracts:
-	$(UV) run pytest tests/test_contract_models.py
+	$(UV) run pytest tests/test_contract_models.py tests/workflow_core
 
 check-doc-consistency:
 	$(UV) run pytest tests/test_foundation_integrity.py -k "doc_consistency or work_contract_git_scope"
@@ -89,6 +92,9 @@ check-shell:
 
 check-lanes:
 	$(UV) run python scripts/check-lane-map.py
+
+check-workflow-state:
+	$(UV) run python scripts/check-workflow-state.py templates/workflow-core/state-record.yaml
 
 check-skill-routes:
 	$(UV) run python scripts/check-skill-routes.py

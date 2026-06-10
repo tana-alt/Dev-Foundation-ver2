@@ -1,0 +1,21 @@
+schema_version: "0.1"
+record_type: context_result
+status: draft
+
+result_id: example_context_result_id
+request_id: example_context_request_id
+context_status: ok
+source_refs:
+  - "commondb:demo-context:example"
+snippets:
+  - source_ref: "commondb:demo-context:example"
+    relevance: "Explains the bounded context needed by the workflow task."
+    text: "Sanitized bounded snippet. No private storage identifiers, local paths, raw bodies, logs, vectors, or secrets."
+error:
+  code:
+  message:
+boundary_check:
+  result: passed
+  notes:
+    - "Contains only stable source_ref values and bounded snippet text."
+    - "Blocked/error states are represented as workflow context results."
