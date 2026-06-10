@@ -1,87 +1,66 @@
 ---
 name: subagent-workflow-governance
-description: "Use when coordinating a multi-phase subagent workflow from goal intake through spec drafting/review, human spec approval, lane mapping, build/review integration, inconsistency rework, convergence, or final handoff. Keeps subagents behind main_lane and record refs."
+description: Coordinate goal-first subagent work only when parallel or independent subtasks materially help; avoid record-heavy phase workflows.
 ---
 
 # Subagent Workflow Governance
 
 ## Purpose
 
-Coordinate subagent-oriented specification workflow without expanding active docs,
-repo context, or runtime state.
-
-## Effect
-
-When this skill fires, convert the task into phase-specific records, keep
-subagents behind `main_lane`, separate behavior specification from
-implementation policy, and make convergence depend on evidence, verification,
-and `INC-*` closure.
+Use subagents to advance the goal, not to manufacture workflow records.
 
 ## Use When
 
-- A human goal must become an approved behavior specification before build.
-- Multiple subagents or lanes must be coordinated through records.
-- Specification review, lane mapping, integration review, inconsistency
-  tracking, rework, convergence, or final handoff is in scope.
-- The task names `main_lane`, `spec_drafter`, `spec_reviewer`, `lane_mapper`,
-  `build_worker`, `review_worker`, `integration_reviewer`, `rework_worker`, or
-  `convergence_checker`.
+- The user explicitly asks to use subagents or parallel agents.
+- Work can be split into independent slices with clear source refs and allowed
+  writes.
+- A focused explorer can answer a bounded question while the main agent keeps
+  implementing.
+- A reviewer can inspect a separate risk surface in parallel.
 
 ## Do Not Use When
 
-- The task is an ordinary local implementation with a complete work contract.
-- The task only needs current commands, branch/worktree mechanics, security
-  review, or release readiness.
-- A single-file edit has no spec ambiguity, lane split, or subagent handoff.
-- The user asks for a runtime scheduler, queue, lock ledger, heartbeat, or
-  dashboard; return rework against repository boundaries.
+- A direct local implementation is faster.
+- The next step is blocked on the delegated result.
+- The split would require broad repo context or overlapping writes.
+- The task only needs a spec, handoff, traceability, convergence, or residual
+  risk record.
 
-## Required References
+## Read First
 
-Open `docs/reference/specification-workflow-reference.md` when this skill
-materially shapes the task. Use packet/evidence, git/worktree, repo-boundary,
-and verification references only when their specific fields or commands are
-needed.
+- `docs/reference/specification-workflow-reference.md` only when the split needs
+  goal/spec structure.
 
-## Success Conditions
+## Method
 
-- Human-facing communication flows only through `main_lane`.
-- Subagents communicate through result records, not sibling chat.
-- Specs contain observable behavior only.
-- Implementation policy stays in implementation-policy records or lane
-  contracts.
-- Lane work receives only its approved spec slice and relevant refs.
-- Inconsistencies are tracked as `INC-*` items with evidence and status.
-- Convergence checks trace all `REQ-*` and `AC-*` items to evidence, blocked
-  reason, or residual risk.
+1. State the goal and immediate main-agent task.
+2. Delegate only non-blocking, bounded slices.
+3. Give each subagent source refs, allowed writes, denied context, Done
+   criteria, and expected return shape.
+4. Keep user communication and final integration in the main agent.
+5. Integrate results into working changes and verification, not record bundles.
+
+## Subagent Packet
+
+```text
+Task slice:
+Source refs:
+Allowed writes:
+Denied context:
+Done criteria:
+Verification expected:
+Return:
+```
 
 ## Stop Conditions
 
-Return `rework` when source refs, human approval, allowed write targets,
-observable requirements, verification expectations, record refs, or `INC-*`
-closure are missing.
-
-Return `blocked` when required human decision, side-effect approval, protected
-branch/merge action, secret handling, or external write authority is missing.
-
-## Constraints
-
-- Do not create runtime queues, locks, heartbeats, polling loops, dashboards, or
-  broad logs.
-- Do not add role-per-subagent skills unless skill-authoring governance later
-  proves one compact skill is insufficient.
-- Do not let implementation policy redefine behavior authority.
-- Do not claim verification that did not run.
+Do not delegate if the subtask lacks source refs, has overlapping writes, needs
+protected side effects, or would slow the critical path.
 
 ## Output
 
-- `workflow_verdict`: proceed / rework / blocked / human_review_required.
-- `phase`: current workflow phase and next action.
-- `records`: workflow, spec, review, lane-map, evidence, verification, rework,
-  and inconsistency refs used or required.
-- `subagent_contracts`: roles or modes to invoke, with scoped inputs and
-  outputs.
-- `open_inconsistencies`: `INC-*` IDs, severity, owner lane or human decision
-  path.
-- `verification`: checks run or blocked reason.
-- `residual_risk`: remaining uncertainty and review focus.
+- delegated slices and why they matter
+- main-agent work kept local
+- integrated result
+- verification
+- remaining risk that affects goal completion

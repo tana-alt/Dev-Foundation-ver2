@@ -27,5 +27,7 @@ unset $(git rev-parse --local-env-vars)
 CHECK_TARGET="${FOUNDATION_PRE_PUSH_TARGET:-check-push}"
 make "$CHECK_TARGET"
 make check-context-scope
-make check-residual-risk-carryover
-make check-review-convergence
+
+if [ "${FOUNDATION_LEGACY_CONTRACT_CHECKS:-0}" = "1" ]; then
+  make check-legacy-contracts
+fi

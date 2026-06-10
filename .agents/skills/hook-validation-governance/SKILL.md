@@ -19,15 +19,14 @@ runtime monitoring or network-dependent checks.
 
 ## Do Not Use When
 
-- Task is purely spec freeze, traceability, or review record content.
 - Hook/check files are not in scope.
+- The task only asks for archived heavy-contract records.
 
 ## Read First
 
 - `hooks/pre-commit`
 - `hooks/pre-push`
 - `Makefile`
-- `docs/reference/agent-operationalization-reference.md`
 - `docs/reference/verification-ci-and-pr-reference.md` only for commands.
 
 ## Context Budget

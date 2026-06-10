@@ -1,6 +1,6 @@
 UV ?= uv
 
-.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-hygiene check-secrets check-cd check-fast check-push check-required check-ci check-foundation
+.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-legacy-contracts check-hygiene check-secrets check-cd check-fast check-push check-required check-ci check-foundation
 
 help:
 	@printf '%s\n' \
@@ -18,7 +18,7 @@ help:
 		'  make check-doc-consistency Run doc consistency tests' \
 		'  make check-hooks           Run shell syntax checks on hooks/scripts' \
 		'  make check-shell           Run ShellCheck on tracked shell hooks/scripts' \
-		'  make check-lanes           Validate parallel lane-map templates and records' \
+		'  make check-lanes           Validate legacy/optional parallel lane maps' \
 		'  make check-skill-routes    Validate operational skill routes and budgets' \
 		'  make check-context-scope   Validate context-scope and budget records' \
 		'  make check-result-envelope Validate checker result envelopes' \
@@ -26,7 +26,8 @@ help:
 		'  make check-review-convergence Validate review/fix/convergence records' \
 		'  make check-audit-provenance Validate audit and source snapshot records' \
 		'  make check-operational-scorecard Validate operational scorecard records' \
-		'  make check-agent-operational Run operational record checks' \
+		'  make check-agent-operational Run legacy operational record checks' \
+		'  make check-legacy-contracts Run archived heavy-contract compatibility checks' \
 		'  make check-hygiene         Run repo hygiene guardrails' \
 		'  make check-secrets         Run Gitleaks with redacted output' \
 		'  make check-fast            Run fast local/push checks' \
@@ -112,6 +113,8 @@ check-operational-scorecard:
 
 check-agent-operational: check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard
 
+check-legacy-contracts: check-lanes check-agent-operational check-contracts
+
 check-hygiene:
 	sh scripts/check-repo-hygiene.sh
 
@@ -121,7 +124,7 @@ check-secrets:
 check-cd:
 	$(UV) run pytest tests/test_foundation_integrity.py -k cd_readiness
 
-check-fast: format-check lint check-hooks check-lanes test-fast
+check-fast: format-check lint check-hooks test-fast
 
 check-push:
 	@if [ "$${FOUNDATION_FULL_PUSH:-0}" = "1" ]; then \
@@ -130,7 +133,7 @@ check-push:
 		$(MAKE) check-fast; \
 	fi
 
-check-required: format-check lint typecheck check-hooks check-shell check-hygiene check-secrets check-lanes test
+check-required: format-check lint typecheck check-hooks check-shell check-hygiene check-secrets test
 
 check-ci: check-toolchain check-required check-cd
 

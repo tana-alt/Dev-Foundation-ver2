@@ -1,0 +1,12 @@
+task:
+  goal: ""
+  done_when: []
+  source_refs: []
+  allowed_write_targets: []
+  denied_context: []
+  human_gates: []
+  verification: []
+  expected_outputs: []
+  result_state: "achieved | partially_achieved | rework | blocked | not_applicable"
+  not_done: []
+  next_action: ""
