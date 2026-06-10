@@ -34,6 +34,19 @@ port(seam)→ trajectory(記録)→ eval scoring(測定)→ escape scan + hack-c
 in-session loop を実現でき、日常業務は **hook だけ**で完了ゲート+trajectory+loop を回せる
 (低負荷)。SDK/headless は token 計測と無人 eval のみ。詳細 `harness-goal-and-plan.md` Phase B。
 
+| 80d11a8 | eval 計測(hook 記録 trajectory を score→保持ストア蓄積→集計、SDK不要)| G4 実接続 |
+
+**eval 計測(SDK 保留版)**: `workflow_core/measure.py` + `scripts/measure_eval.py`
+(`make measure`)。hook が記録した実 trajectory を読み、tool/skill/想定外/成功を計測し、
+構造化シグナルを保持ストアに蓄積(raw は退役)。`Plan/<project>/eval-envelope.json` で
+想定外検出を有効化。
+
+**Phase D は deferred(理由)**: retired skills / legacy checker の archive 化は
+`test_clean_checkout_reproducibility`(checksums)/ `test_foundation_integrity` /
+`test_residual_risk_carryover_check` にカスケードする。緑のスイートを壊さないため、
+テスト同時更新を伴う専用 PR に分離する。`archive/` は .gitignore 対象なので撤去は
+git rm + 物理移動で実現できる。
+
 ## 3. 実装済みコンポーネント(`src/workflow_core/`)
 
 | モジュール | 役割 | 状態 |
