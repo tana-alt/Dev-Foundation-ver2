@@ -7,3 +7,4 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 make check-skill-routes
 make check-context-scope
+make check-frozen

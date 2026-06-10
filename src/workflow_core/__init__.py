@@ -1,6 +1,12 @@
 """Workflow Core state and contract helpers."""
 
 from workflow_core.checks import WorkflowCheckError, check_workflow_document
+from workflow_core.completion import (
+    CheckOutcome,
+    EvidenceRecord,
+    run_completion_gate,
+    write_evidence,
+)
 from workflow_core.contracts import ApprovedWorkContract, WorkflowRecord
 from workflow_core.evaluation import (
     EvalReport,
@@ -11,7 +17,9 @@ from workflow_core.evaluation import (
     hack_catch_rate,
     score_run,
 )
+from workflow_core.frozen import frozen_path_violations
 from workflow_core.gate import EscapeFinding, build_verdict, scan_escapes
+from workflow_core.handoff import build_handoff, render_handoff
 from workflow_core.runtime import (
     AgentRuntime,
     GateVerdict,
@@ -24,9 +32,11 @@ from workflow_core.trajectory import RunSummary, record_run, summarize
 __all__ = [
     "AgentRuntime",
     "ApprovedWorkContract",
+    "CheckOutcome",
     "EscapeFinding",
     "EvalReport",
     "EvalScore",
+    "EvidenceRecord",
     "ExpectedEnvelope",
     "GateVerdict",
     "HackCase",
@@ -36,12 +46,17 @@ __all__ = [
     "WorkflowCheckError",
     "WorkflowRecord",
     "aggregate",
+    "build_handoff",
     "build_verdict",
     "check_workflow_document",
+    "frozen_path_violations",
     "hack_catch_rate",
     "record_run",
+    "render_handoff",
+    "run_completion_gate",
     "scan_escapes",
     "score_run",
     "summarize",
     "to_jsonl",
+    "write_evidence",
 ]
