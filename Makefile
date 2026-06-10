@@ -1,7 +1,7 @@
 UV ?= uv
 
 
-.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-workflow-state check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-hygiene check-secrets check-cd check-fast check-push check-required check-ci check-foundation
+.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-workflow-state check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-hygiene check-secrets check-cd check-frozen gate eval measure check-fast check-push check-required check-ci check-foundation
 
 help:
 	@printf '%s\n' \
@@ -38,6 +38,10 @@ help:
 		'  make check-required        Run required local checks' \
 		'  make check-ci              Run full CI-equivalent checks' \
 		'  make check-cd              Run deployment-readiness guard' \
+		'  make check-frozen          Block staged edits to spec-frozen paths' \
+		'  make gate                  Run the completion gate (re-runs checks, binds diff hash, writes evidence)' \
+		'  make eval                  Run the eval suite and print harness signals' \
+		'  make measure               Measure hook-recorded trajectories and accumulate signals' \
 		'  make check-foundation      Run the Foundation Robustness Gate'
 
 sync:
@@ -129,6 +133,18 @@ check-secrets:
 
 check-cd:
 	$(UV) run pytest tests/test_foundation_integrity.py -k cd_readiness
+
+check-frozen:
+	$(UV) run python scripts/check-frozen-paths.py
+
+gate:
+	$(UV) run python scripts/completion_gate.py
+
+eval:
+	$(UV) run python scripts/run_eval.py
+
+measure:
+	$(UV) run python scripts/measure_eval.py
 
 check-fast: format-check lint check-hooks test-fast
 
