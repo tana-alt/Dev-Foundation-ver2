@@ -9,15 +9,19 @@ from workflow_core.runtime import (
     TrajectoryEvent,
     to_jsonl,
 )
+from workflow_core.trajectory import RunSummary, record_run, summarize
 
 __all__ = [
     "AgentRuntime",
     "ApprovedWorkContract",
     "GateVerdict",
     "HandoffPacket",
+    "RunSummary",
     "TrajectoryEvent",
     "WorkflowCheckError",
     "WorkflowRecord",
     "check_workflow_document",
+    "record_run",
+    "summarize",
     "to_jsonl",
 ]
