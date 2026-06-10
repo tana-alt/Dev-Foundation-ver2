@@ -11,7 +11,8 @@ Preserve the user's intended behavior while keeping specs small.
 
 ## Use When
 
-- A spec, mini-spec, or requirement list is being written or revised.
+- A spec, mini-spec, detailed spec, or requirement list is being written or
+  revised.
 - Implementation choices may change the intended behavior.
 - A behavior change needs explicit user approval.
 
@@ -26,11 +27,14 @@ Preserve the user's intended behavior while keeping specs small.
 2. Separate WHAT from HOW.
 3. Keep non-goals and human gates explicit.
 4. Treat behavior changes as user-visible decisions, not implementation drift.
-5. Prefer plain bullets over IDs unless many agents must trace many items.
+5. Capture exception behavior, invariants, and ADR-worthy decisions when they
+   affect the design.
+6. Prefer plain bullets over IDs unless many agents must trace many items.
 
 ## Output
 
 - spec authority verdict
 - behavior changes that need user decision
 - implementation details that should move out of the spec
+- exception, invariant, or ADR gaps
 - verification needed to prove the goal

@@ -34,6 +34,7 @@ REFERENCE_DOCS = (*ACTIVE_REFERENCE_DOCS, *LEGACY_REFERENCE_DOCS)
 TEMPLATES = (
     "templates/goal-brief.md",
     "templates/mini-spec.md",
+    "templates/detailed-spec.md",
     "templates/task-packet.yaml",
     "templates/verification-note.md",
     "templates/work-contract.yaml",
