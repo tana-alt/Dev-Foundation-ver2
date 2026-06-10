@@ -100,6 +100,30 @@ def main() -> int:
         "report": report.model_dump(),
         "hack_catch_rate": hack_catch_rate(hack_cases),
     }
+
+    # Opt-in retention store: accumulate structured metrics, age out raw data.
+    import os
+
+    db_path = os.environ.get("FOUNDATION_EVAL_DB")
+    if db_path:
+        from workflow_core.metrics_store import MetricsStore
+        from workflow_core.trajectory import summarize, to_jsonl
+
+        store = MetricsStore(db_path)
+        for idx, (label, script, _diff, _hack, _scan) in enumerate(cases):
+            raw = to_jsonl(script)
+            _ = summarize(label, script)
+            matching = next(s for s in scores if s.run_id == label)
+            store.record_run(matching, raw_trajectory=raw, created_at=f"2026-06-11T00:00:0{idx}Z")
+        max_raw = int(os.environ.get("FOUNDATION_EVAL_MAX_RAW", "2"))
+        purged = store.enforce_retention(max_raw_runs=max_raw)
+        summary["store"] = {
+            "raw_runs_kept": store.raw_count(),
+            "structured_metrics_kept": store.metrics_count(),
+            "raw_purged": purged,
+        }
+        store.close()
+
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 

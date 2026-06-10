@@ -20,6 +20,9 @@ from workflow_core.evaluation import (
 from workflow_core.frozen import frozen_path_violations
 from workflow_core.gate import EscapeFinding, build_verdict, scan_escapes
 from workflow_core.handoff import build_handoff, render_handoff
+from workflow_core.loop import LoopOutcome, run_loop
+from workflow_core.metrics_store import MetricsStore
+from workflow_core.report import ResultReport, build_result_report
 from workflow_core.runtime import (
     AgentRuntime,
     GateVerdict,
@@ -41,12 +44,16 @@ __all__ = [
     "GateVerdict",
     "HackCase",
     "HandoffPacket",
+    "LoopOutcome",
+    "MetricsStore",
+    "ResultReport",
     "RunSummary",
     "TrajectoryEvent",
     "WorkflowCheckError",
     "WorkflowRecord",
     "aggregate",
     "build_handoff",
+    "build_result_report",
     "build_verdict",
     "check_workflow_document",
     "frozen_path_violations",
@@ -54,6 +61,7 @@ __all__ = [
     "record_run",
     "render_handoff",
     "run_completion_gate",
+    "run_loop",
     "scan_escapes",
     "score_run",
     "summarize",
