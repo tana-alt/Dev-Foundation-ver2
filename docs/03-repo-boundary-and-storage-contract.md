@@ -1,50 +1,57 @@
 # Repo Boundary And Storage Contract
 
 ## Active Surface
-This compact foundation repo is routed by `AGENTS.md`. Active contracts in
-`docs/` define behavior; detailed guidance lives in `docs/reference/`.
+
+This repo is routed by `AGENTS.md`. Active contracts in `docs/` keep work
+goal-first, bounded, and verifiable. Detailed guidance lives in
+`docs/reference/` and should be opened only when needed.
 
 ## Repo Truth
+
 Repo truth includes `AGENTS.md`, `docs/`, `docs/reference/`, `README.md`,
 `templates/`, `scripts/`, `tests/`, tooling files, `.github/`, `.agents/`,
 `plugins/`, `hooks/`, `Plan/`, `app/`, `src/`, and `artifact/`.
 
-Use `docs/reference/repo-boundary-and-storage-reference.md` for the folder map
-and root README routes.
+`archive/`, `.serena/`, caches, broad logs, local runtime state, browser
+sessions, credentials, tokens, cookies, and secret-bearing files are not repo
+truth.
 
-## Placement Gate
-- Place durable tracked work only in documented roots.
-- Keep project-specific plan/log, artifact, and source records under
-  `Plan/<project_id>/`, `artifact/<project_id>/`, or `src/<project_id>/`.
-- Keep `docs/` clean: direct new files must be repo-wide rules, contracts, or
-  routing docs, and must be linked from an existing route.
-- If placement is unclear, open the repo boundary reference and root README
-  before writing.
+## Placement
+
+- Use `Plan/<project_id>/` for lightweight plans and logs.
+- Use `artifact/<project_id>/` only for durable, useful outputs or evidence.
+- Use `src/<project_id>/` or existing shared source paths for implementation.
+- Keep `docs/` for repo-wide rules and references.
+- Use `templates/` only for compact blank formats that are still active.
+
+Optional durable lane-map records may live under
+`Plan/<project_id>/lane-maps/` for real parallel write work. They are not a
+runtime scheduler, queue, lock ledger, heartbeat, dashboard, or completion
+claim.
+
+Do not introduce runtime queues, lock ledgers, dashboards, broad operational
+logs, or unowned project storage.
 
 ## Storage Rules
-Do not turn this repo into default storage for runtime queues, lock indexes,
-broad logs, browser sessions, caches, or secret-bearing material.
 
-Track sanitized templates, restore scripts, compact contracts, references, and
-verification helpers instead of local operational state.
+Prefer small records that help the next action:
 
-`Plan/` stores project-scoped agent plans, logs, and optional durable lane-map
-records for planning and handoff; it is not runtime state. Local worktrees are not repo truth.
+- plan
+- log
+- task packet
+- verification note
+- optional spec
 
-## Secrets And Past Source
-`.serena/`, `archive/`, auth files, tokens, cookies, API keys, logs, caches,
-and local runtime state are not repo truth.
+Do not store raw bodies, credentials, local runtime ledgers, browser sessions,
+secret-bearing metadata, or unrelated context in docs, plans, artifacts,
+templates, or prompts.
 
-Do not write secrets, credentials, raw bodies, browser sessions, or
-secret-bearing metadata into prompts, packets, docs, logs, artifacts,
-templates, or repo files.
-
-Distill useful past-source content into active docs or current references.
+Heavy contract artifacts such as final handoffs, traceability matrices,
+convergence decisions, source snapshot locks, operational scorecards, and
+residual-risk carryover records are archived patterns, not default storage.
 
 ## Skills And Plugins
-Load only the smallest relevant skill. Name a skill ref in output when it
-materially shapes work.
 
-Skills and plugins do not override active docs, allowed write targets, denied
-context, secret boundaries, human gates, verification requirements, or storage
+Skills are compact routing helpers. They do not override the user request,
+active contracts, allowed write targets, human gates, verification, or storage
 rules.

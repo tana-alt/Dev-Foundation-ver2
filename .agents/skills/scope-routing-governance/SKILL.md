@@ -51,10 +51,18 @@ broad_repo_scan_allowed: false
 
 ## Output
 
-- `context_scope_manifest_ref`, or
-- rework/residual risk explaining missing scope.
+For ordinary work, output an inline scope decision:
+
+- source refs used
+- allowed write targets
+- denied context
+- any context expansion reason
+- next action
+
+Create a `context_scope_manifest_ref` only when the user asks for a durable
+record or the workflow is substantial enough that a later worker needs it.
 
 ## Stop / Carryover Conditions
 
-Stop and request scope clarification or carry residual risk when source refs are
-broad enough to imply a full repo scan.
+Stop and request scope clarification when source refs are broad enough to imply
+a full repo scan and no safe local assumption exists.

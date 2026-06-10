@@ -1,48 +1,74 @@
 # Output Verification Contract
 
-## Complete Output
-Every final, handoff, rework, or write-task output states source refs used,
-changed paths or artifact refs, evidence or why none exists, verification
-attempted, result (`passed`, `failed`, `blocked`, `skipped`, or
-`not_applicable`), unverified surfaces, residual risk, next action, and human gate status when relevant.
-For casual brainstorming, answer directly; do not invent paths, evidence, or checks.
+## Purpose
 
-Do not claim verification that did not run. Evidence and verification records
-must stay schema-valid, source-ref based, and free of secrets or runtime
-ledger state.
+Do not claim work is done unless the relevant behavior was checked honestly.
+
+## Completion Standard
+
+An output can be called complete only when:
+
+- the requested behavior or artifact exists
+- the smallest relevant verification was attempted
+- failures, skipped checks, and unverified surfaces are stated plainly
+- no required protected action is hidden behind wording like residual risk
+
+Mocks, dry runs, draft specs, and records-only outputs are incomplete unless the
+user explicitly asked for those outputs.
 
 ## Verification Order
-Start with the smallest relevant check and widen only when required:
 
-1. closest local review, schema check, unit, or command
-2. lint, typecheck, build, contract check, or smoke check when applicable
-3. broader suite only when scope, shared behavior, or PR readiness requires it
+Use the narrowest meaningful check first:
+
+1. local review, schema check, unit test, or direct command
+2. lint, typecheck, build, contract check, or smoke check when relevant
+3. broader suite only when shared behavior, release readiness, or PR scope
+   requires it
 
 Use commands backed by current repo files such as `Makefile`, `pyproject.toml`,
-`tests/`, scripts, or CI. Current commands and fast/full gate mapping live in
-`docs/reference/verification-ci-and-pr-reference.md`.
+`tests/`, scripts, or CI. Do not invent checks.
 
-If a check cannot run, record check name, reason, result state, residual risk,
-and next action.
+If a check cannot run, report the check name, reason, result state, and what
+would be needed to run it.
 
-## PR Or Handoff Evidence
-PRs, handoffs, and review packets include intent, scope, changed paths or
-artifacts, verifier results, docs impact, risks, follow-up, and review focus.
+Result states:
 
-For write work, include branch, worktree, base ref, changed paths,
-allowed-write-target check, and conflict-check status when applicable. For side
-effects, include command, target surface, gate status, input refs, output refs,
-and verification or rollback note.
+- `passed`: check ran and passed
+- `failed`: check ran and failed
+- `blocked`: check could not run because a blocker exists
+- `skipped`: intentionally not run; reason required
+- `not_applicable`: outside this work
 
-## Human Gate
-Agents may push owned `agent/*` review branches and create or update PRs when
-scope, branch/worktree ownership, verification, and evidence are clear.
+## Human Gates
 
-Do not push directly to `main` or `master`. Do not merge; merge is human-only.
+Human approval is required before:
 
-Release, deployment, CI/CD or GitHub Actions change, dependency change, secret
-or credential handling, auth, billing, database migration or schema change,
-infrastructure change, branch/worktree deletion, external write outside the
-owned review branch or PR, public release, protected data change,
-irreversible/protected action, or security-sensitive behavior requires explicit
-human approval unless scope explicitly approves it.
+- release or deployment
+- CI/CD or infrastructure changes
+- dependency changes
+- secret or credential handling
+- auth, billing, or protected data behavior
+- database migrations or schema changes
+- branch/worktree deletion
+- external writes outside the owned review branch or PR
+- public release
+- destructive or irreversible/protected actions
+
+Do not use human-gate language for ordinary local implementation, local tests,
+or reversible local edits.
+
+## Handoff Shape
+
+For code or doc changes, report enough for the user to continue:
+
+- source refs used
+- changed paths
+- verification result
+- unverified surfaces
+- next action
+
+PR-ready work may also include branch, base ref, and conflict notes. Dedicated
+handoff records are optional and should not be the default.
+
+Do not create or update PRs unless the user asked for PR work or explicitly
+approved that external write.

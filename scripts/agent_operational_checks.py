@@ -18,25 +18,27 @@ ACTIVE_DOCS = (
     "docs/03-repo-boundary-and-storage-contract.md",
 )
 
-OPERATIONAL_SKILLS = {
+ACTIVE_GOVERNANCE_SKILLS = {
     "scope-routing-governance",
     "spec-authority-governance",
-    "traceability-gate-governance",
+    "subagent-workflow-governance",
     "merge-integrity-governance",
-    "residual-risk-carryover",
     "hook-validation-governance",
+    "goal-completion-governance",
+}
+
+RETIRED_GOVERNANCE_SKILLS = {
+    "traceability-gate-governance",
+    "residual-risk-carryover",
     "review-fix-convergence-governance",
 }
 
-REQUIRED_SKILL_SECTIONS = (
+ACTIVE_SKILL_REQUIRED_SECTIONS = (
     "## Purpose",
     "## Use When",
     "## Do Not Use When",
-    "## Read First",
-    "## Context Budget",
     "## Method",
     "## Output",
-    "## Stop / Carryover Conditions",
 )
 
 REQUIRED_DENIED_CONTEXT = {"secrets", "runtime_state", "broad_repo_scan"}
@@ -213,23 +215,27 @@ def validate_skill_routes(root: Path) -> list[str]:
             add_issue(issues, label, "description must be non-empty")
 
         text = skill_file.read_text(encoding="utf-8")
-        if skill_dir.name in OPERATIONAL_SKILLS:
+        if skill_dir.name in ACTIVE_GOVERNANCE_SKILLS:
             if len(text.splitlines()) > 140:
-                add_issue(issues, label, "operational skill exceeds 140-line budget")
+                add_issue(issues, label, "governance skill exceeds 140-line budget")
             if f"`{label}`" not in agents:
                 add_issue(issues, "AGENTS.md", f"missing route to {label}")
-            for section in REQUIRED_SKILL_SECTIONS:
+            for section in ACTIVE_SKILL_REQUIRED_SECTIONS:
                 if section not in text:
                     add_issue(issues, label, f"missing required section {section}")
             for template_ref in re.findall(r"`(templates/[^`]+)`", text):
                 if not (root / template_ref).exists():
                     add_issue(issues, label, f"references missing template {template_ref}")
+        elif skill_dir.name in RETIRED_GOVERNANCE_SKILLS:
+            lowered = text.lower()
+            if "retired" not in lowered or "do not use" not in lowered:
+                add_issue(issues, label, "retired governance skill must state retired/do not use")
 
     total_active_lines = sum(
         len((root / path).read_text(encoding="utf-8").splitlines()) for path in ACTIVE_DOCS
     )
-    if total_active_lines > 200:
-        add_issue(issues, "active docs", f"line budget exceeded: {total_active_lines} > 200")
+    if total_active_lines > 320:
+        add_issue(issues, "active docs", f"line budget exceeded: {total_active_lines} > 320")
     return issues
 
 

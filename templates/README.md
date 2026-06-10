@@ -9,27 +9,52 @@
   the value could become cargo-cult storage.
 - Do not store completed plans, logs, evidence, verification records, runtime
   state, local paths, or secrets here.
-- Add a template only when an active contract or reference explains when it is
-  used.
-- Use `templates/parallel-lane-map.yaml` for lane allocation templates; completed
-  lane maps belong under `Plan/<project_id>/lane-maps/` when tracked.
-- Use `templates/specification-packet.yaml`,
-  `templates/specification-review-record.yaml`,
-  `templates/implementation-policy-record.yaml`,
-  `templates/workflow-run-record.yaml`, and
-  `templates/inconsistency-register.yaml` for reusable
-  specification/subagent workflow records; completed records belong under the
-  owning `project_id`.
-- Use `templates/context-scope-manifest.yaml`,
-  `templates/residual-risk-carryover-record.yaml`,
-  `templates/final-handoff-record.yaml`, and the review/fix/convergence
-  templates for operationalization records; completed records belong under the
-  owning `artifact/<project_id>/` surface.
-- Use `templates/budget-override-record.yaml`,
-  `templates/check-result-envelope.yaml`,
-  `templates/phase-gate-matrix.yaml`,
-  `templates/source-snapshot-lock.yaml`,
-  `templates/audit-trail-index.yaml`, and
-  `templates/operational-scorecard.yaml` for 9.5 hardening records.
-- Do not store completed specs, workflow runs, logs, evidence, verification
-  records, or project records in `templates/`.
+- Add or keep a template only when it helps complete future goals.
+
+## Default Active Templates
+
+Use these lightweight shapes first:
+
+- `templates/goal-brief.md`
+- `templates/mini-spec.md`
+- `templates/task-packet.yaml`
+- `templates/verification-note.md`
+
+Use existing project `Plan/<project_id>/plans/Plan_N0001.md` and
+`Plan/<project_id>/logs/Plan_N0001.log.md` for durable project memory.
+
+## Optional Templates
+
+- `templates/parallel-lane-map.yaml`: only for real parallel write work.
+- `templates/specification-packet.yaml`: only when a short mini-spec is not
+  enough.
+- `templates/work-contract.yaml`: only when a separate worker needs a bounded
+  task packet.
+- `templates/evidence-record.yaml` and `templates/verification-record.yaml`:
+  only when inline verification notes are not enough.
+
+## Archived Heavy-Contract Templates
+
+The following templates are retained only for migration or archive inspection.
+They are not default workflow outputs:
+
+- approved spec freeze
+- final handoff
+- fix handoff
+- convergence decision
+- requirement traceability matrix
+- source snapshot lock
+- audit trail index
+- operational scorecard
+- residual-risk carryover
+- review assignment
+- narrow/wide/security/fix review records
+- inconsistency register
+- implementation policy record
+- check result envelope
+- budget override
+- exception pack
+- phase gate matrix
+
+Do not create these records unless the user explicitly asks to restore or audit
+the heavy-contract workflow.

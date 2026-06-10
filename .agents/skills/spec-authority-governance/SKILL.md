@@ -1,59 +1,36 @@
 ---
 name: spec-authority-governance
-description: Govern approved specification authority, amendment, and WHAT/HOW separation.
+description: Keep lightweight specs focused on observable WHAT and prevent implementation details from redefining the user's goal.
 ---
 
 # Spec Authority Governance
 
 ## Purpose
 
-Implement or review approved specification authority without allowing
-implementation policy to redefine behavior.
+Preserve the user's intended behavior while keeping specs small.
 
 ## Use When
 
-- An approved specification packet, review, or freeze is added or changed.
-- Frozen behavior may need amendment.
-- Implementation policy risks redefining behavior.
-- Behavior authority and amendment flow are in scope.
+- A spec, mini-spec, or requirement list is being written or revised.
+- Implementation choices may change the intended behavior.
+- A behavior change needs explicit user approval.
 
 ## Do Not Use When
 
-- The task only changes hook wiring, context manifests, or residual-risk records.
-- No spec authority, freeze, or amendment behavior is involved.
-
-## Read First
-
-- `templates/specification-packet.yaml`
-- `templates/specification-review-record.yaml`
-- `templates/implementation-policy-record.yaml`
-- `docs/reference/specification-workflow-reference.md` only when named.
-
-## Context Budget
-
-```yaml
-max_selected_skills: 2
-max_source_refs: 6
-max_reference_docs: 1
-broad_repo_scan_allowed: false
-```
+- The task is ordinary implementation with clear Done criteria.
+- The work only changes records, traceability, convergence, or handoff files.
 
 ## Method
 
-1. Identify behavior authority source.
-2. Confirm frozen WHAT is not changed through implementation docs.
-3. Route behavior changes through explicit review or amendment records.
-4. Ensure traceability IDs remain stable or are amended explicitly.
-5. Record verification and residual risk.
+1. Identify the current goal and Done criteria.
+2. Separate WHAT from HOW.
+3. Keep non-goals and human gates explicit.
+4. Treat behavior changes as user-visible decisions, not implementation drift.
+5. Prefer plain bullets over IDs unless many agents must trace many items.
 
 ## Output
 
-- specification authority verdict
-- review or amendment refs
-- verification refs
-- residual risk if behavior authority is unresolved
-
-## Stop / Carryover Conditions
-
-Stop if behavior is changed without spec authority. Carry unresolved human
-approval as residual risk; do not mark behavior authority complete.
+- spec authority verdict
+- behavior changes that need user decision
+- implementation details that should move out of the spec
+- verification needed to prove the goal

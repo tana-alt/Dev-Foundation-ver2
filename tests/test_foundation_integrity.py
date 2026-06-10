@@ -14,10 +14,8 @@ ACTIVE_DOCS = (
     "docs/03-repo-boundary-and-storage-contract.md",
 )
 
-REFERENCE_DOCS = (
+ACTIVE_REFERENCE_DOCS = (
     "docs/reference/agent-runtime-and-scope-reference.md",
-    "docs/reference/agent-operationalization-95-hardening-reference.md",
-    "docs/reference/agent-operationalization-reference.md",
     "docs/reference/git-worktree-and-branch-reference.md",
     "docs/reference/migration-and-acceptance-reference.md",
     "docs/reference/packet-evidence-and-rework-reference.md",
@@ -26,7 +24,18 @@ REFERENCE_DOCS = (
     "docs/reference/verification-ci-and-pr-reference.md",
 )
 
+LEGACY_REFERENCE_DOCS = (
+    "docs/reference/agent-operationalization-95-hardening-reference.md",
+    "docs/reference/agent-operationalization-reference.md",
+)
+
+REFERENCE_DOCS = (*ACTIVE_REFERENCE_DOCS, *LEGACY_REFERENCE_DOCS)
+
 TEMPLATES = (
+    "templates/goal-brief.md",
+    "templates/mini-spec.md",
+    "templates/task-packet.yaml",
+    "templates/verification-note.md",
     "templates/work-contract.yaml",
     "templates/evidence-record.yaml",
     "templates/verification-record.yaml",
@@ -227,13 +236,13 @@ def line_count(relative_path: str) -> int:
 
 def test_active_agent_context_stays_under_budget() -> None:
     total_lines = sum(line_count(path) for path in ACTIVE_DOCS)
-    assert total_lines <= 200
+    assert total_lines <= 320
 
 
 def test_agents_routes_to_active_docs_and_references() -> None:
     agents = read_text("AGENTS.md")
 
-    for relative_path in (*ACTIVE_DOCS[1:], *REFERENCE_DOCS):
+    for relative_path in (*ACTIVE_DOCS[1:], *ACTIVE_REFERENCE_DOCS):
         assert f"`{relative_path}`" in agents
 
     assert "Root Boundary" not in agents
@@ -258,12 +267,14 @@ def test_doc_consistency_specification_subagent_workflow_is_routed_and_compact()
 
     assert "`docs/reference/specification-workflow-reference.md`" in agents
     assert "main_lane" in reference
-    assert "spec_drafter" in reference
-    assert "inconsistency register" in reference.lower()
+    assert "Goal Brief" in reference
+    assert "Mini-Spec" in reference
+    assert "plain issue list" in reference
     assert "not a runtime scheduler" in reference
     assert "worker heartbeat" in reference
     assert "specification-workflow-reference.md" in packet_reference
-    assert "templates/specification-packet.yaml" in templates_readme
+    assert "templates/goal-brief.md" in templates_readme
+    assert "templates/task-packet.yaml" in templates_readme
     assert "blank reusable" in templates_readme
 
 
@@ -527,8 +538,8 @@ def test_tracked_hooks_enforce_agent_policy_and_checks() -> None:
     assert "check-skill-routes" in pre_commit
     assert "check-context-scope" in pre_commit
     assert "check-context-scope" in pre_push
-    assert "check-residual-risk-carryover" in pre_push
-    assert "check-review-convergence" in pre_push
+    assert "FOUNDATION_LEGACY_CONTRACT_CHECKS" in pre_push
+    assert "check-legacy-contracts" in pre_push
     assert "check-push" in pre_push
     assert 'make "$CHECK_TARGET"' in pre_push
 
@@ -858,6 +869,7 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert "check-audit-provenance:" in makefile
     assert "check-operational-scorecard:" in makefile
     assert "check-agent-operational:" in makefile
+    assert "check-legacy-contracts:" in makefile
     assert "check-ci:" in makefile
     assert "check-hygiene:" in makefile
     assert "check-shell:" in makefile
@@ -871,10 +883,9 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
         "check-shell",
         "check-hygiene",
         "check-secrets",
-        "check-lanes",
         "test",
     ]
-    assert "check-shell check-hygiene check-secrets check-lanes test" in makefile
+    assert "check-shell check-hygiene check-secrets test" in makefile
     assert "core.hooksPath" in dev_check
     assert "foundation.canonicalRoot" in dev_check
     assert "command -v shellcheck" in dev_check
@@ -916,7 +927,7 @@ def test_dev_environment_and_hygiene_checks_are_wired() -> None:
     assert "make check-shell" in verification_reference
     assert "make check-secrets" in verification_reference
     assert "make check-lanes" in verification_reference
-    assert "make check-agent-operational" in verification_reference
+    assert "heavy-contract checks" in verification_reference
 
 
 def test_parallel_lane_management_is_routed_and_checked() -> None:
@@ -934,8 +945,8 @@ def test_parallel_lane_management_is_routed_and_checked() -> None:
     assert "templates/parallel-lane-map.yaml" in runtime_reference
     assert "lane_map_ref" in runtime_reference
     assert "lane slice" in runtime_reference
-    assert "make check-lanes" in runtime_reference
-    assert "lane-map\nrecords for planning and handoff" in storage_contract
+    assert "real parallel write work" in runtime_reference
+    assert "Optional durable lane-map records" in storage_contract
     assert "Plan/<project_id>/lane-maps/<work_id>.yaml" in boundary_reference
     assert "not a scheduler, runtime queue, lock ledger" in boundary_reference
     assert "lane_map_ref" in git_reference
@@ -952,7 +963,7 @@ def test_parallel_lane_management_is_routed_and_checked() -> None:
     assert "assigned" in lane_check
     assert "Plan/<project_id>/lane-maps/<work_id>.yaml" in lane_check
     assert "branch_target must be agent/<work_id>/<lane>/<slug>" in lane_check
-    assert "check-lanes" in make_target_dependencies(makefile, "check-fast")
+    assert "check-lanes" not in make_target_dependencies(makefile, "check-fast")
 
 
 def test_pytest_collection_is_aggregate_foundation_gate() -> None:
@@ -989,6 +1000,7 @@ def test_verification_reference_documents_pytest_aggregate_gate() -> None:
         "`make check-push`",
         "`make check-ci`",
         "`make check-lanes`",
+        "`make check-legacy-contracts`",
         "lane-map validation",
         "Fast And Full Gate Mapping",
         "not automatic test classification",
@@ -1078,7 +1090,7 @@ def test_doc_consistency_routes_canonical_output_and_human_gates() -> None:
     assert "canonical human-gate list" in operating_contract
 
     for phrase in (
-        "external write outside the owned review branch or PR",
+        "external writes outside the owned review branch or PR",
         "branch/worktree deletion",
         "irreversible/protected action",
     ):

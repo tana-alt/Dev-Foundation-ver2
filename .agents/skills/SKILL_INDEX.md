@@ -73,13 +73,20 @@ boundaries.
 ## Governance skills
 
 - `skill-authoring-governance`
+- `goal-completion-governance`
 - `subagent-workflow-governance`
 - `scope-routing-governance`
 - `spec-authority-governance`
-- `traceability-gate-governance`
 - `merge-integrity-governance`
-- `residual-risk-carryover`
 - `hook-validation-governance`
+
+## Archived heavy-contract routes
+
+These exist only for reading or migrating old records. Do not use them as
+default workflow routes:
+
+- `traceability-gate-governance`
+- `residual-risk-carryover`
 - `review-fix-convergence-governance`
 
 ## Routing notes
@@ -91,5 +98,5 @@ boundaries.
   guidance.
 - Agent context and tool-output safety is folded into security-check, not a
   separate local skill.
-- Operational governance skills route record-heavy workflow, context, hooks,
-  review, traceability, and residual-risk tasks without making active docs long.
+- Governance skills support evidence-backed goal completion. Records are audit
+  aids only; creating records does not complete a task.

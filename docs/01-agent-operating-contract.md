@@ -1,55 +1,89 @@
 # Agent Operating Contract
 
 ## Purpose
-Defines how workers act in this repo. Small, bounded work contracts replace
-broad role hierarchy.
 
-## Scope First
-Start from the user request, task packet, provided scope, and named
-`source_refs`; do not discover scope by reading the whole repo.
+Keep agent work focused on the user's goal, with enough scope control to avoid
+unsafe or unrelated edits.
 
-Useful scope may include task intent, success criteria, source refs, optional
-refs, expected outputs, allowed write targets, denied context, evidence
-required, verification required, `git_scope` when writing in parallel,
-blockers, open questions, and next action.
+## Goal First
 
-Do not invent missing facts, paths, requirements, state, roles, or ownership.
+Start from the current user request, task packet, or named scope. Identify:
+
+- goal
+- Done criteria
+- source refs
+- allowed write targets
+- denied context
+- verification command or method
+- next action
+
+If details are missing but a safe local assumption is obvious, state the
+assumption and proceed. Ask for clarification only when a wrong assumption would
+cause unsafe work, broad rewrites, external side effects, or destructive
+actions.
 
 ## Context Boundary
-- Read named refs first.
-- Inspect nearby files only as needed for a safe local change.
-- Deny unrelated logs, broad history, archives, runtime state, secret material,
-  and past-source material by default.
-- If context expands, say why in the output.
+
+Read named refs first. Inspect nearby files only when needed for a safe local
+change or verification. Do not read broad logs, archives, unrelated history,
+secrets, runtime state, caches, or past-source material by default.
+
+If context expands, explain why.
 
 ## Write Preconditions
-Before any local write, confirm allowed write targets, current contents or
-absence, canonical repo root, relevant VCS status, and conflict risk.
 
-For parallel work, also confirm complete `git_scope`: `base_ref`,
-`merge_target`, allowed write targets, conflict policy, and explicit or
-derivable branch and worktree targets. If missing, return rework.
+Before local writes, confirm:
 
-Installed hooks block direct writes to protected branches and non-`agent/*`
-branches. Parallel agent work must use one branch and one external worktree per
-agent. Do not bypass hooks for agent work.
+- current file contents or absence
+- repo root
+- relevant VCS status
+- conflict risk with existing user changes
+
+For parallel write work, require explicit branch and worktree ownership. Do not
+create worktrees by default; use them only when the user requests parallel work
+or the task truly needs separate write lanes.
 
 ## Side Effects
-Classify work before acting: read-only local, local write, external read/write,
-dependency/tooling, infra/deploy, secret-bearing, or irreversible/protected.
 
-External writes, dependency/tooling changes, CI/CD changes, deployment, release,
-secret handling, auth, billing, database migration, infrastructure, and
-security-sensitive work require explicit approval or human gate.
+Classify side effects before acting:
 
-Do not perform gated work without approval; split approved local work from
-blocked/rework items. Record command, target surface, gate status, input/output refs,
-and verification or rollback note; canonical human-gate list lives in `docs/02-output-verification-contract.md`.
+- local read
+- local write
+- external read
+- external write
+- dependency/tooling change
+- deploy/release/infra change
+- secret-bearing action
+- destructive or irreversible action
+
+Human approval is required for secrets, external writes, deploy/release,
+dependency or CI/infra changes, database migrations, destructive Git, or
+irreversible/protected actions. Missing approval blocks that action only; keep
+approved local work moving when possible.
+
+The canonical human-gate list and verification result states live in
+`docs/02-output-verification-contract.md`.
+
+## Records
+
+Records are optional tools, not the product. Use lightweight plan/log records
+for substantial or resumable work. Do not create final handoff, convergence,
+traceability, source snapshot, or scorecard records unless explicitly requested.
+
+Forbidden completion shortcuts:
+
+- records-only complete
+- mock complete when real behavior was requested
+- `complete_with_residual_risk` as a substitute for unfinished implementation
 
 ## Valid Output
-A valid output follows `docs/02-output-verification-contract.md` and states
-changed paths or artifact refs, evidence refs, verification result, unverified
-surfaces, residual risk, and next action.
 
-Return rework when scope, permission, evidence, output shape, or verification is
-missing, unsafe, ambiguous, or in conflict with repo truth.
+For implementation work, report:
+
+- changed paths
+- verification attempted and result
+- anything intentionally not verified
+- remaining risk that affects goal completion
+- next action
+
+For casual brainstorming or read-only answers, answer directly.
