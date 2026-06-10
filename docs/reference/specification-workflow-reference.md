@@ -31,7 +31,7 @@ criteria.
 Goal
   -> Scope
   -> Done criteria
-  -> Direct implementation or mini-spec
+  -> Direct implementation, mini-spec, or detailed spec
   -> Verify
   -> Log result
 ```
@@ -69,6 +69,19 @@ Write this into `Plan/<project_id>/plans/Plan_N0001.md` only when the work is
 substantial or resumable. For small work, state it in the assistant response and
 continue.
 
+## Spec Depth
+
+Use the smallest spec that prevents real mistakes:
+
+- Direct edit: clear Done criteria, low design risk.
+- Mini-spec: ambiguous behavior, non-goals, or acceptance criteria.
+- Detailed spec: failure modes, interfaces, data/trust boundaries, security,
+  persistence, external writes, migration, or durable architecture decisions.
+
+The spec is thinking before work, not a running gate. Once the spec is clear,
+execute toward the goal and verify. Do not add spec freeze, mandatory spec
+review records, traceability matrices, or convergence records by default.
+
 ## Mini-Spec
 
 Use a mini-spec when the goal needs design clarity. Keep it short:
@@ -78,14 +91,49 @@ Goal:
 Done when:
 Out of scope:
 Constraints:
+Error / exception behavior:
+Invariants:
 Human gates:
 Source refs:
 Open questions:
+ADR needed?: yes/no
 ```
 
 For larger behavior work, add requirements as plain bullets. Use `REQ-*` and
 `AC-*` IDs only when another person or agent must trace many items across
 multiple changes. Do not create traceability matrices by default.
+
+## Detailed Spec
+
+Use `templates/detailed-spec.md` when a lightweight spec would miss important
+engineering judgment. Pull useful thinking from the old heavy spec packs:
+
+- behavior requirements: observable requirement, outcome, acceptance criteria
+- exception pack: failure or edge case, expected handling, verification
+- interface contract: public/API/tool contract and compatibility expectations
+- data contract: persisted shape, ownership, migration, retention, privacy
+- security/privacy pack: trust boundary, control, review need
+- NFR pack: reliability, performance, operability, maintainability
+- test strategy: the smallest check that proves each important behavior
+
+Do not split those into separate records unless the user explicitly asks for
+that compatibility format.
+
+## ADR Lite
+
+Write an ADR note inside the detailed spec when the decision is hard to reverse
+or easy to forget. A separate ADR file is optional and should be rare.
+
+ADR-worthy decisions include:
+
+- persistent data ownership, schema, migration, or retention
+- external API, MCP, queue, worker, scheduler, deploy, or integration boundary
+- security, auth, secrets, billing, privacy, or protected data behavior
+- multiple plausible designs with meaningful tradeoffs
+- a design that future agents might otherwise undo accidentally
+
+ADR is not needed for obvious local refactors, reversible implementation
+details, naming, file layout, or routine test command choice.
 
 ## WHAT/HOW Separation
 

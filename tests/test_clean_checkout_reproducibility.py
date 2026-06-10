@@ -48,6 +48,7 @@ STATIC_REQUIRED_PATHS = (
     "templates/README.md",
     "templates/codex-config.toml.example",
     "templates/evidence-record.yaml",
+    "templates/detailed-spec.md",
     "templates/goal-brief.md",
     "templates/mini-spec.md",
     "templates/task-packet.yaml",

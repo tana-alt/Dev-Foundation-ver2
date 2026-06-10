@@ -17,6 +17,7 @@ Use these lightweight shapes first:
 
 - `templates/goal-brief.md`
 - `templates/mini-spec.md`
+- `templates/detailed-spec.md`
 - `templates/task-packet.yaml`
 - `templates/verification-note.md`
 
@@ -26,8 +27,9 @@ Use existing project `Plan/<project_id>/plans/Plan_N0001.md` and
 ## Optional Templates
 
 - `templates/parallel-lane-map.yaml`: only for real parallel write work.
-- `templates/specification-packet.yaml`: only when a short mini-spec is not
-  enough.
+- `templates/specification-packet.yaml`: legacy structured spec packet; prefer
+  `templates/detailed-spec.md` unless the user explicitly wants packet-shaped
+  compatibility.
 - `templates/work-contract.yaml`: only when a separate worker needs a bounded
   task packet.
 - `templates/evidence-record.yaml` and `templates/verification-record.yaml`:

@@ -10,6 +10,10 @@ Done criteria:
 
 User-visible behavior:
 
+Error / exception behavior:
+
+Invariants:
+
 Non-goals:
 
 Constraints:
@@ -19,6 +23,8 @@ Human gates:
 Source refs:
 
 Open questions:
+
+ADR needed?: yes/no
 
 Verification:
 
