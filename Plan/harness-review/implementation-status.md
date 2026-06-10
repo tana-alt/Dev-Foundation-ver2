@@ -27,6 +27,7 @@ port(seam)→ trajectory(記録)→ eval scoring(測定)→ escape scan + hack-c
 | ad1862a | eval scoring(成功率 / tool-call 率 / skill 率 / 想定外行動) | ② |
 | 3a95d14 | escape scanner + hack-catch(現行ゲートの穴を数値化) | S2 / ② |
 | a0745e3 | 完了ゲート + handoff + test freeze + eval runner | S1 / ⑤ / S4 / ② |
+| c54c4c7 | spec-gated loop + 結果報告契約 + eval 保持ストア | G8 / 委任 / G4 |
 
 ## 3. 実装済みコンポーネント(`src/workflow_core/`)
 
@@ -39,6 +40,9 @@ port(seam)→ trajectory(記録)→ eval scoring(測定)→ escape scan + hack-c
 | `completion.py` | `run_completion_gate` / `EvidenceRecord` / `write_evidence`(S1) | ✅ |
 | `handoff.py` | `build_handoff` / `render_handoff`(⑤ 種) | ✅ |
 | `frozen.py` | `frozen_path_violations`(S4) | ✅ |
+| `loop.py` | `run_loop`(spec-gated・非spec は single-pass・失敗予算 escalate)| ✅ |
+| `report.py` | `ResultReport` / `build_result_report`(agent 間は結果報告のみ・bounded)| ✅ |
+| `metrics_store.py` | `MetricsStore`(sqlite・raw 退役 / 構造化シグナル保持)| ✅ |
 
 スクリプト: `scripts/completion_gate.py`(`make gate`)/ `check-frozen-paths.py`
 (`make check-frozen`、pre-commit 配線済み)/ `run_eval.py`(`make eval`)。
