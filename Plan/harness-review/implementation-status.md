@@ -28,6 +28,11 @@ port(seam)→ trajectory(記録)→ eval scoring(測定)→ escape scan + hack-c
 | 3a95d14 | escape scanner + hack-catch(現行ゲートの穴を数値化) | S2 / ② |
 | a0745e3 | 完了ゲート + handoff + test freeze + eval runner | S1 / ⑤ / S4 / ② |
 | c54c4c7 | spec-gated loop + 結果報告契約 + eval 保持ストア | G8 / 委任 / G4 |
+| (本コミット) | hook runtime(payload→TrajectoryEvent 翻訳 + Stop/PostToolUse スクリプト + 設定テンプレ)| G1/G2/G3 実接続 |
+
+**runtime 接続の判断(確定)**: Claude/Codex とも `Stop` hook が block+理由差し戻しで
+in-session loop を実現でき、日常業務は **hook だけ**で完了ゲート+trajectory+loop を回せる
+(低負荷)。SDK/headless は token 計測と無人 eval のみ。詳細 `harness-goal-and-plan.md` Phase B。
 
 ## 3. 実装済みコンポーネント(`src/workflow_core/`)
 

@@ -20,6 +20,7 @@ from workflow_core.evaluation import (
 from workflow_core.frozen import frozen_path_violations
 from workflow_core.gate import EscapeFinding, build_verdict, scan_escapes
 from workflow_core.handoff import build_handoff, render_handoff
+from workflow_core.hook_events import from_post_tool_use
 from workflow_core.loop import LoopOutcome, run_loop
 from workflow_core.metrics_store import MetricsStore
 from workflow_core.report import ResultReport, build_result_report
@@ -57,6 +58,7 @@ __all__ = [
     "build_verdict",
     "check_workflow_document",
     "frozen_path_violations",
+    "from_post_tool_use",
     "hack_catch_rate",
     "record_run",
     "render_handoff",

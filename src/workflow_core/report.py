@@ -15,7 +15,7 @@ from pydantic import model_validator
 
 from workflow_core.contracts import StrictModel
 
-MAX_SUMMARY_CHARS = 1000
+MAX_SUMMARY_CHARS = 3000
 
 ReportStatus = Literal["completed", "blocked", "failed"]
 

@@ -1,0 +1,26 @@
+{
+  "_comment": "Copy into .claude/settings.json to activate the harness as a Claude Code observe-mode runtime. PostToolUse records the trajectory; Stop runs the spec-gated completion loop. Do NOT activate in this repo's own .claude/ unless you want your own session gated.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/hook_post_tool_use.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/hook_stop.py"
+          }
+        ]
+      }
+    ]
+  }
+}
