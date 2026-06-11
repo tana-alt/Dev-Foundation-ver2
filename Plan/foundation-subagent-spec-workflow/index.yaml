@@ -9,6 +9,6 @@ plans:
     plan_ref: Plan/foundation-subagent-spec-workflow/plans/Plan_N0002.md
     log_ref: Plan/foundation-subagent-spec-workflow/logs/Plan_N0002.log.md
   - plan_id: Plan_N0003
-    status: active
+    status: completed
     plan_ref: Plan/foundation-subagent-spec-workflow/plans/Plan_N0003.md
     log_ref: Plan/foundation-subagent-spec-workflow/logs/Plan_N0003.log.md

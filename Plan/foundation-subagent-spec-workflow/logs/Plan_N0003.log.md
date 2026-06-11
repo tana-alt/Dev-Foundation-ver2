@@ -33,3 +33,6 @@ plan_ref: Plan/foundation-subagent-spec-workflow/plans/Plan_N0003.md
   measure -> issues pipeline, NFR evaluate exit 0/1/2, malformed env knob
   degrades with warning, simulated missing-pydantic runs (Stop hook
   fail-open exit 0; PostToolUse still records via the stdlib path).
+- Final verification: 269 tests passed; ruff format/check, mypy (42 files),
+  shell static analysis, repo hygiene, secret scan, check-push all green.
+  Committed as d2faf30; plan closed as completed.

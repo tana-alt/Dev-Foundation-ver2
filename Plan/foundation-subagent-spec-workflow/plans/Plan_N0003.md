@@ -1,7 +1,7 @@
 ---
 plan_id: Plan_N0003
 project_id: foundation-subagent-spec-workflow
-status: active
+status: completed
 log_ref: Plan/foundation-subagent-spec-workflow/logs/Plan_N0003.log.md
 ---
 
@@ -49,4 +49,5 @@ two distinct finding classes via hypothesis verification:
 
 ## Status
 
-- In progress (2026-06-11).
+- Completed 2026-06-11 (commit d2faf30). Findings and classifications:
+  `Plan/harness-review/hypothesis-driven-refactor-20260611.md`.
