@@ -48,6 +48,7 @@ def run_completion_gate(
         diff,
         check_passed=check.exit_code == 0,
         scan_escapes_enabled=scan_escapes_enabled,
+        findings=findings,
     )
     evidence = EvidenceRecord(
         command=check.command,

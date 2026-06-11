@@ -115,6 +115,20 @@ RESTORE_SCRIPTS = (
     "scripts/check-operational-scorecard.py",
 )
 
+HARNESS_SCRIPTS = (
+    "scripts/hook_session_start.py",
+    "scripts/hook_post_tool_use.py",
+    "scripts/hook_stop.py",
+    "scripts/completion_gate.py",
+    "scripts/measure_eval.py",
+    "scripts/surface_issues.py",
+    "scripts/nfr_metric.py",
+    "scripts/run_eval.py",
+    "scripts/check-frozen-paths.py",
+    "scripts/check-lane-map.py",
+    "scripts/check-workflow-state.py",
+)
+
 DEPLOYMENT_CONFIGS = (
     "Dockerfile",
     "docker-compose.yml",
@@ -295,6 +309,7 @@ def test_required_contract_files_exist() -> None:
         *DEV_DEFAULTS,
         *HOOKS,
         *RESTORE_SCRIPTS,
+        *HARNESS_SCRIPTS,
     )
 
     for relative_path in required:

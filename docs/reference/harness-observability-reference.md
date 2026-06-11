@@ -21,6 +21,17 @@ active `Plan_N000X.md` record (status from `index.yaml`; see
 `src/workflow_core/plans.py`). `FOUNDATION_SPEC_PRESENT=1` forces gating;
 unplanned work stays single-pass.
 
+Hook robustness contract: hooks run under plain `python3` (no venv). The
+PostToolUse recorder and the gating decision are stdlib-only
+(`workflow_core.hook_events.event_dict_from_post_tool_use`,
+`workflow_core.plans`; the package `__init__` resolves exports lazily so
+those imports never pull pydantic). The Stop hook's verdict path needs
+pydantic; when it is missing, or `make` exceeds `FOUNDATION_GATE_TIMEOUT_S`
+(default 900), the hook fails open -- stderr note, exit 0 -- so an
+environment problem never traps the session. Numeric `FOUNDATION_*` knobs
+parse via `workflow_core.env` and fall back to their defaults (with a stderr
+warning) on malformed values.
+
 ## Measurement And Retention (make measure)
 
 `scripts/measure_eval.py` scores every recorded trajectory and accumulates
@@ -61,7 +72,8 @@ python3 scripts/nfr_metric.py evaluate api_latency --threshold 200 --statistic p
 ```
 
 `evaluate` prints the verdict (p50/p95/max/mean vs threshold) and exits 1 on a
-missed budget, so it can sit inside a verification gate. Copy the verdict into
+missed budget, so it can sit inside a verification gate (exit 2 means no
+samples yet -- cold start, not a miss). Copy the verdict into
 evidence or the plan log, then `purge` the metric; retention also ages out
 samples beyond `FOUNDATION_NFR_MAX_SAMPLES` (default 1000) per metric.
 `make nfr-summary` prints all current distributions.

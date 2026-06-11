@@ -27,6 +27,7 @@ def main() -> int:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
     from datetime import UTC, datetime
 
+    from workflow_core.env import env_float, env_int
     from workflow_core.issues import IssueThresholds, derive_issues, render_issues_markdown
     from workflow_core.metrics_store import MetricsStore
 
@@ -39,13 +40,12 @@ def main() -> int:
         return 0
 
     thresholds = IssueThresholds(
-        min_calls=int(os.environ.get("FOUNDATION_ISSUE_MIN_CALLS", "5")),
-        max_failure_rate=float(os.environ.get("FOUNDATION_ISSUE_FAILURE_RATE", "0.3")),
-        min_success_rate=float(os.environ.get("FOUNDATION_ISSUE_SUCCESS_RATE", "0.8")),
+        min_calls=env_int("FOUNDATION_ISSUE_MIN_CALLS", 5),
+        max_failure_rate=env_float("FOUNDATION_ISSUE_FAILURE_RATE", 0.3),
+        min_success_rate=env_float("FOUNDATION_ISSUE_SUCCESS_RATE", 0.8),
     )
-    store = MetricsStore(db_path)
-    issues = derive_issues(store.aggregate_stored(), store.tool_stats(), thresholds)
-    store.close()
+    with MetricsStore(db_path) as store:
+        issues = derive_issues(store.aggregate_stored(), store.tool_stats(), thresholds)
 
     generated_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     out_dir = db_path.parent

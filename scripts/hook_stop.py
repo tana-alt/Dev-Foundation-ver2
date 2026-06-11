@@ -11,7 +11,11 @@ via its Stop hook.
 Gating: a project is gated when Plan/<project>/plans/ holds an active
 Plan_N000X.md record (the agent-operated plan convention -- see Plan/README.md),
 or FOUNDATION_SPEC_PRESENT=1 forces it. A legacy Plan/<project>/spec.md still
-gates. Env: FOUNDATION_GATE_TIER, FOUNDATION_PROJECT_ID.
+gates. Env: FOUNDATION_GATE_TIER, FOUNDATION_PROJECT_ID,
+FOUNDATION_GATE_TIMEOUT_S (default 900).
+
+Fail-open by design: an environment problem (missing pydantic, hung check)
+must never trap the user's session, so those paths log to stderr and exit 0.
 """
 
 from __future__ import annotations
@@ -21,7 +25,10 @@ import json
 import os
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 
 def _gated(root: Path, project: str) -> bool:
@@ -35,11 +42,6 @@ def _gated(root: Path, project: str) -> bool:
 
 
 def main() -> int:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-    from datetime import UTC, datetime
-
-    from workflow_core.completion import CheckOutcome, run_completion_gate, write_evidence
-
     # Drain stdin; respect the loop guard so we never block forever.
     try:
         payload = json.load(sys.stdin)
@@ -53,10 +55,27 @@ def main() -> int:
     if not _gated(root, project):
         return 0  # unplanned work: single pass, no loop
 
+    try:
+        from workflow_core.completion import CheckOutcome, run_completion_gate, write_evidence
+    except ImportError as exc:  # gate needs pydantic; fail open, never trap the session
+        print(f"hook_stop: import failed, gate skipped: {exc}", file=sys.stderr)
+        return 0
+
+    from workflow_core.env import env_int
+
     tier = os.environ.get("FOUNDATION_GATE_TIER", "check-required")
-    diff = subprocess.run(["git", "diff", "HEAD"], cwd=root, capture_output=True, text=True).stdout
+    timeout_s = env_int("FOUNDATION_GATE_TIMEOUT_S", 900)
+    try:
+        diff = subprocess.run(
+            ["git", "diff", "HEAD"], cwd=root, capture_output=True, text=True, timeout=60
+        ).stdout
+        completed = subprocess.run(
+            ["make", tier], cwd=root, capture_output=True, text=True, timeout=timeout_s
+        )
+    except subprocess.TimeoutExpired as exc:
+        print(f"hook_stop: gate command timed out, gate skipped: {exc}", file=sys.stderr)
+        return 0
     diff_hash = "sha256:" + hashlib.sha256(diff.encode("utf-8")).hexdigest()
-    completed = subprocess.run(["make", tier], cwd=root, capture_output=True, text=True)
     check = CheckOutcome(command=f"make {tier}", exit_code=completed.returncode)
     ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 

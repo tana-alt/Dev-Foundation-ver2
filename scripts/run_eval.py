@@ -97,24 +97,25 @@ def _run_cases(cases: list[Case]) -> tuple[list[Any], list[Any]]:
 
 def _store_block(cases: list[Case], scores: list[Any], db_path: str) -> dict[str, int]:
     """Opt-in retention store: accumulate structured metrics, age out raw data."""
+    from workflow_core.env import env_int
     from workflow_core.metrics_store import MetricsStore
     from workflow_core.trajectory import summarize, to_jsonl
 
-    store = MetricsStore(db_path)
-    for idx, (label, script, _diff, _hack, _scan) in enumerate(cases):
-        raw = to_jsonl(script)
-        _ = summarize(label, script)
-        matching = next(s for s in scores if s.run_id == label)
-        store.record_run(matching, raw_trajectory=raw, created_at=f"2026-06-11T00:00:0{idx}Z")
-    max_raw = int(os.environ.get("FOUNDATION_EVAL_MAX_RAW", "2"))
-    purged = store.enforce_retention(max_raw_runs=max_raw)
-    block = {
-        "raw_runs_kept": store.raw_count(),
-        "structured_metrics_kept": store.metrics_count(),
-        "raw_purged": purged,
-    }
-    store.close()
-    return block
+    with MetricsStore(db_path) as store:
+        for idx, (label, script, _diff, _hack, _scan) in enumerate(cases):
+            raw = to_jsonl(script)
+            _ = summarize(label, script)
+            matching = next(s for s in scores if s.run_id == label)
+            created_at = f"2026-06-11T00:{idx // 60:02d}:{idx % 60:02d}Z"
+            store.record_run(matching, raw_trajectory=raw, created_at=created_at)
+        # Default 2 is deliberately below the 3 built-in cases so the demo
+        # output shows retention purging; measure_eval.py defaults to 50.
+        purged = store.enforce_retention(max_raw_runs=env_int("FOUNDATION_EVAL_MAX_RAW", 2))
+        return {
+            "raw_runs_kept": store.raw_count(),
+            "structured_metrics_kept": store.metrics_count(),
+            "raw_purged": purged,
+        }
 
 
 def main() -> int:

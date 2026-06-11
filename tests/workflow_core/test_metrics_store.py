@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from workflow_core.evaluation import EvalScore
 from workflow_core.metrics_store import MetricsStore
 
@@ -111,3 +113,37 @@ def test_record_tool_usage_is_idempotent(tmp_path: Path) -> None:
     (stat,) = store.tool_stats()
     assert stat.calls == 2
     store.close()
+
+
+# ---------------------------------------------------------------------------
+# Context-manager protocol
+# ---------------------------------------------------------------------------
+
+
+def test_context_manager_record_and_read(tmp_path: Path) -> None:
+    """MetricsStore works as a context manager; record is readable inside."""
+    with MetricsStore(":memory:") as store:
+        store.record_run(
+            score("cm-run", succeeded=True),
+            raw_trajectory='{"t":1}',
+            created_at="2026-06-11T00:00:00Z",
+        )
+        assert store.metrics_count() == 1
+        metrics = store.metrics()
+        assert metrics[0]["run_id"] == "cm-run"
+
+
+def test_context_manager_connection_closed_after_exit() -> None:
+    """After the with block, the connection is closed and raises ProgrammingError."""
+    import sqlite3
+
+    store = MetricsStore(":memory:")
+    with store:
+        store.record_run(
+            score("x"),
+            raw_trajectory="{}",
+            created_at="2026-06-11T00:00:00Z",
+        )
+    # The connection is closed; any query must raise ProgrammingError.
+    with pytest.raises(sqlite3.ProgrammingError):
+        store._conn.execute("SELECT 1")

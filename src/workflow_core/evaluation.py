@@ -14,9 +14,9 @@ from collections.abc import Sequence
 from typing import Literal
 
 from workflow_core.contracts import StrictModel
+from workflow_core.hook_events import SKILL_TOOL_NAMES as SKILL_TOOL_NAMES
 from workflow_core.runtime import GateVerdict, TrajectoryEvent
 
-SKILL_TOOL_NAMES = frozenset({"Skill", "skill"})
 WRITE_TOOL_NAMES = frozenset({"Write", "Edit", "NotebookEdit"})
 
 

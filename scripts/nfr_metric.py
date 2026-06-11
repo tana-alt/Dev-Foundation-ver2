@@ -13,6 +13,9 @@ Usage:
   nfr_metric.py evaluate <metric> --threshold X [--statistic p50|p95|max|mean]
   nfr_metric.py purge <metric>
 
+Exit codes for evaluate: 0 budget met, 1 budget missed, 2 no samples yet
+(cold start is distinguishable from a miss for CI callers).
+
 Env: FOUNDATION_PROJECT_ID, FOUNDATION_REPO_ROOT,
 FOUNDATION_NFR_MAX_SAMPLES (default 1000, applied on record).
 """
@@ -53,17 +56,19 @@ def main(argv: list[str] | None = None) -> int:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
     from datetime import UTC, datetime
 
+    from workflow_core.env import env_int
     from workflow_core.nfr import NfrStore
 
     args = build_parser().parse_args(argv)
     root = Path(os.environ.get("FOUNDATION_REPO_ROOT", Path(__file__).resolve().parents[1]))
     project = os.environ.get("FOUNDATION_PROJECT_ID", "default")
-    store = NfrStore(root / "artifact" / project / "metrics" / "nfr.db")
-    try:
+    with NfrStore(root / "artifact" / project / "metrics" / "nfr.db") as store:
         if args.command == "record":
+            # Microsecond precision: NFR samples can land many per second and
+            # retention drops the oldest by ts.
             ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             store.record(args.metric, args.value, ts=ts, unit=args.unit, run_id=args.run_id)
-            max_samples = int(os.environ.get("FOUNDATION_NFR_MAX_SAMPLES", "1000"))
+            max_samples = env_int("FOUNDATION_NFR_MAX_SAMPLES", 1000)
             store.enforce_retention(max_samples_per_metric=max_samples)
             return 0
         if args.command == "summary":
@@ -77,14 +82,12 @@ def main(argv: list[str] | None = None) -> int:
             )
             if verdict is None:
                 print(f"nfr: no samples for metric '{args.metric}'")
-                return 1
+                return 2
             print(json.dumps(verdict.model_dump(), indent=2, sort_keys=True))
             return 0 if verdict.passed else 1
         removed = store.purge_metric(args.metric)
         print(f"nfr: purged {removed} sample(s) of '{args.metric}'")
         return 0
-    finally:
-        store.close()
 
 
 if __name__ == "__main__":

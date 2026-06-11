@@ -16,11 +16,11 @@ Accumulates run results in sqlite (stdlib, no new dependency). Two tiers:
 from __future__ import annotations
 
 import json
-import sqlite3
 from collections.abc import Sequence
 from pathlib import Path
 
 from workflow_core.evaluation import EvalReport, EvalScore, ToolStat, ToolUsage, aggregate
+from workflow_core.sqlite_store import SqliteStore
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS run_metrics (
@@ -50,13 +50,9 @@ CREATE TABLE IF NOT EXISTS raw_runs (
 """
 
 
-class MetricsStore:
+class MetricsStore(SqliteStore):
     def __init__(self, path: Path | str) -> None:
-        if str(path) != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(str(path))
-        self._conn.executescript(_SCHEMA)
-        self._conn.commit()
+        super().__init__(path, schema=_SCHEMA)
 
     def record_run(self, score: EvalScore, *, raw_trajectory: str, created_at: str) -> None:
         self._conn.execute(
@@ -173,6 +169,3 @@ class MetricsStore:
             )
             for row in rows
         ]
-
-    def close(self) -> None:
-        self._conn.close()

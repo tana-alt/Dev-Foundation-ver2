@@ -127,14 +127,17 @@ def workflow_run_paths(root: Path) -> list[Path]:
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
-    raw_data: object = yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        raw_data: object = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise ValueError(f"{issue_path(path)}: invalid YAML: {exc}") from exc
     if not isinstance(raw_data, dict):
-        raise ValueError(f"{path}: expected YAML mapping")
+        raise ValueError(f"{issue_path(path)}: expected YAML mapping")
     return cast(dict[str, Any], raw_data)
 
 
 def add_issue(issues: list[str], path: Path, message: str) -> None:
-    issues.append(f"{path.relative_to(ROOT)}: {message}")
+    issues.append(f"{issue_path(path)}: {message}")
 
 
 def issue_path(path: Path) -> str:
@@ -1497,7 +1500,11 @@ def main() -> int:
     issues: list[str] = []
     lane_maps_by_ref: dict[str, LaneMapSummary] = {}
     for path in paths:
-        lane_issues = validate_lane_map(path)
+        try:
+            lane_issues = validate_lane_map(path)
+        except ValueError as exc:
+            issues.append(str(exc))
+            continue
         issues.extend(lane_issues)
         if lane_issues or is_template_path(path):
             continue
@@ -1506,7 +1513,10 @@ def main() -> int:
             lane_maps_by_ref[path.as_posix()] = summary
 
     for path in workflow_paths:
-        issues.extend(validate_workflow_run(path, lane_maps_by_ref))
+        try:
+            issues.extend(validate_workflow_run(path, lane_maps_by_ref))
+        except ValueError as exc:
+            issues.append(str(exc))
 
     if issues:
         for issue in issues:

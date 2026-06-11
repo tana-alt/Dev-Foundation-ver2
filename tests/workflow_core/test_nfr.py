@@ -243,3 +243,55 @@ def test_record_whitespace_only_metric_raises_value_error(tmp_path: Path) -> Non
     with pytest.raises(ValueError, match="metric"):
         store.record("   ", 1.0, ts="2026-01-01T00:00:00Z")
     store.close()
+
+
+# ---------------------------------------------------------------------------
+# Context-manager protocol
+# ---------------------------------------------------------------------------
+
+
+def test_nfr_context_manager_record_and_read() -> None:
+    """NfrStore works as a context manager; data is readable inside the block."""
+    with NfrStore(":memory:") as store:
+        store.record("latency", 42.0, ts="2026-06-11T00:00:00Z")
+        s = store.summarize("latency")
+        assert s is not None
+        assert s.count == 1
+        assert s.max == 42.0
+
+
+def test_nfr_context_manager_connection_closed_after_exit() -> None:
+    """After the with block, the connection is closed and raises ProgrammingError."""
+    import sqlite3
+
+    store = NfrStore(":memory:")
+    with store:
+        store.record("latency", 10.0, ts="2026-06-11T00:00:00Z")
+    with pytest.raises(sqlite3.ProgrammingError):
+        store._conn.execute("SELECT 1")
+
+
+# ---------------------------------------------------------------------------
+# Non-finite value validation
+# ---------------------------------------------------------------------------
+
+
+def test_record_nan_raises_value_error(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    with pytest.raises(ValueError, match="finite"):
+        store.record("lat", float("nan"), ts="2026-06-11T00:00:00Z")
+    store.close()
+
+
+def test_record_inf_raises_value_error(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    with pytest.raises(ValueError, match="finite"):
+        store.record("lat", float("inf"), ts="2026-06-11T00:00:00Z")
+    store.close()
+
+
+def test_record_negative_inf_raises_value_error(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    with pytest.raises(ValueError, match="finite"):
+        store.record("lat", float("-inf"), ts="2026-06-11T00:00:00Z")
+    store.close()

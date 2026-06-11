@@ -11,11 +11,11 @@ CLI binding: ``scripts/nfr_metric.py`` (record / summary / evaluate / purge).
 from __future__ import annotations
 
 import math
-import sqlite3
 from pathlib import Path
 from typing import Literal
 
 from workflow_core.contracts import StrictModel
+from workflow_core.sqlite_store import SqliteStore
 
 Statistic = Literal["p50", "p95", "max", "mean"]
 
@@ -58,19 +58,17 @@ def _percentile(ordered: list[float], q: float) -> float:
     return ordered[rank - 1]
 
 
-class NfrStore:
+class NfrStore(SqliteStore):
     def __init__(self, path: Path | str) -> None:
-        if str(path) != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(str(path))
-        self._conn.executescript(_SCHEMA)
-        self._conn.commit()
+        super().__init__(path, schema=_SCHEMA)
 
     def record(
         self, metric: str, value: float, *, ts: str, unit: str = "ms", run_id: str = ""
     ) -> None:
         if not metric.strip():
             raise ValueError("metric must be non-empty")
+        if not math.isfinite(value):
+            raise ValueError(f"value must be finite, got {value!r}")
         self._conn.execute(
             "INSERT INTO nfr_samples VALUES (?,?,?,?,?)", (metric, float(value), unit, run_id, ts)
         )
@@ -139,6 +137,3 @@ class NfrStore:
         cursor = self._conn.execute("DELETE FROM nfr_samples WHERE metric = ?", (metric,))
         self._conn.commit()
         return cursor.rowcount
-
-    def close(self) -> None:
-        self._conn.close()
