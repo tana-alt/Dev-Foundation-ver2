@@ -423,9 +423,12 @@ def validate_final_handoff_data(
         next_goal_refs = strings(next_goal_seed.get("source_refs"))
         if not next_goal_problem or not next_goal_refs:
             add_issue(issues, label, "complete_with_residual_risk needs next_goal_seed")
-    if human_gate.get("required") is True and string(human_gate.get("status")) == "required":
-        if decision == "complete":
-            add_issue(issues, label, "complete cannot hide required human gate")
+    if (
+        human_gate.get("required") is True
+        and string(human_gate.get("status")) == "required"
+        and decision == "complete"
+    ):
+        add_issue(issues, label, "complete cannot hide required human gate")
     if audit_required and not string(data.get("audit_trail_index_ref")):
         add_issue(issues, label, "final handoff requires audit_trail_index_ref")
     return issues
@@ -621,9 +624,13 @@ def validate_source_snapshot_data(data: dict[str, Any], label: str) -> list[str]
             add_issue(issues, label, "source snapshot ref is required")
         if local_file and hash_status == "present" and not SHA256_RE.match(content_hash):
             add_issue(issues, label, f"{ref} has invalid sha256 hash")
-        if local_file and hash_status in {"unknown", "unavailable"}:
-            if unknown_requires_risk and not residual_risk_refs:
-                add_issue(issues, label, f"{ref} unknown hash needs residual risk ref")
+        if (
+            local_file
+            and hash_status in {"unknown", "unavailable"}
+            and unknown_requires_risk
+            and not residual_risk_refs
+        ):
+            add_issue(issues, label, f"{ref} unknown hash needs residual risk ref")
         if hash_status not in {"present", "unknown", "unavailable"}:
             add_issue(issues, label, f"{ref} invalid hash_status")
     if not mappings(data.get("source_snapshots")):
@@ -739,9 +746,12 @@ def validate_scorecard_data(data: dict[str, Any], label: str, root: Path) -> lis
             add_issue(issues, label, f"{dimension} score exceeds recomputed score")
         required_min = float(section.get("required_min", 9.5) or 9.5)
         claim_dimension = mapping(data.get("claim")).get("can_claim_95_plus", {})
-        if isinstance(claim_dimension, dict) and claim_dimension.get(dimension) is True:
-            if recorded_score < required_min:
-                add_issue(issues, label, f"{dimension} claim below required minimum")
+        if (
+            isinstance(claim_dimension, dict)
+            and claim_dimension.get(dimension) is True
+            and recorded_score < required_min
+        ):
+            add_issue(issues, label, f"{dimension} claim below required minimum")
 
     claim = mapping(mapping(data.get("claim")).get("can_claim_95_plus"))
     if claim.get("overall") is True:

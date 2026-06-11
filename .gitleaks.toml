@@ -9,3 +9,10 @@ regexes = [
   '''kL9xQn2VwM8pYrTb4ZcHjF''',
   '''pR8mNv5KqXzGwY2JtCfL4D''',
 ]
+
+[[allowlists]]
+description = "policy prose listing forbidden secret types, not a credential"
+regexTarget = "line"
+regexes = [
+  '''tokens, secrets, vault/corpus/qdrant internals''',
+]

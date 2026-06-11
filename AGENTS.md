@@ -48,6 +48,8 @@ or quick edits.
   needed.
 - Migration acceptance checks:
   `docs/reference/migration-and-acceptance-reference.md`
+- Hook observability, metrics store, issue surfacing, and NFR budgets:
+  `docs/reference/harness-observability-reference.md`
 
 Avoid operationalization, traceability, convergence, final-handoff, source
 snapshot, and scorecard references for normal work. Those heavy-contract

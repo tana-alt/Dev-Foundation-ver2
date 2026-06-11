@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Stop hook -- the in-session completion loop, spec-gated.
+"""Stop hook -- the in-session completion loop, plan-gated.
 
-On stop, if the project is spec'd work, re-derive the gate verdict (required
-check + escape scan, bound to the diff hash), write agent-read-only evidence,
-and on failure emit {"decision":"block","reason":...} so the agent keeps working
-in the SAME session. Non-spec work is not gated (single pass), so casual use
-stays usable. No SDK or process driver -- the agent calls this via its Stop hook.
+On stop, if the project carries plan'd work, re-derive the gate verdict
+(required check + escape scan, bound to the diff hash), write agent-read-only
+evidence, and on failure emit {"decision":"block","reason":...} so the agent
+keeps working in the SAME session. Unplanned work is not gated (single pass),
+so casual use stays usable. No SDK or process driver -- the agent calls this
+via its Stop hook.
 
-Spec presence: a project is "spec'd" when Plan/<project>/spec.md exists or
-FOUNDATION_SPEC_PRESENT=1. Env: FOUNDATION_GATE_TIER, FOUNDATION_PROJECT_ID.
+Gating: a project is gated when Plan/<project>/plans/ holds an active
+Plan_N000X.md record (the agent-operated plan convention -- see Plan/README.md),
+or FOUNDATION_SPEC_PRESENT=1 forces it. A legacy Plan/<project>/spec.md still
+gates. Env: FOUNDATION_GATE_TIER, FOUNDATION_PROJECT_ID.
 """
 
 from __future__ import annotations
@@ -21,8 +24,12 @@ import sys
 from pathlib import Path
 
 
-def _spec_present(root: Path, project: str) -> bool:
+def _gated(root: Path, project: str) -> bool:
+    from workflow_core.plans import plan_gated
+
     if os.environ.get("FOUNDATION_SPEC_PRESENT") == "1":
+        return True
+    if plan_gated(root, project):
         return True
     return (root / "Plan" / project / "spec.md").is_file()
 
@@ -43,8 +50,8 @@ def main() -> int:
 
     root = Path(os.environ.get("FOUNDATION_REPO_ROOT", Path(__file__).resolve().parents[1]))
     project = os.environ.get("FOUNDATION_PROJECT_ID", "default")
-    if not _spec_present(root, project):
-        return 0  # non-spec work: single pass, no loop
+    if not _gated(root, project):
+        return 0  # unplanned work: single pass, no loop
 
     tier = os.environ.get("FOUNDATION_GATE_TIER", "check-required")
     diff = subprocess.run(["git", "diff", "HEAD"], cwd=root, capture_output=True, text=True).stdout

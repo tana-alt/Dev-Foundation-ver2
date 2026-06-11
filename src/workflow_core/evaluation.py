@@ -11,6 +11,7 @@ re-score, compare.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 from workflow_core.contracts import StrictModel
 from workflow_core.runtime import GateVerdict, TrajectoryEvent
@@ -44,6 +45,52 @@ class EvalReport(StrictModel):
     mean_tool_call_rate: float
     mean_skill_usage_rate: float
     runs_with_unexpected: int
+
+
+class ToolUsage(StrictModel):
+    """Per-run call/failure tally for one tool or skill."""
+
+    name: str
+    kind: Literal["tool", "skill"]
+    calls: int
+    failures: int
+
+
+class ToolStat(StrictModel):
+    """Cross-run aggregate for one tool or skill (from the metrics store)."""
+
+    name: str
+    kind: Literal["tool", "skill"]
+    calls: int
+    failures: int
+    runs_used: int
+    usage_rate: float
+    failure_rate: float
+
+
+def tool_usage(events: Sequence[TrajectoryEvent]) -> list[ToolUsage]:
+    """Tally calls and failures per tool/skill, sorted by (kind, name)."""
+    tally: dict[tuple[str, str], list[int]] = {}
+    for event in events:
+        if event.kind != "tool_call":
+            continue
+        if event.tool in SKILL_TOOL_NAMES:
+            key = ("skill", event.target or event.tool)
+        else:
+            key = ("tool", event.tool or "(unknown)")
+        counts = tally.setdefault(key, [0, 0])
+        counts[0] += 1
+        if event.exit_code not in (None, 0):
+            counts[1] += 1
+    return [
+        ToolUsage(
+            name=name,
+            kind="skill" if kind == "skill" else "tool",
+            calls=calls,
+            failures=failures,
+        )
+        for (kind, name), (calls, failures) in sorted(tally.items())
+    ]
 
 
 class HackCase(StrictModel):

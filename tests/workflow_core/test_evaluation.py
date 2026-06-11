@@ -105,3 +105,19 @@ def test_aggregate_empty_is_zeroed() -> None:
     report = aggregate([])
     assert report.runs == 0
     assert report.success_rate == 0.0
+
+
+def test_tool_usage_tallies_calls_and_failures() -> None:
+    from workflow_core.evaluation import tool_usage
+
+    events = [
+        event(tool="Bash", target="pytest", exit_code=0),
+        event(tool="Bash", target="pytest", exit_code=2),
+        event(tool="Skill", target="code-review"),
+        event(kind="message"),
+    ]
+    usages = {(u.kind, u.name): u for u in tool_usage(events)}
+    assert usages[("tool", "Bash")].calls == 2
+    assert usages[("tool", "Bash")].failures == 1
+    assert usages[("skill", "code-review")].calls == 1
+    assert usages[("skill", "code-review")].failures == 0
