@@ -636,6 +636,8 @@ class WorkflowRunRecordRefs(StrictModel):
 
 class WorkflowRunCommunicationRules(StrictModel):
     human_interface: Literal["main_lane_only"]
+    goal_trigger: Literal["/goal"]
+    goal_loop_owner: Literal["main_lane"]
     subagent_to_human_direct: Literal["prohibited"]
     subagent_to_subagent_direct: Literal["prohibited"]
     state_authority: Literal["record_refs_not_conversation"]
@@ -663,6 +665,7 @@ class WorkflowRunHumanGates(StrictModel):
 
 
 class WorkflowRunHandoff(StrictModel):
+    next_goal_trigger: Literal["/goal"]
     next_action: str
 
     @model_validator(mode="after")
@@ -932,9 +935,10 @@ class DesignGate(StrictModel):
 
     @model_validator(mode="after")
     def design_gate_must_be_consistent(self) -> Self:
-        if self.architecture_significance == "significant":
-            if not self.system_design_skill_required:
-                raise ValueError("significant work requires system-design skill")
+        if self.architecture_significance == "significant" and (
+            not self.system_design_skill_required
+        ):
+            raise ValueError("significant work requires system-design skill")
         if self.architecture_significance != "significant" and self.system_design_skill_required:
             raise ValueError("system-design skill is only required for significant work")
         if not self.reason.strip():
