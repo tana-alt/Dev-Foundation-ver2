@@ -42,10 +42,14 @@ Do not invent checks. Use current repo files.
 - `make check-hygiene`
 - `make check-secrets`
 - `make check-lanes` only when lane maps are relevant
+- `make check-workflow-state` for Plan/workflow state-record integrity
+- `make check-frozen` only when frozen-path control is active
 - `make check-fast` for local fast confidence
 - `make check-required` for broader local readiness
 - `make check-ci` for CI-equivalent checks
 - `make check-cd` for deployment-readiness guard
+- `make check-foundation` for the Foundation Robustness Gate (alias of
+  `check-ci`)
 - `make check-legacy-contracts` only for archived heavy-contract compatibility
 - `make doctor` for local toolchain and hook setup inspection
 

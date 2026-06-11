@@ -18,8 +18,9 @@ normal agent session into a recorded run:
 
 Gating is plan-based: a project loops when `Plan/<project>/plans/` holds an
 active `Plan_N000X.md` record (status from `index.yaml`; see
-`src/workflow_core/plans.py`). `FOUNDATION_SPEC_PRESENT=1` forces gating;
-unplanned work stays single-pass.
+`src/workflow_core/plans.py`). A legacy `Plan/<project>/spec.md` file still
+gates as a fallback (`scripts/hook_stop.py`). `FOUNDATION_SPEC_PRESENT=1`
+forces gating; unplanned work stays single-pass.
 
 Hook robustness contract: hooks run under plain `python3` (no venv). The
 PostToolUse recorder and the gating decision are stdlib-only
