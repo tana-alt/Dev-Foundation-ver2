@@ -167,6 +167,7 @@ EXPECTED_TRACKED_TOP_LEVELS = {
     "app",
     "artifact",
     "docs",
+    "harness",
     "hooks",
     "plugins",
     "pyproject.toml",

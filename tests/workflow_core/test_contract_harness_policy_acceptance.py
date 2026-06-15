@@ -119,6 +119,7 @@ def add_bare_remote(tmp_path: Path, repo: Path) -> Path:
     git(tmp_path, "init", "--bare", str(remote))
     git(repo, "remote", "add", "origin", str(remote))
     git(repo, "push", "-u", "origin", "main")
+    git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
     return remote
 
 
