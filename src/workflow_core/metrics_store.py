@@ -4,6 +4,9 @@ Accumulates run results in sqlite (stdlib, no new dependency). Two tiers:
 
 - ``run_metrics`` -- the structured signals that are *kept*: success, tool /
   skill usage, unexpected actions. This is the durable measurement record.
+- ``tool_usage`` -- per-run call/failure tallies per tool and skill, also kept;
+  ``tool_stats`` aggregates them into usage and failure rates for issue
+  surfacing.
 - ``raw_runs`` -- the raw trajectory JSONL, which is *purgeable*. Once the raw
   tier exceeds a threshold, the oldest raw rows are deleted while the structured
   metrics survive. So the store grows bounded: raw data ages out, distilled
@@ -13,10 +16,11 @@ Accumulates run results in sqlite (stdlib, no new dependency). Two tiers:
 from __future__ import annotations
 
 import json
-import sqlite3
+from collections.abc import Sequence
 from pathlib import Path
 
-from workflow_core.evaluation import EvalReport, EvalScore, aggregate
+from workflow_core.evaluation import EvalReport, EvalScore, ToolStat, ToolUsage, aggregate
+from workflow_core.sqlite_store import SqliteStore
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS run_metrics (
@@ -30,6 +34,14 @@ CREATE TABLE IF NOT EXISTS run_metrics (
     unexpected_actions TEXT,
     created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS tool_usage (
+    run_id TEXT,
+    name TEXT,
+    kind TEXT,
+    calls INTEGER,
+    failures INTEGER,
+    PRIMARY KEY (run_id, kind, name)
+);
 CREATE TABLE IF NOT EXISTS raw_runs (
     run_id TEXT PRIMARY KEY,
     trajectory_jsonl TEXT,
@@ -38,13 +50,9 @@ CREATE TABLE IF NOT EXISTS raw_runs (
 """
 
 
-class MetricsStore:
+class MetricsStore(SqliteStore):
     def __init__(self, path: Path | str) -> None:
-        if str(path) != ":memory:":
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(str(path))
-        self._conn.executescript(_SCHEMA)
-        self._conn.commit()
+        super().__init__(path, schema=_SCHEMA)
 
     def record_run(self, score: EvalScore, *, raw_trajectory: str, created_at: str) -> None:
         self._conn.execute(
@@ -67,6 +75,39 @@ class MetricsStore:
         )
         self._conn.commit()
 
+    def record_tool_usage(self, run_id: str, usages: Sequence[ToolUsage]) -> None:
+        """Replace the run's per-tool tallies (idempotent re-measurement)."""
+        self._conn.execute("DELETE FROM tool_usage WHERE run_id = ?", (run_id,))
+        self._conn.executemany(
+            "INSERT INTO tool_usage VALUES (?,?,?,?,?)",
+            [(run_id, u.name, u.kind, u.calls, u.failures) for u in usages],
+        )
+        self._conn.commit()
+
+    def tool_stats(self) -> list[ToolStat]:
+        """Cross-run usage and failure rates per tool/skill.
+
+        ``usage_rate`` is the share of all recorded calls; ``failure_rate`` is
+        failures over the tool's own calls.
+        """
+        total = self._conn.execute("SELECT COALESCE(SUM(calls), 0) FROM tool_usage").fetchone()[0]
+        rows = self._conn.execute(
+            "SELECT name, kind, SUM(calls), SUM(failures), COUNT(DISTINCT run_id) "
+            "FROM tool_usage GROUP BY kind, name ORDER BY SUM(calls) DESC, name"
+        ).fetchall()
+        return [
+            ToolStat(
+                name=str(row[0]),
+                kind="skill" if str(row[1]) == "skill" else "tool",
+                calls=int(row[2]),
+                failures=int(row[3]),
+                runs_used=int(row[4]),
+                usage_rate=round(int(row[2]) / total, 4) if total else 0.0,
+                failure_rate=round(int(row[3]) / int(row[2]), 4) if row[2] else 0.0,
+            )
+            for row in rows
+        ]
+
     def raw_count(self) -> int:
         return int(self._conn.execute("SELECT COUNT(*) FROM raw_runs").fetchone()[0])
 
@@ -74,14 +115,18 @@ class MetricsStore:
         return int(self._conn.execute("SELECT COUNT(*) FROM run_metrics").fetchone()[0])
 
     def enforce_retention(self, *, max_raw_runs: int) -> int:
-        """Purge oldest raw trajectories beyond the budget; keep structured metrics."""
+        """Purge oldest raw trajectories beyond the budget; keep structured metrics.
+
+        Ordered by ``created_at`` (not rowid) so re-ingesting an old run via
+        INSERT OR REPLACE cannot promote it past newer raws.
+        """
         count = self.raw_count()
         if count <= max_raw_runs:
             return 0
         purge = count - max_raw_runs
         self._conn.execute(
             "DELETE FROM raw_runs WHERE rowid IN "
-            "(SELECT rowid FROM raw_runs ORDER BY rowid ASC LIMIT ?)",
+            "(SELECT rowid FROM raw_runs ORDER BY created_at ASC, rowid ASC LIMIT ?)",
             (purge,),
         )
         self._conn.commit()
@@ -124,6 +169,3 @@ class MetricsStore:
             )
             for row in rows
         ]
-
-    def close(self) -> None:
-        self._conn.close()

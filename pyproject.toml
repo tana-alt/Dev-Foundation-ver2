@@ -36,7 +36,18 @@ select = [
     "I",
     "B",
     "UP",
+    "C90",
+    "SIM",
 ]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+# Grandfathered legacy heavy-contract validators; new code meets C901.
+"scripts/agent_operational_checks.py" = ["C901"]
+"scripts/check-lane-map.py" = ["C901"]
+"tests/test_contract_models.py" = ["C901"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

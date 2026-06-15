@@ -30,7 +30,7 @@ def main() -> int:
     for path in args.paths:
         try:
             check_workflow_document(load_yaml(path))
-        except (ValueError, WorkflowCheckError) as exc:
+        except (OSError, ValueError, yaml.YAMLError, WorkflowCheckError) as exc:
             failures.append(f"{path}: {exc}")
 
     if failures:

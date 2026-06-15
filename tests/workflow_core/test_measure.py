@@ -53,3 +53,18 @@ def test_tool_failure_marks_run_unsuccessful() -> None:
     events = [event(kind="tool_result", tool="Bash", exit_code=1)]
     score = measure_trajectory("sess", events, default_envelope(events))
     assert score.succeeded is False
+
+
+def test_prune_trajectory_files_keeps_newest_ingested(tmp_path: Path) -> None:
+    import os
+
+    from workflow_core.measure import prune_trajectory_files
+
+    for i, name in enumerate(["a", "b", "c", "skipped"]):
+        path = tmp_path / f"{name}.jsonl"
+        path.write_text("{}", encoding="utf-8")
+        os.utime(path, (1000 + i, 1000 + i))
+    removed = prune_trajectory_files(tmp_path, keep=1, ingested=["a", "b", "c"])
+    assert [p.name for p in removed] == ["b.jsonl", "a.jsonl"]
+    # newest ingested file and the un-ingested file survive
+    assert sorted(p.name for p in tmp_path.glob("*.jsonl")) == ["c.jsonl", "skipped.jsonl"]

@@ -1,13 +1,25 @@
 {
-  "_comment": "Copy into .claude/settings.json to activate the harness as a Claude Code observe-mode runtime. PostToolUse records the trajectory; Stop runs the spec-gated completion loop. Do NOT activate in this repo's own .claude/ unless you want your own session gated.",
+  "_comment": "Copy into .claude/settings.json to activate the harness as a Claude Code observe-mode runtime. SessionStart resurfaces open eval issues; PostToolUse records the trajectory; Stop runs the plan-gated completion loop. Do NOT activate in this repo's own .claude/ unless you want your own session gated.",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/hook_session_start.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 scripts/hook_post_tool_use.py"
+            "command": "python3 scripts/hook_post_tool_use.py",
+            "timeout": 30
           }
         ]
       }
@@ -17,7 +29,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 scripts/hook_stop.py"
+            "command": "python3 scripts/hook_stop.py",
+            "timeout": 900
           }
         ]
       }

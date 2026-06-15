@@ -1,7 +1,7 @@
 ---
 plan_id: Plan_N0001
 project_id: foundation-subagent-spec-workflow
-status: active
+status: completed
 log_ref: Plan/foundation-subagent-spec-workflow/logs/Plan_N0001.log.md
 ---
 

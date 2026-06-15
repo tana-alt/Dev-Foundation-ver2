@@ -72,9 +72,15 @@ artifact/<project_id>/evidence/
 artifact/<project_id>/governance/
 artifact/<project_id>/verification/
 artifact/<project_id>/output/
+artifact/<project_id>/trajectory/
+artifact/<project_id>/metrics/
 
 src/<project_id>/
 ```
+
+`trajectory/` and `metrics/` are created by the observability harness (hook
+recordings and the eval/NFR stores; see
+`docs/reference/harness-observability-reference.md`).
 
 Use `templates/` only for blank reusable formats. Real plan, log, evidence,
 verification, artifact, or implementation files belong under the owning
@@ -100,7 +106,8 @@ verification, artifact, or implementation files belong under the owning
 - `.agents/skills/`: current repo-local skills.
 - `.agents/plugins/marketplace.json`: local plugin registry. It may be empty by
   default to avoid implying that optional payloads are installed.
-- `plugins/`: optional local plugin bundles and downloaded plugin payloads.
+- `plugins/`: optional local plugin bundles and downloaded plugin payloads;
+  created only when plugins are installed, absent by default.
 - `Plan/`: project-scoped agent plans, logs, and optional durable lane-map
   records for planning and handoff, not a runtime queue, lock ledger, worker
   heartbeat, or claim source of truth.
@@ -166,7 +173,8 @@ Extension-surface integrity checks are structural only:
 
 - each local skill directory has a parseable `SKILL.md` with minimal metadata
 - the human skill index covers repo-local skill roots
-- plugin registry paths are relative and stay under `plugins/`
+- plugin registry paths are relative and stay under `plugins/` when payloads
+  are present
 - plugin manifests and MCP config samples parse and point to existing local
   paths when optional plugin payloads are present
 

@@ -129,6 +129,6 @@ outputs, and verification.
 ## Archived Record Families
 
 Final handoff, convergence, traceability, residual-risk carryover, source
-snapshot, operational scorecard, and similar heavy records are archived
-patterns. Do not create them unless the user explicitly asks for heavy-contract
+snapshot, operational scorecard, approved-spec freeze, and similar heavy
+records are archived patterns. Do not create them unless the user explicitly asks for heavy-contract
 archive migration or audit.

@@ -2,12 +2,16 @@
 """Eval measurement over hook-recorded trajectories (no SDK).
 
 Scans artifact/<project>/trajectory/*.jsonl, scores each run, accumulates the
-structured signals into the retention store (raw ages out, signals persist), and
-prints the aggregate. Supply Plan/<project>/eval-envelope.json to turn on
-unexpected-action detection; otherwise each run is measured against its own
-observed envelope (counting only).
+structured signals plus the raw JSONL into the retention store (raw ages out,
+signals persist), records per-tool/skill tallies, and prints the aggregate.
+Ingested trajectory files beyond FOUNDATION_TRAJ_MAX_FILES are deleted -- their
+raw content lives on in the store's purgeable tier. Supply
+Plan/<project>/eval-envelope.json to turn on unexpected-action detection;
+otherwise each run is measured against its own observed envelope (counting
+only).
 
-Env: FOUNDATION_PROJECT_ID, FOUNDATION_REPO_ROOT, FOUNDATION_EVAL_MAX_RAW (default 50).
+Env: FOUNDATION_PROJECT_ID, FOUNDATION_REPO_ROOT,
+FOUNDATION_EVAL_MAX_RAW (default 50), FOUNDATION_TRAJ_MAX_FILES (default 50).
 """
 
 from __future__ import annotations
@@ -16,12 +20,48 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+if TYPE_CHECKING:
+    from workflow_core.evaluation import EvalScore, ExpectedEnvelope
+    from workflow_core.metrics_store import MetricsStore
+
+
+def _measure_into_store(
+    traj_dir: Path, store: MetricsStore, fixed_envelope: ExpectedEnvelope | None
+) -> tuple[list[EvalScore], list[str]]:
+    from datetime import UTC, datetime
+
+    from workflow_core.evaluation import tool_usage
+    from workflow_core.measure import default_envelope, load_trajectory, measure_trajectory
+
+    scores: list[EvalScore] = []
+    ingested: list[str] = []
+    for path in sorted(traj_dir.glob("*.jsonl")):
+        raw = path.read_text(encoding="utf-8")
+        events = load_trajectory(path)
+        if not events:
+            continue
+        envelope = fixed_envelope or default_envelope(events)
+        score = measure_trajectory(path.stem, events, envelope)
+        scores.append(score)
+        created_at = datetime.fromtimestamp(path.stat().st_mtime, UTC).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+        store.record_run(score, raw_trajectory=raw, created_at=created_at)
+        store.record_tool_usage(path.stem, tool_usage(events))
+        ingested.append(path.stem)
+        if score.unexpected_actions:
+            print(f"- {path.stem}: unexpected={score.unexpected_actions}")
+    return scores, ingested
 
 
 def main() -> int:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    from workflow_core.env import env_int
     from workflow_core.evaluation import ExpectedEnvelope, aggregate
-    from workflow_core.measure import default_envelope, load_trajectory, measure_trajectory
+    from workflow_core.measure import prune_trajectory_files
     from workflow_core.metrics_store import MetricsStore
 
     root = Path(os.environ.get("FOUNDATION_REPO_ROOT", Path(__file__).resolve().parents[1]))
@@ -36,36 +76,27 @@ def main() -> int:
     if envelope_path.is_file():
         fixed_envelope = ExpectedEnvelope.model_validate_json(envelope_path.read_text("utf-8"))
 
-    store = MetricsStore(root / "artifact" / project / "metrics" / "eval.db")
-    scores = []
-    for path in sorted(traj_dir.glob("*.jsonl")):
-        events = load_trajectory(path)
-        if not events:
-            continue
-        envelope = fixed_envelope or default_envelope(events)
-        score = measure_trajectory(path.stem, events, envelope)
-        scores.append(score)
-        store.record_run(score, raw_trajectory="", created_at=path.stem)
-        if score.unexpected_actions:
-            print(f"- {path.stem}: unexpected={score.unexpected_actions}")
-
-    max_raw = int(os.environ.get("FOUNDATION_EVAL_MAX_RAW", "50"))
-    purged = store.enforce_retention(max_raw_runs=max_raw)
-    report = aggregate(scores)
-    print(
-        json.dumps(
-            {
-                "report": report.model_dump(),
-                "runs_measured": len(scores),
-                "structured_metrics_kept": store.metrics_count(),
-                "raw_purged": purged,
-                "envelope": "fixed" if fixed_envelope else "per-run-default",
-            },
-            indent=2,
-            sort_keys=True,
+    with MetricsStore(root / "artifact" / project / "metrics" / "eval.db") as store:
+        scores, ingested = _measure_into_store(traj_dir, store, fixed_envelope)
+        purged = store.enforce_retention(max_raw_runs=env_int("FOUNDATION_EVAL_MAX_RAW", 50))
+        pruned = prune_trajectory_files(
+            traj_dir, keep=env_int("FOUNDATION_TRAJ_MAX_FILES", 50), ingested=ingested
         )
-    )
-    store.close()
+        print(
+            json.dumps(
+                {
+                    "report": aggregate(scores).model_dump(),
+                    "runs_measured": len(scores),
+                    "structured_metrics_kept": store.metrics_count(),
+                    "raw_purged": purged,
+                    "trajectory_files_pruned": len(pruned),
+                    "tool_stats": [stat.model_dump() for stat in store.tool_stats()],
+                    "envelope": "fixed" if fixed_envelope else "per-run-default",
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
     return 0
 
 

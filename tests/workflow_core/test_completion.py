@@ -55,3 +55,50 @@ def test_write_evidence_roundtrip(tmp_path: Path) -> None:
     loaded = json.loads(path.read_text(encoding="utf-8"))
     assert loaded["diff_hash"] == "sha256:abc"
     assert loaded["command"] == "make check-required"
+
+
+# ---------------------------------------------------------------------------
+# build_verdict with precomputed findings
+# ---------------------------------------------------------------------------
+
+
+def test_build_verdict_precomputed_empty_findings_overrides_scan() -> None:
+    """Explicit findings=[] skips the rescan even when escape patterns exist in the diff."""
+    from workflow_core.gate import build_verdict
+
+    diff_with_escape = "+    raise NotImplementedError\n"
+    # If findings=[] is respected (no rescan), the verdict should pass.
+    verdict = build_verdict(
+        "sha256:test",
+        diff_with_escape,
+        check_passed=True,
+        scan_escapes_enabled=True,
+        findings=[],
+    )
+    assert verdict.passed is True
+
+
+def test_build_verdict_precomputed_findings_equal_direct_scan() -> None:
+    """Precomputed findings from scan_escapes() must yield the same verdict as an internal scan."""
+    from workflow_core.gate import build_verdict, scan_escapes
+
+    diff = "+    raise NotImplementedError\n+x = 1\n"
+    precomputed = scan_escapes(diff)
+    assert precomputed  # sanity: there is a finding
+
+    verdict_precomputed = build_verdict(
+        "sha256:test",
+        diff,
+        check_passed=True,
+        scan_escapes_enabled=True,
+        findings=precomputed,
+    )
+    verdict_internal = build_verdict(
+        "sha256:test",
+        diff,
+        check_passed=True,
+        scan_escapes_enabled=True,
+        findings=None,
+    )
+    assert verdict_precomputed.passed == verdict_internal.passed
+    assert verdict_precomputed.feedback == verdict_internal.feedback
