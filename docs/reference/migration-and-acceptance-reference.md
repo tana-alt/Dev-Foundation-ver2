@@ -58,8 +58,9 @@ work without introducing repo-stored queues, lock ledgers, broad log roots, or
 scheduler state.
 
 Current repo-specific surfaces are preserved: templates, restore script, tests,
-verification tooling, CI, skills, plugin registry, plugin payloads, `Plan/`, and
-reserved `app/`, `src`, and `artifact/` surfaces.
+verification tooling, CI, skills, the plugin registry, `Plan/`, and reserved
+`app/`, `src`, and `artifact/` surfaces. A `plugins/` payload root exists only
+when plugins are actually installed.
 
 ## Acceptance Checklist
 
@@ -72,8 +73,8 @@ reserved `app/`, `src`, and `artifact/` surfaces.
 - [ ] Current repo surfaces are preserved: `docs/`, `docs/reference/`,
       `README.md`, `templates/`, `scripts/`, `tests/`, `pyproject.toml`,
       `uv.lock`, `Makefile`, `.github/workflows/ci.yml`, `.agents/skills/`,
-      `.agents/plugins/marketplace.json`, `plugins/`, `Plan/`, `app/`, `src/`,
-      and `artifact/`.
+      `.agents/plugins/marketplace.json`, `Plan/`, `app/`, `src/`, and
+      `artifact/` (`plugins/` appears only when plugin payloads are installed).
 - [ ] No default runtime queue, lock ledger, broad log root, dashboard root,
       `projects/`, plural `apps/`, or plural `artifacts/` is introduced.
 - [ ] `Plan/` remains scoped planning material, not runtime state or a default
@@ -85,11 +86,9 @@ reserved `app/`, `src`, and `artifact/` surfaces.
 - [ ] Tracked hooks enforce agent branch/worktree policy locally and run required
       checks before push.
 - [ ] Verification commands come from current repo files only.
-- [ ] Current verification commands are reflected: `uv sync --frozen --group
-      dev`, `make doctor`, `make lint`, `make typecheck`, `make test`,
-      `make check-contracts`, `make check-doc-consistency`, `make check-hooks`,
-      `make check-shell`, `make check-hygiene`, `make check-secrets`,
-      `make check-cd`, `make check-required`, and `make check-foundation`.
+- [ ] Current verification commands are reflected. The canonical command list
+      lives in `docs/reference/verification-ci-and-pr-reference.md` and the
+      `Makefile` `help` target; do not restate it here.
 - [ ] CD remains `not_applicable` unless deployment config or a release target is
       introduced.
 - [ ] Evidence uses refs and separates facts from inference.

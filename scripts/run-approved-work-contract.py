@@ -9,7 +9,9 @@ from typing import Any, cast
 
 import yaml
 
-from src.workflow_adapters.codex_sdk_adapter import (
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.workflow_adapters.codex_sdk_adapter import (  # noqa: E402
     ApprovedWorkContract,
     CodexRunConfig,
     CodexSDKExecutionAdapter,

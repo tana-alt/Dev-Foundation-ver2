@@ -12,6 +12,7 @@ only) and the improved gate. Eval measures hack-catch-rate across that switch.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 
 from workflow_core.contracts import StrictModel
 from workflow_core.runtime import GateVerdict
@@ -48,9 +49,15 @@ def build_verdict(
     *,
     check_passed: bool,
     scan_escapes_enabled: bool,
+    findings: Sequence[EscapeFinding] | None = None,
 ) -> GateVerdict:
-    """Combine the required-check outcome with an optional escape scan."""
-    findings = scan_escapes(diff) if scan_escapes_enabled else []
+    """Combine the required-check outcome with an optional escape scan.
+
+    Pass ``findings`` to reuse an existing scan of the same diff; otherwise
+    the scan runs here when enabled.
+    """
+    if findings is None:
+        findings = scan_escapes(diff) if scan_escapes_enabled else []
     if check_passed and not findings:
         return GateVerdict(passed=True, diff_hash=diff_hash)
     reasons: list[str] = []

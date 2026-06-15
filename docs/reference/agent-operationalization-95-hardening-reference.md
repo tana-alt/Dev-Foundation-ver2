@@ -45,14 +45,9 @@ in runtime queues, logs, dashboards, or root-level source-pack folders.
 
 ## Context Slimming
 
-Default budget:
-
-```yaml
-max_selected_skills: 2
-max_source_refs: 6
-max_reference_docs: 2
-broad_repo_scan_allowed: false
-```
+The default budget is the context budget block in
+`.agents/skills/scope-routing-governance/SKILL.md` (single source of truth;
+do not restate it here).
 
 Budget overrides are allowed only when a selected skill, phase rule, or review
 mode explicitly allows them. Allowed examples are wide review, security review,

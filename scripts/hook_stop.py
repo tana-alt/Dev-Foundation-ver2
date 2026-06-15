@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-"""Stop hook -- the in-session completion loop, spec-gated.
+"""Stop hook -- the in-session completion loop, plan-gated.
 
-On stop, if the project is spec'd work, re-derive the gate verdict (required
-check + escape scan, bound to the diff hash), write agent-read-only evidence,
-and on failure emit {"decision":"block","reason":...} so the agent keeps working
-in the SAME session. Non-spec work is not gated (single pass), so casual use
-stays usable. No SDK or process driver -- the agent calls this via its Stop hook.
+On stop, if the project carries plan'd work, re-derive the gate verdict
+(required check + escape scan, bound to the diff hash), write agent-read-only
+evidence, and on failure emit {"decision":"block","reason":...} so the agent
+keeps working in the SAME session. Unplanned work is not gated (single pass),
+so casual use stays usable. No SDK or process driver -- the agent calls this
+via its Stop hook.
 
-Spec presence: a project is "spec'd" when Plan/<project>/spec.md exists or
-FOUNDATION_SPEC_PRESENT=1. Env: FOUNDATION_GATE_TIER, FOUNDATION_PROJECT_ID.
+Gating: a project is gated when Plan/<project>/plans/ holds an active
+Plan_N000X.md record (the agent-operated plan convention -- see Plan/README.md),
+or FOUNDATION_SPEC_PRESENT=1 forces it. A legacy Plan/<project>/spec.md still
+gates. Env: FOUNDATION_GATE_TIER, FOUNDATION_PROJECT_ID,
+FOUNDATION_GATE_TIMEOUT_S (default 900).
+
+Fail-open by design: an environment problem (missing pydantic, hung check)
+must never trap the user's session, so those paths log to stderr and exit 0.
 """
 
 from __future__ import annotations
@@ -18,21 +25,23 @@ import json
 import os
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-def _spec_present(root: Path, project: str) -> bool:
+
+def _gated(root: Path, project: str) -> bool:
+    from workflow_core.plans import plan_gated
+
     if os.environ.get("FOUNDATION_SPEC_PRESENT") == "1":
+        return True
+    if plan_gated(root, project):
         return True
     return (root / "Plan" / project / "spec.md").is_file()
 
 
 def main() -> int:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-    from datetime import UTC, datetime
-
-    from workflow_core.completion import CheckOutcome, run_completion_gate, write_evidence
-
     # Drain stdin; respect the loop guard so we never block forever.
     try:
         payload = json.load(sys.stdin)
@@ -43,13 +52,30 @@ def main() -> int:
 
     root = Path(os.environ.get("FOUNDATION_REPO_ROOT", Path(__file__).resolve().parents[1]))
     project = os.environ.get("FOUNDATION_PROJECT_ID", "default")
-    if not _spec_present(root, project):
-        return 0  # non-spec work: single pass, no loop
+    if not _gated(root, project):
+        return 0  # unplanned work: single pass, no loop
+
+    try:
+        from workflow_core.completion import CheckOutcome, run_completion_gate, write_evidence
+    except ImportError as exc:  # gate needs pydantic; fail open, never trap the session
+        print(f"hook_stop: import failed, gate skipped: {exc}", file=sys.stderr)
+        return 0
+
+    from workflow_core.env import env_int
 
     tier = os.environ.get("FOUNDATION_GATE_TIER", "check-required")
-    diff = subprocess.run(["git", "diff", "HEAD"], cwd=root, capture_output=True, text=True).stdout
+    timeout_s = env_int("FOUNDATION_GATE_TIMEOUT_S", 900)
+    try:
+        diff = subprocess.run(
+            ["git", "diff", "HEAD"], cwd=root, capture_output=True, text=True, timeout=60
+        ).stdout
+        completed = subprocess.run(
+            ["make", tier], cwd=root, capture_output=True, text=True, timeout=timeout_s
+        )
+    except subprocess.TimeoutExpired as exc:
+        print(f"hook_stop: gate command timed out, gate skipped: {exc}", file=sys.stderr)
+        return 0
     diff_hash = "sha256:" + hashlib.sha256(diff.encode("utf-8")).hexdigest()
-    completed = subprocess.run(["make", tier], cwd=root, capture_output=True, text=True)
     check = CheckOutcome(command=f"make {tier}", exit_code=completed.returncode)
     ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 

@@ -83,8 +83,8 @@ lock, heartbeat, polling, dashboard, claim-state, or broad log behavior.
 Use `.agents/skills/scope-routing-governance/SKILL.md` for context budgets,
 named refs, denied context, allowed write targets, and expansion reasons.
 
-Use `.agents/skills/spec-authority-governance/SKILL.md` for approved spec
-freeze, amendment, and WHAT/HOW separation.
+Use `.agents/skills/spec-authority-governance/SKILL.md` for spec WHAT/HOW
+separation.
 
 Use `.agents/skills/traceability-gate-governance/SKILL.md` for REQ, AC, NFR,
 EXC, SEC, DATA, API coverage and final handoff evidence.
@@ -102,14 +102,9 @@ Use `.agents/skills/review-fix-convergence-governance/SKILL.md` for
 narrow/wide/security review, fix handoff, fix review, convergence decision, and
 final handoff.
 
-Default budget remains:
-
-```yaml
-max_selected_skills: 2
-max_source_refs: 6
-max_reference_docs: 2
-broad_repo_scan_allowed: false
-```
+The default budget is the context budget block in
+`.agents/skills/scope-routing-governance/SKILL.md` (single source of truth;
+do not restate it here).
 
 ## Context-Scope Manifest
 

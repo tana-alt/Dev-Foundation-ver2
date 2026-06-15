@@ -24,6 +24,28 @@ from workflow_core.evaluation import (
 from workflow_core.runtime import GateVerdict, TrajectoryEvent
 
 
+def prune_trajectory_files(
+    traj_dir: Path,
+    *,
+    keep: int,
+    ingested: Sequence[str],
+) -> list[Path]:
+    """Delete the oldest ingested trajectory files beyond ``keep``.
+
+    Only files whose run is already in the store (``ingested``) are candidates,
+    so raw data always survives in exactly one tier: file first, then the
+    store's purgeable raw tier once measured.
+    """
+    runs = set(ingested)
+    candidates = [path for path in traj_dir.glob("*.jsonl") if path.stem in runs]
+    candidates.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    removed: list[Path] = []
+    for path in candidates[max(keep, 0) :]:
+        path.unlink()
+        removed.append(path)
+    return removed
+
+
 def load_trajectory(path: Path) -> list[TrajectoryEvent]:
     return [
         TrajectoryEvent.model_validate_json(line)

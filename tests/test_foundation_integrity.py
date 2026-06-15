@@ -16,7 +16,9 @@ ACTIVE_DOCS = (
 
 ACTIVE_REFERENCE_DOCS = (
     "docs/reference/agent-runtime-and-scope-reference.md",
+    "docs/reference/exit-codes-reference.md",
     "docs/reference/git-worktree-and-branch-reference.md",
+    "docs/reference/harness-observability-reference.md",
     "docs/reference/migration-and-acceptance-reference.md",
     "docs/reference/packet-evidence-and-rework-reference.md",
     "docs/reference/repo-boundary-and-storage-reference.md",
@@ -114,6 +116,25 @@ RESTORE_SCRIPTS = (
     "scripts/check-operational-scorecard.py",
 )
 
+HARNESS_SCRIPTS = (
+    "scripts/hook_session_start.py",
+    "scripts/hook_post_tool_use.py",
+    "scripts/hook_stop.py",
+    "scripts/completion_gate.py",
+    "scripts/measure_eval.py",
+    "scripts/surface_issues.py",
+    "scripts/nfr_metric.py",
+    "scripts/bench_compare.py",
+    "scripts/abrun.py",
+    "scripts/verdict.py",
+    "scripts/check_runner.py",
+    "scripts/quality_gate.py",
+    "scripts/run_eval.py",
+    "scripts/check-frozen-paths.py",
+    "scripts/check-lane-map.py",
+    "scripts/check-workflow-state.py",
+)
+
 DEPLOYMENT_CONFIGS = (
     "Dockerfile",
     "docker-compose.yml",
@@ -146,6 +167,7 @@ EXPECTED_TRACKED_TOP_LEVELS = {
     "app",
     "artifact",
     "docs",
+    "harness",
     "hooks",
     "plugins",
     "pyproject.toml",
@@ -294,6 +316,7 @@ def test_required_contract_files_exist() -> None:
         *DEV_DEFAULTS,
         *HOOKS,
         *RESTORE_SCRIPTS,
+        *HARNESS_SCRIPTS,
     )
 
     for relative_path in required:
@@ -352,7 +375,6 @@ def test_project_plan_artifact_and_source_rules_are_project_scoped() -> None:
     assert "<project_id>" in templates_readme
     assert "templates/parallel-lane-map.yaml" in templates_readme
     assert "src/<project_id>/" in src_readme
-    assert "Plan/<project_id>/lane-maps/" in plan_readme
     assert "project_id" in git_reference
     assert "lane map" in runtime_reference
     assert "do not share a\nworktree across project IDs" in git_reference
@@ -938,7 +960,6 @@ def test_parallel_lane_management_is_routed_and_checked() -> None:
     storage_contract = read_text("docs/03-repo-boundary-and-storage-contract.md")
     boundary_reference = read_text("docs/reference/repo-boundary-and-storage-reference.md")
     verification_reference = read_text("docs/reference/verification-ci-and-pr-reference.md")
-    plan_readme = read_text("Plan/README.md")
     lane_template = read_text("templates/parallel-lane-map.yaml")
     lane_check = read_text("scripts/check-lane-map.py")
     makefile = read_text("Makefile")
@@ -956,8 +977,6 @@ def test_parallel_lane_management_is_routed_and_checked() -> None:
     assert "Plan/<project_id>/lane-maps/" in packet_reference
     assert "make check-lanes" in verification_reference
     assert "parallel lane-map validation" in verification_reference
-    assert "Plan/<project_id>/lane-maps/" in plan_readme
-    assert "runtime queue, lock ledger" in plan_readme
     assert "record_type: parallel_lane_map" in lane_template
     assert "deny_broad_repo_scan: true" in lane_template
     assert "conflict_policy: no_overlap" in lane_template

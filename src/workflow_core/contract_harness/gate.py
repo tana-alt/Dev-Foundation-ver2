@@ -1,0 +1,242 @@
+from __future__ import annotations
+
+import os
+import subprocess
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, cast
+
+from workflow_core.completion import CheckOutcome, run_completion_gate, write_evidence
+from workflow_core.contract_harness.config import review_settings
+from workflow_core.contract_harness.contract import load_contract, semantic_reproducible
+from workflow_core.contract_harness.evidence import machine_artifact_hashes
+from workflow_core.contract_harness.gitutil import head_sha
+from workflow_core.contract_harness.hashing import file_hash
+from workflow_core.contract_harness.jsonio import read_json, write_json
+from workflow_core.contract_harness.review import collect, run_profile, stale_or_missing
+from workflow_core.contract_harness.runtime_paths import task_dir
+from workflow_core.contract_harness.snapshot import changed_repo_paths, snapshot_diff
+from workflow_core.contract_harness.worktree import resolve_candidate_workspace
+from workflow_core.metrics_store import MetricsStore
+
+
+def gate_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
+    base = _base_result(root, task_id)
+    workspace = Path(str(base.get("candidate_workspace", {}).get("path", root)))
+    if base["reason"] != "ok":
+        base = _with_existing_blocking_review(root, task_id, base)
+    if base["reason"] == "ok":
+        base = _with_completion(root, task_id, base, workspace)
+    if base["reason"] == "ok":
+        before_review = head_sha(workspace)
+        _auto_review(root, task_id)
+        after_review = head_sha(workspace)
+        if before_review != after_review:
+            base["reason"] = "reviewer_head_changed"
+        else:
+            base["review"] = collect(root, task_id)
+            base["reason"] = _review_reason(base["review"])
+    base["metrics"] = _metrics(root, task_id)
+    base = _apply_metrics_policy(root, base)
+    base["mergeable"] = base["reason"] == "ok"
+    write_json(task_dir(root, task_id) / "gate-result.json", base)
+    return base, 0 if base["mergeable"] else 1
+
+
+def _with_existing_blocking_review(
+    root: Path,
+    task_id: str,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    try:
+        summary = collect(root, task_id)
+    except (OSError, ValueError, KeyError):
+        return result
+    if _review_reason(summary) == "review_blocked":
+        result["review"] = summary
+        result["reason"] = "review_blocked"
+    return result
+
+
+def _base_result(root: Path, task_id: str) -> dict[str, Any]:
+    verify_result = read_json(task_dir(root, task_id) / "verify-result.json")
+    candidate = task_dir(root, task_id) / "candidate.diff"
+    lock = load_contract(root, task_id)
+    candidate_sha = file_hash(candidate)
+    workspace, workspace_reason = _candidate_workspace(root, task_id, verify_result)
+    reason = workspace_reason or _preflight_reason(
+        Path(str(workspace["path"])), task_id, verify_result, lock, candidate_sha
+    )
+    return {
+        "task_id": task_id,
+        "mergeable": False,
+        "reason": reason,
+        "candidate_diff_sha256": verify_result.get("candidate_diff_sha256"),
+        "machine_evidence_sha256": verify_result.get("machine_evidence_sha256"),
+        "candidate_workspace": workspace,
+        "review": {},
+        "completion": {"status": "not_run"},
+    }
+
+
+def _candidate_workspace(
+    root: Path,
+    task_id: str,
+    verify_result: dict[str, Any],
+) -> tuple[dict[str, Any], str | None]:
+    try:
+        return (
+            resolve_candidate_workspace(
+                root,
+                task_id,
+                expected_hash=str(verify_result.get("candidate_diff_sha256")),
+            ),
+            None,
+        )
+    except (OSError, ValueError) as exc:
+        return {"path": str(root), "status": "unavailable", "reason": str(exc)}, str(exc)
+
+
+def _preflight_reason(
+    root: Path,
+    task_id: str,
+    verify_result: dict[str, Any],
+    lock: dict[str, Any],
+    candidate_sha: str,
+) -> str:
+    if candidate_sha != verify_result.get("candidate_diff_sha256"):
+        return "candidate_hash_mismatch"
+    if not semantic_reproducible(root, task_id, lock):
+        return "contract_semantic_mismatch"
+    if verify_result.get("status") != "pass":
+        return "machine_gate_failed"
+    if not _matches_machine_artifact_hashes(root, task_id, verify_result):
+        return "evidence_hash_mismatch"
+    if _current_diff_hash(root, lock) != verify_result.get("candidate_diff_sha256"):
+        return "candidate_hash_mismatch"
+    return "ok"
+
+
+def _matches_machine_artifact_hashes(
+    root: Path,
+    task_id: str,
+    verify_result: dict[str, Any],
+) -> bool:
+    return all(
+        verify_result.get(key) == value
+        for key, value in machine_artifact_hashes(root, task_id).items()
+    )
+
+
+def _with_completion(
+    root: Path,
+    task_id: str,
+    result: dict[str, Any],
+    workspace: Path,
+) -> dict[str, Any]:
+    before = head_sha(workspace)
+    completed = _run_make(workspace)
+    after = head_sha(workspace)
+    diff_text = (task_dir(root, task_id) / "candidate.diff").read_text(encoding="utf-8")
+    verdict, evidence = run_completion_gate(
+        diff_text,
+        str(result["candidate_diff_sha256"]),
+        CheckOutcome(command=str(completed["command"]), exit_code=int(str(completed["exit_code"]))),
+        datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    )
+    evidence_path = write_evidence(
+        evidence,
+        artifact_dir=_completion_artifact_dir(root, task_id),
+    )
+    result["completion"] = {
+        "status": "pass" if verdict.passed else "fail",
+        "evidence_path": str(evidence_path),
+    }
+    if not verdict.passed or before != after:
+        result["reason"] = "machine_gate_failed"
+    return result
+
+
+def _completion_artifact_dir(root: Path, task_id: str) -> Path:
+    if (root / ".harness-worktree.json").is_file():
+        return task_dir(root, task_id) / "completion-evidence"
+    return root / "artifact" / task_id / "evidence"
+
+
+def _run_make(root: Path) -> dict[str, object]:
+    tier = os.environ.get("FOUNDATION_GATE_TIER", "check-required")
+    timeout = int(os.environ.get("FOUNDATION_GATE_TIMEOUT_S", "900"))
+    completed = subprocess.run(
+        ["make", tier],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    return {"command": f"make {tier}", "exit_code": completed.returncode}
+
+
+def _auto_review(root: Path, task_id: str) -> None:
+    settings = review_settings(root)
+    if not settings["background_auto_run"]:
+        return
+    for reviewer_id in stale_or_missing(root, task_id):
+        run_profile(root, task_id, reviewer_id)
+
+
+def _review_reason(summary: dict[str, Any]) -> str:
+    if summary.get("review_pass") is True:
+        return "ok"
+    if summary.get("semantic_review_required") and not summary.get("fresh_semantic_approves"):
+        return "semantic_review_required"
+    if summary.get("fresh_blocks"):
+        return "review_blocked"
+    return "review_quorum_unmet"
+
+
+def _apply_metrics_policy(root: Path, result: dict[str, Any]) -> dict[str, Any]:
+    settings = review_settings(root)
+    unexpected = result["metrics"].get("unexpected_actions") or []
+    if result["reason"] == "ok" and settings["reject_unexpected_actions"] and unexpected:
+        result["reason"] = "unexpected_actions"
+    return result
+
+
+def _current_diff_hash(root: Path, lock: dict[str, Any]) -> str:
+    paths = changed_repo_paths(root, task_id=str(lock["task_id"]))
+    diff_text = snapshot_diff(root, str(lock["prepared_base_sha"]), paths)
+    return file_hash_from_text(diff_text)
+
+
+def file_hash_from_text(text: str) -> str:
+    from workflow_core.contract_harness.hashing import sha256_text
+
+    return sha256_text(text)
+
+
+def _metrics(root: Path, task_id: str) -> dict[str, Any]:
+    db = root / "artifact" / task_id / "metrics" / "eval.db"
+    if not db.exists():
+        return _empty_metrics()
+    with MetricsStore(db) as store:
+        rows = store.metrics()
+        report = store.aggregate_stored()
+    return {
+        "tool_calls": sum(int(str(row["tool_calls"])) for row in rows),
+        "tool_call_rate": report.mean_tool_call_rate,
+        "skill_uses": sum(int(str(row["skill_uses"])) for row in rows),
+        "skill_usage_rate": report.mean_skill_usage_rate,
+        "unexpected_actions": sorted(
+            {item for row in rows for item in cast(list[str], row["unexpected_actions"])}
+        ),
+    }
+
+
+def _empty_metrics() -> dict[str, Any]:
+    return {
+        "tool_calls": 0,
+        "tool_call_rate": 0.0,
+        "skill_uses": 0,
+        "skill_usage_rate": 0.0,
+        "unexpected_actions": [],
+    }

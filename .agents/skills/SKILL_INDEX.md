@@ -17,6 +17,7 @@ matter in `SKILL.md`.
 
 - `system-design`
 - `tdd-scope`
+- `implementation-slice-verification`
 - `db-migration`
 - `deploy-readiness`
 - `browser-verification`
@@ -94,6 +95,8 @@ default workflow routes:
 - Treat skills as a discovery layer plus a compact execution contract.
 - Convert best practices into success conditions and constraints.
 - Keep framework-specific details outside skills unless repeatedly needed.
+- Use `implementation-slice-verification` only as a fallback for substantial
+  cross-layer work when no narrower domain skill owns the implementation.
 - Use doc-lookup for current official docs instead of embedding bulky stack
   guidance.
 - Agent context and tool-output safety is folded into security-check, not a

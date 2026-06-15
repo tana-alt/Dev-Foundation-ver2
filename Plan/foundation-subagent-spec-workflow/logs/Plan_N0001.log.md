@@ -51,3 +51,10 @@ plan_ref: Plan/foundation-subagent-spec-workflow/plans/Plan_N0001.md
     18 tests.
   - `python3 scripts/check-lane-map.py`: passed.
   - `git diff --check -- tests/test_contract_models.py scripts/check-lane-map.py templates/parallel-lane-map.yaml`: passed.
+
+## 2026-06-11
+
+- Closed as completed (Plan_N0003 hygiene pass): every work-plan item was
+  already marked Done, and both residual blockers (pyproject conflict marker,
+  .gitignore conflict content) were resolved in later sessions. The stale
+  `active` status was keeping the Stop-hook gate on for this project.

@@ -1,7 +1,7 @@
 UV ?= uv
 
 
-.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-workflow-state check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-hygiene check-secrets check-cd check-frozen gate eval measure check-fast check-push check-required check-ci check-foundation
+.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-workflow-state check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-hygiene check-secrets check-cd check-frozen gate eval measure issues nfr-summary bench-summary check-fast check-push check-required check-ci check-foundation
 
 help:
 	@printf '%s\n' \
@@ -42,6 +42,9 @@ help:
 		'  make gate                  Run the completion gate (re-runs checks, binds diff hash, writes evidence)' \
 		'  make eval                  Run the eval suite and print harness signals' \
 		'  make measure               Measure hook-recorded trajectories and accumulate signals' \
+		'  make issues                Surface eval-store problems into open-issues records' \
+		'  make nfr-summary           Print recorded NFR sample distributions' \
+		'  make bench-summary         Print recorded benchmark distributions' \
 		'  make check-foundation      Run the Foundation Robustness Gate'
 
 sync:
@@ -145,6 +148,15 @@ eval:
 
 measure:
 	$(UV) run python scripts/measure_eval.py
+
+issues:
+	$(UV) run python scripts/surface_issues.py
+
+nfr-summary:
+	$(UV) run python scripts/nfr_metric.py summary
+
+bench-summary:
+	$(UV) run python scripts/bench_compare.py summary
 
 check-fast: format-check lint check-hooks test-fast
 

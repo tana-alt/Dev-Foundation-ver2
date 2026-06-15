@@ -16,15 +16,22 @@ BLOCKING_EXECUTION_STATUSES = {
 }
 
 
+def _parse_status(value: str) -> WorkflowStatus:
+    try:
+        return WorkflowStatus(value)
+    except ValueError as exc:
+        raise WorkflowCheckError(f"unknown workflow status: {value!r}") from exc
+
+
 def check_transition(current_status: str, next_status: str) -> None:
-    current = WorkflowStatus(current_status)
-    next_value = WorkflowStatus(next_status)
+    current = _parse_status(current_status)
+    next_value = _parse_status(next_status)
     if not can_transition(current, next_value):
         raise WorkflowCheckError(f"invalid workflow transition: {current} -> {next_value}")
 
 
 def check_execution_ready(record: dict[str, Any]) -> None:
-    status = WorkflowStatus(str(record.get("status", "")))
+    status = _parse_status(str(record.get("status", "")))
     if status in BLOCKING_EXECUTION_STATUSES:
         raise WorkflowCheckError(f"execution is blocked by status: {status}")
 

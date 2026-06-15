@@ -99,6 +99,10 @@ requires the branch `work_id` to include that project ID. In enforced parallel
 worktree mode, the local worktree path must include it too. Placeholder
 ownership such as `agent/none/none/none` is invalid.
 
+The same script reads `FOUNDATION_PRIMARY_BRANCH` (default `main`) as the
+protected primary branch when locating the canonical worktree and rejecting
+direct agent work on the primary branch.
+
 If the scope provides `work_id`, `lane`, and a short task slug, derive:
 
 ```text
