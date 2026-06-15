@@ -48,8 +48,11 @@ or quick edits.
   needed.
 - Migration acceptance checks:
   `docs/reference/migration-and-acceptance-reference.md`
-- Hook observability, metrics store, issue surfacing, and NFR budgets:
+- Hook observability, metrics store, issue surfacing, NFR budgets, benchmark
+  comparison, and the AB evaluation pipeline (abrun/verdict/check/gate):
   `docs/reference/harness-observability-reference.md`
+- Evaluation tool exit codes (0 pass / 1 fail / 2 inconclusive / 3 error):
+  `docs/reference/exit-codes-reference.md`
 
 Avoid operationalization, traceability, convergence, final-handoff, source
 snapshot, and scorecard references for normal work. Those heavy-contract

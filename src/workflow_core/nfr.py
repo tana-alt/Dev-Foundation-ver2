@@ -12,12 +12,10 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Literal
 
 from workflow_core.contracts import StrictModel
 from workflow_core.sqlite_store import SqliteStore
-
-Statistic = Literal["p50", "p95", "max", "mean"]
+from workflow_core.stats import Statistic, describe
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS nfr_samples (
@@ -52,12 +50,6 @@ class NfrVerdict(StrictModel):
     count: int
 
 
-def _percentile(ordered: list[float], q: float) -> float:
-    """Nearest-rank percentile over pre-sorted values."""
-    rank = max(math.ceil(q * len(ordered)), 1)
-    return ordered[rank - 1]
-
-
 class NfrStore(SqliteStore):
     def __init__(self, path: Path | str) -> None:
         super().__init__(path, schema=_SCHEMA)
@@ -85,14 +77,15 @@ class NfrStore(SqliteStore):
         if not rows:
             return None
         values = [float(row[0]) for row in rows]
+        dist = describe(values)
         return NfrSummary(
             metric=metric,
             unit=str(rows[0][1]),
             count=len(values),
-            p50=_percentile(values, 0.50),
-            p95=_percentile(values, 0.95),
-            max=values[-1],
-            mean=round(sum(values) / len(values), 4),
+            p50=dist.p50,
+            p95=dist.p95,
+            max=dist.max,
+            mean=dist.mean,
         )
 
     def evaluate(

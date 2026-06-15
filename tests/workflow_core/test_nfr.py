@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from workflow_core.nfr import NfrStore, NfrSummary, NfrVerdict, _percentile
+from workflow_core.nfr import NfrStore, NfrSummary, NfrVerdict
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -19,22 +19,6 @@ def record_range(store: NfrStore, metric: str, values: list[float], *, unit: str
     """Insert values with synthetic timestamps derived from position."""
     for i, v in enumerate(values):
         store.record(metric, v, ts=f"2026-01-01T00:00:{i:02d}Z", unit=unit)
-
-
-# ---------------------------------------------------------------------------
-# _percentile
-# ---------------------------------------------------------------------------
-
-
-def test_percentile_single_element() -> None:
-    assert _percentile([42.0], 0.50) == 42.0
-    assert _percentile([42.0], 0.95) == 42.0
-
-
-def test_percentile_p50_and_p95_on_1_to_100() -> None:
-    data = [float(i) for i in range(1, 101)]
-    assert _percentile(data, 0.50) == 50.0
-    assert _percentile(data, 0.95) == 95.0
 
 
 # ---------------------------------------------------------------------------

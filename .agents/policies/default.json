@@ -1,0 +1,8 @@
+{
+  "policy_version": 1,
+  "conditions": [
+    {"tool": "check", "metric": "overall", "require": "pass"}
+  ],
+  "on_inconclusive": "retry_then_fail",
+  "max_retries": 2
+}

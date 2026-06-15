@@ -16,6 +16,7 @@ ACTIVE_DOCS = (
 
 ACTIVE_REFERENCE_DOCS = (
     "docs/reference/agent-runtime-and-scope-reference.md",
+    "docs/reference/exit-codes-reference.md",
     "docs/reference/git-worktree-and-branch-reference.md",
     "docs/reference/harness-observability-reference.md",
     "docs/reference/migration-and-acceptance-reference.md",
@@ -123,6 +124,11 @@ HARNESS_SCRIPTS = (
     "scripts/measure_eval.py",
     "scripts/surface_issues.py",
     "scripts/nfr_metric.py",
+    "scripts/bench_compare.py",
+    "scripts/abrun.py",
+    "scripts/verdict.py",
+    "scripts/check_runner.py",
+    "scripts/quality_gate.py",
     "scripts/run_eval.py",
     "scripts/check-frozen-paths.py",
     "scripts/check-lane-map.py",

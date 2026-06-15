@@ -1,0 +1,10 @@
+project_id: bench-compare-20260612
+plans:
+  - plan_id: Plan_N0001
+    status: completed
+    plan_ref: Plan/bench-compare-20260612/plans/Plan_N0001.md
+    log_ref: Plan/bench-compare-20260612/logs/Plan_N0001.log.md
+  - plan_id: Plan_N0002
+    status: completed
+    plan_ref: Plan/bench-compare-20260612/plans/Plan_N0002.md
+    log_ref: Plan/bench-compare-20260612/logs/Plan_N0002.log.md

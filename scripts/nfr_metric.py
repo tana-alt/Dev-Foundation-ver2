@@ -13,8 +13,11 @@ Usage:
   nfr_metric.py evaluate <metric> --threshold X [--statistic p50|p95|max|mean]
   nfr_metric.py purge <metric>
 
-Exit codes for evaluate: 0 budget met, 1 budget missed, 2 no samples yet
-(cold start is distinguishable from a miss for CI callers).
+Exit codes (R6 convention -- see docs/reference/exit-codes-reference.md):
+  0  budget met
+  1  budget missed
+  2  reserved for inconclusive (unused here)
+  3  no samples yet / tool error (missing preconditions, bad arguments)
 
 Env: FOUNDATION_PROJECT_ID, FOUNDATION_REPO_ROOT,
 FOUNDATION_NFR_MAX_SAMPLES (default 1000, applied on record).
@@ -30,7 +33,9 @@ from pathlib import Path
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
+    from workflow_core.cli import R6ArgumentParser
+
+    parser = R6ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
 
     record = commands.add_parser("record", help="append one sample")
@@ -82,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             if verdict is None:
                 print(f"nfr: no samples for metric '{args.metric}'")
-                return 2
+                return 3
             print(json.dumps(verdict.model_dump(), indent=2, sort_keys=True))
             return 0 if verdict.passed else 1
         removed = store.purge_metric(args.metric)
