@@ -8,36 +8,29 @@ Do not claim work is done unless the relevant behavior was checked honestly.
 
 An output can be called complete only when:
 
-- the requested behavior or artifact exists
-- the smallest relevant verification was attempted
-- failures, skipped checks, and unverified surfaces are stated plainly
-- no required protected action is hidden behind wording like residual risk
+the requested behavior or artifact exists, the smallest relevant verification
+was attempted, failures or skips are stated plainly, and protected actions are
+not hidden behind residual-risk wording.
 
 Mocks, dry runs, draft specs, and records-only outputs are incomplete unless the
 user explicitly asked for those outputs.
 
 ## Verification Order
 
-Use the narrowest meaningful check first:
-
-1. local review, schema check, unit test, or direct command
-2. lint, typecheck, build, contract check, or smoke check when relevant
-3. broader suite only when shared behavior, release readiness, or PR scope
-   requires it
+Use the narrowest meaningful check first: local/direct check; then lint,
+typecheck, build, contract, or smoke when relevant; then broader suites only
+for shared behavior, release readiness, or PR scope.
 
 Use commands backed by current repo files such as `Makefile`, `pyproject.toml`,
 `tests/`, scripts, or CI. Do not invent checks.
 
+For user-visible deliverables, prefer the closest runnable path over build-only proof; change observation layer before retrying failures.
+
 If a check cannot run, report the check name, reason, result state, and what
 would be needed to run it.
 
-Result states:
-
-- `passed`: check ran and passed
-- `failed`: check ran and failed
-- `blocked`: check could not run because a blocker exists
-- `skipped`: intentionally not run; reason required
-- `not_applicable`: outside this work
+Result states: `passed`, `failed`, `blocked`, `skipped`, `not_applicable`.
+Skipped or blocked checks require a reason.
 
 ## Human Gates
 
@@ -59,13 +52,8 @@ or reversible local edits.
 
 ## Handoff Shape
 
-For code or doc changes, report enough for the user to continue:
-
-- source refs used
-- changed paths
-- verification result
-- unverified surfaces
-- next action
+For code or doc changes, report enough for the user to continue: source refs,
+changed paths, verification, unverified surfaces, and next action.
 
 PR-ready work may also include branch, base ref, and conflict notes. Dedicated
 handoff records are optional and should not be the default.

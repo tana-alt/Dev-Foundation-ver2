@@ -9,13 +9,8 @@ unsafe or unrelated edits.
 
 Start from the current user request, task packet, or named scope. Identify:
 
-- goal
-- Done criteria
-- source refs
-- allowed write targets
-- denied context
-- verification command or method
-- next action
+goal, Done criteria, source refs, allowed write targets, denied context,
+verification command or method, and next action.
 
 If details are missing but a safe local assumption is obvious, state the
 assumption and proceed. Ask for clarification only when a wrong assumption would
@@ -29,6 +24,8 @@ change or verification. Do not read broad logs, archives, unrelated history,
 secrets, runtime state, caches, or past-source material by default.
 
 If context expands, explain why.
+
+For implementation work, prefer small runnable slices: core path, then integration, verification, and required sync.
 
 ## Write Preconditions
 
@@ -56,34 +53,20 @@ Classify side effects before acting:
 - secret-bearing action
 - destructive or irreversible action
 
-Human approval is required for secrets, external writes, deploy/release,
-dependency or CI/infra changes, database migrations, destructive Git, or
-irreversible/protected actions. Missing approval blocks that action only; keep
-approved local work moving when possible.
-
-The canonical human-gate list and verification result states live in
-`docs/02-output-verification-contract.md`.
+The canonical human-gate list and result states live in
+`docs/02-output-verification-contract.md`. Missing approval blocks only that
+action; keep approved local work moving.
 
 ## Records
 
-Records are optional tools, not the product. Use lightweight plan/log records
-for substantial or resumable work. Do not create final handoff, convergence,
+Records are optional tools, not the product. Avoid final handoff, convergence,
 traceability, source snapshot, or scorecard records unless explicitly requested.
-
-Forbidden completion shortcuts:
-
-- records-only complete
-- mock complete when real behavior was requested
-- `complete_with_residual_risk` as a substitute for unfinished implementation
+Do not treat records-only work, mocks, or `complete_with_residual_risk` as
+finished implementation.
 
 ## Valid Output
 
-For implementation work, report:
-
-- changed paths
-- verification attempted and result
-- anything intentionally not verified
-- remaining risk that affects goal completion
-- next action
+For implementation work, report changed paths, verification, unverified
+surfaces, remaining risk, and next action.
 
 For casual brainstorming or read-only answers, answer directly.

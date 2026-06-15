@@ -8,9 +8,8 @@ goal-first, bounded, and verifiable. Detailed guidance lives in
 
 ## Repo Truth
 
-Repo truth includes `AGENTS.md`, `docs/`, `docs/reference/`, `README.md`,
-`templates/`, `scripts/`, `tests/`, tooling files, `.github/`, `.agents/`,
-`plugins/`, `hooks/`, `Plan/`, `app/`, `src/`, and `artifact/`.
+Repo truth is the tracked product, docs, tooling, templates, tests, plans,
+artifacts, source roots, hooks, plugins, `.agents/`, and `.github/`.
 
 `archive/`, `.serena/`, caches, broad logs, local runtime state, browser
 sessions, credentials, tokens, cookies, and secret-bearing files are not repo
@@ -34,13 +33,8 @@ logs, or unowned project storage.
 
 ## Storage Rules
 
-Prefer small records that help the next action:
-
-- plan
-- log
-- task packet
-- verification note
-- optional spec
+Prefer small records that help the next action: plan, log, task packet,
+verification note, or optional spec.
 
 Do not store raw bodies, credentials, local runtime ledgers, browser sessions,
 secret-bearing metadata, or unrelated context in docs, plans, artifacts,
