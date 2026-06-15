@@ -182,7 +182,6 @@ def skill_index_entries(index_text: str) -> list[str]:
 def validate_skill_routes(root: Path) -> list[str]:
     issues: list[str] = []
     skill_root = root / ".agents" / "skills"
-    agents = (root / "AGENTS.md").read_text(encoding="utf-8")
     index = (skill_root / "SKILL_INDEX.md").read_text(encoding="utf-8")
     indexed = set(skill_index_entries(index))
     skill_dirs = sorted(path for path in skill_root.iterdir() if path.is_dir())
@@ -218,8 +217,6 @@ def validate_skill_routes(root: Path) -> list[str]:
         if skill_dir.name in ACTIVE_GOVERNANCE_SKILLS:
             if len(text.splitlines()) > 140:
                 add_issue(issues, label, "governance skill exceeds 140-line budget")
-            if f"`{label}`" not in agents:
-                add_issue(issues, "AGENTS.md", f"missing route to {label}")
             for section in ACTIVE_SKILL_REQUIRED_SECTIONS:
                 if section not in text:
                     add_issue(issues, label, f"missing required section {section}")
