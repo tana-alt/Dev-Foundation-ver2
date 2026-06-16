@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from workflow_core.contract_harness import push as push_module
+
 ROOT = Path(__file__).resolve().parents[2]
 HARNESS = ROOT / "harness"
 TASK_ID = "T-0001"
@@ -291,6 +293,36 @@ def test_land_creates_integrator_commit_without_mutating_parent_head(tmp_path: P
     assert load_runtime(repo, "land-result.json")["landed_commit"] == result["landed_commit"]
 
 
+def test_push_dry_run_preserves_landed_context_without_external_write(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path, push_mode="dry_run")
+    remote = add_remote(tmp_path, repo)
+    old_remote = git(repo, "rev-parse", "origin/main").stdout.strip()
+    prepare_candidate(repo)
+    land = json.loads(run_harness(repo, "land", TASK_ID).stdout)
+
+    pushed = run_harness(repo, "push", TASK_ID)
+
+    assert pushed.returncode != 0
+    result = json.loads(pushed.stdout)
+    assert result["status"] == "blocked"
+    assert result["reason"] == "protected_external_write"
+    assert result["landed_commit"] == land["landed_commit"]
+    assert result["target_base_sha"] == old_remote
+    assert result["candidate_diff_sha256"] == land["candidate_diff_sha256"]
+    assert result["machine_evidence_sha256"] == land["machine_evidence_sha256"]
+    assert result["pushed_sha"] is None
+    assert result["lock_acquire"] == {
+        "reason": "protected_external_write",
+        "status": "not_attempted",
+    }
+    assert result["sync"] == {
+        "reason": "push_not_attempted",
+        "status": "not_attempted",
+    }
+    assert git(remote, "rev-parse", "refs/heads/main").stdout.strip() == old_remote
+    assert load_runtime(repo, "push-result.json")["landed_commit"] == land["landed_commit"]
+
+
 def test_land_rebase_conflict_writes_rework_without_commit(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
     add_remote(tmp_path, repo)
@@ -326,6 +358,15 @@ def test_push_creates_rescue_ref_updates_remote_releases_lock_and_syncs_local(
     result = json.loads(pushed.stdout)
     assert result["status"] == "pushed"
     assert result["pushed_sha"] == land["landed_commit"]
+    assert result["lock_ref"] == "refs/harness/locks/origin/main"
+    assert result["remote_sha_before"] == old_remote
+    assert result["remote_sha_after"] == land["landed_commit"]
+    assert result["lock_acquire"]["status"] == "acquired"
+    assert result["lock_acquire"]["target_sha"] == old_remote
+    assert result["lock_release"] == {
+        "ref": "refs/harness/locks/origin/main",
+        "status": "released",
+    }
     assert git(repo, "rev-parse", "origin/main").stdout.strip() == land["landed_commit"]
     assert git(repo, "rev-parse", "main").stdout.strip() == land["landed_commit"]
 
@@ -333,7 +374,36 @@ def test_push_creates_rescue_ref_updates_remote_releases_lock_and_syncs_local(
     assert f" {old_remote}" in refs
     assert f"refs/harness/rescue/main/{TASK_ID}/" in refs
     assert "refs/harness/locks/origin/main" not in refs
+    assert load_runtime(repo, "push-result.json")["lock_release"]["status"] == "released"
     assert load_runtime(repo, "sync-result.json")["status"] == "local_synced"
+
+
+def test_push_reports_local_sync_required_after_remote_update(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path, push_mode="enabled")
+    remote = add_remote(tmp_path, repo)
+    old_remote = git(repo, "rev-parse", "origin/main").stdout.strip()
+    prepare_candidate(repo)
+    land = json.loads(run_harness(repo, "land", TASK_ID).stdout)
+
+    pushed = run_harness(repo, "push", TASK_ID)
+
+    assert pushed.returncode != 0
+    result = json.loads(pushed.stdout)
+    assert result["status"] == "pushed"
+    assert result["reason"] == "local_sync_required"
+    assert result["pushed_sha"] == land["landed_commit"]
+    assert result["remote_sha_before"] == old_remote
+    assert result["remote_sha_after"] == land["landed_commit"]
+    assert result["sync"]["status"] == "local_sync_required"
+    assert result["sync"]["reason"] == "dirty_worktree"
+    assert result["lock_release"] == {
+        "ref": "refs/harness/locks/origin/main",
+        "status": "released",
+    }
+    assert git(remote, "rev-parse", "refs/heads/main").stdout.strip() == land["landed_commit"]
+    assert git(repo, "rev-parse", "main").stdout.strip() == old_remote
+    assert load_runtime(repo, "push-result.json")["reason"] == "local_sync_required"
+    assert load_runtime(repo, "sync-result.json")["reason"] == "dirty_worktree"
 
 
 def test_push_failure_after_rescue_writes_artifact_and_releases_lock(
@@ -365,6 +435,10 @@ def test_push_failure_after_rescue_writes_artifact_and_releases_lock(
     assert result["reason"] == "push_failed"
     assert result["pushed_sha"] is None
     assert result["rescue_ref"].startswith(f"refs/harness/rescue/main/{TASK_ID}/")
+    assert result["lock_release"] == {
+        "ref": "refs/harness/locks/origin/main",
+        "status": "released",
+    }
     assert load_runtime(repo, "push-result.json")["reason"] == "push_failed"
 
     refs = git(remote, "for-each-ref", "--format=%(refname) %(objectname)", "refs/harness").stdout
@@ -373,17 +447,92 @@ def test_push_failure_after_rescue_writes_artifact_and_releases_lock(
     assert git(remote, "rev-parse", "refs/heads/main").stdout.strip() == old_remote
 
 
+def test_push_reports_nonzero_when_remote_lock_release_fails(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path, push_mode="enabled")
+    remote = add_remote(tmp_path, repo)
+    hook = remote / "hooks" / "pre-receive"
+    hook.write_text(
+        "#!/bin/sh\n"
+        "zero=0000000000000000000000000000000000000000\n"
+        "while read old new ref; do\n"
+        '  if [ "$ref" = "refs/harness/locks/origin/main" ] && [ "$new" = "$zero" ]; then\n'
+        "    exit 1\n"
+        "  fi\n"
+        "done\n"
+        "exit 0\n",
+        encoding="utf-8",
+    )
+    hook.chmod(0o755)
+    old_remote = git(repo, "rev-parse", "origin/main").stdout.strip()
+    prepare_candidate(repo)
+    land = json.loads(run_harness(repo, "land", TASK_ID).stdout)
+    git(repo, "checkout", "--", "src/app.txt")
+
+    pushed = run_harness(repo, "push", TASK_ID)
+
+    assert pushed.returncode != 0
+    result = json.loads(pushed.stdout)
+    assert result["status"] == "pushed"
+    assert result["reason"] == "lock_release_failed"
+    assert result["pushed_sha"] == land["landed_commit"]
+    assert result["remote_sha_before"] == old_remote
+    assert result["remote_sha_after"] == land["landed_commit"]
+    assert result["lock_release"]["status"] == "release_failed"
+    assert result["lock_release"]["ref"] == "refs/harness/locks/origin/main"
+    assert git(remote, "rev-parse", "refs/heads/main").stdout.strip() == land["landed_commit"]
+    lock_sha = git(remote, "rev-parse", "refs/harness/locks/origin/main").stdout.strip()
+    assert lock_sha != old_remote
+    assert git(remote, "rev-parse", "refs/harness/locks/origin/main^").stdout.strip() == old_remote
+    assert load_runtime(repo, "push-result.json")["reason"] == "lock_release_failed"
+
+
+def test_remote_push_lock_acquire_is_create_only_even_for_same_sha(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path, push_mode="enabled")
+    remote = add_remote(tmp_path, repo)
+    remote_sha = git(repo, "rev-parse", "origin/main").stdout.strip()
+    lock_ref = "refs/harness/locks/origin/main"
+
+    first = push_module._acquire_remote_lock(repo, "origin", lock_ref, remote_sha)
+    second = push_module._acquire_remote_lock(repo, "origin", lock_ref, remote_sha)
+
+    assert first["ref"] == lock_ref
+    assert first["status"] == "acquired"
+    assert first["target_sha"] == remote_sha
+    assert first["sha"] != remote_sha
+    assert second["ref"] == lock_ref
+    assert second["status"] == "blocked"
+    assert second["reason"] == "remote_lock_exists"
+    assert git(remote, "rev-parse", lock_ref).stdout.strip() == first["sha"]
+    assert git(remote, "rev-parse", f"{lock_ref}^").stdout.strip() == remote_sha
+    assert push_module._release_remote_lock(repo, "origin", lock_ref)["status"] == "released"
+
+
 def test_push_is_blocked_by_remote_lock_ref(tmp_path: Path) -> None:
     repo = init_repo(tmp_path, push_mode="enabled")
     remote = add_remote(tmp_path, repo)
     prepare_candidate(repo)
     run_harness(repo, "land", TASK_ID)
-    lock_sha = git(repo, "rev-parse", "origin/main").stdout.strip()
-    git(repo, "push", "origin", f"{lock_sha}:refs/harness/locks/origin/main")
+    target_sha = git(repo, "rev-parse", "origin/main").stdout.strip()
+    lock = push_module._acquire_remote_lock(
+        repo,
+        "origin",
+        "refs/harness/locks/origin/main",
+        target_sha,
+    )
+    assert lock["status"] == "acquired"
 
     pushed = run_harness(repo, "push", TASK_ID)
     assert pushed.returncode != 0
     result = json.loads(pushed.stdout)
     assert result["status"] == "blocked"
     assert result["reason"] == "blocked_by_lock"
-    assert git(remote, "rev-parse", "refs/heads/main").stdout.strip() == lock_sha
+    assert result["lock_ref"] == "refs/harness/locks/origin/main"
+    assert result["lock_acquire"] == {
+        "reason": "remote_lock_exists",
+        "ref": "refs/harness/locks/origin/main",
+        "sha": lock["sha"],
+        "status": "blocked",
+        "target_sha": target_sha,
+    }
+    assert git(remote, "rev-parse", "refs/heads/main").stdout.strip() == target_sha
+    assert git(remote, "rev-parse", "refs/harness/locks/origin/main").stdout.strip() == lock["sha"]

@@ -337,3 +337,41 @@ def test_bench_context_manager_connection_closed_after_exit() -> None:
         store.record("api", 10.0, label="baseline", ts="2026-06-12T00:00:00Z")
     with pytest.raises(sqlite3.ProgrammingError):
         store._conn.execute("SELECT 1")
+
+
+def test_benchstore_sets_schema_user_version_on_fresh_store(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    version = store._conn.execute("PRAGMA user_version").fetchone()[0]
+    assert version == BenchStore.SCHEMA_VERSION
+    store.close()
+
+
+def test_benchstore_migrates_legacy_zero_version_without_losing_rows(tmp_path: Path) -> None:
+    db = tmp_path / "bench.db"
+    import sqlite3
+
+    conn = sqlite3.connect(db)
+    conn.executescript(
+        """
+        CREATE TABLE bench_samples (
+            benchmark TEXT,
+            label TEXT,
+            value REAL,
+            unit TEXT,
+            run_id TEXT,
+            ts TEXT
+        );
+        INSERT INTO bench_samples VALUES ('api', 'baseline', 42.0, 'ms', '', 't');
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    store = BenchStore(db)
+    version = store._conn.execute("PRAGMA user_version").fetchone()[0]
+    summary = store.summarize("api", "baseline")
+
+    assert version == BenchStore.SCHEMA_VERSION
+    assert summary is not None
+    assert summary.max == 42.0
+    store.close()

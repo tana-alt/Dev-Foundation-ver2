@@ -7,8 +7,12 @@ from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.completion import CheckOutcome, run_completion_gate, write_evidence
-from workflow_core.contract_harness.config import review_settings
-from workflow_core.contract_harness.contract import load_contract, semantic_reproducible
+from workflow_core.contract_harness.config import control_root, review_settings
+from workflow_core.contract_harness.contract import (
+    load_contract,
+    load_verifier_plan,
+    semantic_reproducible,
+)
 from workflow_core.contract_harness.evidence import machine_artifact_hashes
 from workflow_core.contract_harness.gitutil import head_sha
 from workflow_core.contract_harness.hashing import file_hash
@@ -16,6 +20,7 @@ from workflow_core.contract_harness.jsonio import read_json, write_json
 from workflow_core.contract_harness.review import collect, run_profile, stale_or_missing
 from workflow_core.contract_harness.runtime_paths import task_dir
 from workflow_core.contract_harness.snapshot import changed_repo_paths, snapshot_diff
+from workflow_core.contract_harness.verifier import all_passed, run_verifiers
 from workflow_core.contract_harness.worktree import resolve_candidate_workspace
 from workflow_core.metrics_store import MetricsStore
 
@@ -135,7 +140,7 @@ def _with_completion(
     workspace: Path,
 ) -> dict[str, Any]:
     before = head_sha(workspace)
-    completed = _run_make(workspace)
+    completed = _run_completion_check(workspace, task_id)
     after = head_sha(workspace)
     diff_text = (task_dir(root, task_id) / "candidate.diff").read_text(encoding="utf-8")
     verdict, evidence = run_completion_gate(
@@ -151,7 +156,10 @@ def _with_completion(
     result["completion"] = {
         "status": "pass" if verdict.passed else "fail",
         "evidence_path": str(evidence_path),
+        "command": str(completed["command"]),
     }
+    if "verifiers" in completed:
+        result["completion"]["verifiers"] = completed["verifiers"]
     if not verdict.passed or before != after:
         result["reason"] = "machine_gate_failed"
     return result
@@ -176,6 +184,17 @@ def _run_make(root: Path) -> dict[str, object]:
     return {"command": f"make {tier}", "exit_code": completed.returncode}
 
 
+def _run_completion_check(root: Path, task_id: str) -> dict[str, object]:
+    if "FOUNDATION_GATE_TIER" in os.environ:
+        return _run_make(root)
+    verifiers = run_verifiers(root, load_verifier_plan(root, task_id))
+    return {
+        "command": "harness verifiers: " + ", ".join(str(item.get("id", "")) for item in verifiers),
+        "exit_code": 0 if all_passed(verifiers) else 1,
+        "verifiers": verifiers,
+    }
+
+
 def _auto_review(root: Path, task_id: str) -> None:
     settings = review_settings(root)
     if not settings["background_auto_run"]:
@@ -187,10 +206,10 @@ def _auto_review(root: Path, task_id: str) -> None:
 def _review_reason(summary: dict[str, Any]) -> str:
     if summary.get("review_pass") is True:
         return "ok"
-    if summary.get("semantic_review_required") and not summary.get("fresh_semantic_approves"):
-        return "semantic_review_required"
     if summary.get("fresh_blocks"):
         return "review_blocked"
+    if summary.get("semantic_review_required") and not summary.get("fresh_semantic_approves"):
+        return "semantic_review_required"
     return "review_quorum_unmet"
 
 
@@ -215,17 +234,22 @@ def file_hash_from_text(text: str) -> str:
 
 
 def _metrics(root: Path, task_id: str) -> dict[str, Any]:
-    db = root / "artifact" / task_id / "metrics" / "eval.db"
+    db = control_root(root) / "artifact" / task_id / "metrics" / "eval.db"
+    packet_exposure = _packet_exposure(root, task_id)
     if not db.exists():
-        return _empty_metrics()
+        metrics = _empty_metrics()
+        metrics["packet_exposure"] = packet_exposure
+        return metrics
     with MetricsStore(db) as store:
         rows = store.metrics()
         report = store.aggregate_stored()
     return {
+        "usage_observed": bool(rows),
         "tool_calls": sum(int(str(row["tool_calls"])) for row in rows),
         "tool_call_rate": report.mean_tool_call_rate,
         "skill_uses": sum(int(str(row["skill_uses"])) for row in rows),
         "skill_usage_rate": report.mean_skill_usage_rate,
+        "packet_exposure": packet_exposure,
         "unexpected_actions": sorted(
             {item for row in rows for item in cast(list[str], row["unexpected_actions"])}
         ),
@@ -234,9 +258,30 @@ def _metrics(root: Path, task_id: str) -> dict[str, Any]:
 
 def _empty_metrics() -> dict[str, Any]:
     return {
+        "usage_observed": False,
         "tool_calls": 0,
         "tool_call_rate": 0.0,
         "skill_uses": 0,
         "skill_usage_rate": 0.0,
         "unexpected_actions": [],
     }
+
+
+def _packet_exposure(root: Path, task_id: str) -> dict[str, Any]:
+    out_dir = task_dir(root, task_id)
+    try:
+        tools = read_json(out_dir / "agent-tools.json")
+        skills = read_json(out_dir / "agent-skills.json")
+    except (OSError, ValueError):
+        return {"status": "absent", "roles": {}}
+    roles: dict[str, dict[str, Any]] = {}
+    for role in ("writer", "reviewer", "integrator"):
+        role_tools = [item for item in tools.get(role, []) if isinstance(item, dict)]
+        role_skills = [item for item in skills.get(role, []) if isinstance(item, dict)]
+        roles[role] = {
+            "tool_count": len(role_tools),
+            "skill_count": len(role_skills),
+            "tools": [str(item.get("name", "")) for item in role_tools],
+            "skills": [str(item.get("name", "")) for item in role_skills],
+        }
+    return {"status": "present", "roles": roles}

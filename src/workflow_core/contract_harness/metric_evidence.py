@@ -4,13 +4,14 @@ from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.bench import BenchStore
+from workflow_core.contract_harness.config import control_root
 from workflow_core.contract_harness.hashing import hash_json
 from workflow_core.metrics_store import MetricsStore
 from workflow_core.nfr import NfrStore
 
 
 def metric_evidence(root: Path, task_id: str) -> dict[str, Any]:
-    metrics_dir = root / "artifact" / task_id / "metrics"
+    metrics_dir = control_root(root) / "artifact" / task_id / "metrics"
     data = {
         "status": "absent",
         "eval": _eval_evidence(metrics_dir / "eval.db"),

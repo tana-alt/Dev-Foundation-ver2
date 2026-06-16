@@ -77,8 +77,10 @@ def _verdict(improvement_pct: float, min_change_pct: float) -> Verdict:
 
 
 class BenchStore(SqliteStore):
+    SCHEMA_VERSION = 1
+
     def __init__(self, path: Path | str) -> None:
-        super().__init__(path, schema=_SCHEMA)
+        super().__init__(path, schema=_SCHEMA, schema_version=self.SCHEMA_VERSION)
 
     def record(
         self,

@@ -3,10 +3,20 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
+import pytest
+import yaml
+
+from workflow_core.contract_harness.agent_tools import (
+    role_agent_skills,
+    role_agent_tools,
+    role_optional_tools,
+)
 from workflow_core.contract_harness.hashing import file_hash
+from workflow_core.contract_harness.lock import LockBlocked, local_lock
 from workflow_core.contract_harness.verify import recompute_machine_evidence
 from workflow_core.evaluation import EvalScore
 from workflow_core.metrics_store import MetricsStore
@@ -217,9 +227,9 @@ def semantic_review_yaml(
     )
 
 
-def task_yaml(mode: str) -> str:
+def task_yaml(mode: str, task_id: str = TASK_ID) -> str:
     return (
-        f"id: {TASK_ID}\n"
+        f"id: {task_id}\n"
         "scope: demo\n"
         "base: main\n"
         "intent:\n"
@@ -232,19 +242,19 @@ def task_yaml(mode: str) -> str:
     )
 
 
-def runtime_task_dir(repo: Path) -> Path:
+def runtime_task_dir(repo: Path, task_id: str = TASK_ID) -> Path:
     common = Path(git(repo, "rev-parse", "--git-common-dir"))
     if not common.is_absolute():
         common = repo / common
-    return common / "harness-runtime" / "state" / "tasks" / TASK_ID
+    return common / "harness-runtime" / "state" / "tasks" / task_id
 
 
 def runtime_root(repo: Path) -> Path:
     return runtime_task_dir(repo).parents[2]
 
 
-def load_runtime_json(repo: Path, name: str) -> dict[str, Any]:
-    data = json.loads((runtime_task_dir(repo) / name).read_text(encoding="utf-8"))
+def load_runtime_json(repo: Path, name: str, task_id: str = TASK_ID) -> dict[str, Any]:
+    data = json.loads((runtime_task_dir(repo, task_id) / name).read_text(encoding="utf-8"))
     assert isinstance(data, dict)
     return data
 
@@ -255,6 +265,93 @@ def tool_names(tools: list[dict[str, Any]]) -> set[str]:
 
 def skill_names(skills: list[dict[str, Any]]) -> set[str]:
     return {str(skill.get("name")) for skill in skills}
+
+
+def test_harness_worktree_skill_paths_do_not_fallback_to_package_root(tmp_path: Path) -> None:
+    worktree = tmp_path / "writer"
+    skill = worktree / ".agents" / "skills" / "tdd-scope" / "SKILL.md"
+    skill.parent.mkdir(parents=True)
+    skill.write_text(
+        "---\nname: tdd-scope\ndescription: local writer skill\n---\n",
+        encoding="utf-8",
+    )
+    (worktree / ".harness-worktree.json").write_text("{}", encoding="utf-8")
+
+    skills = role_agent_skills(worktree, "writer")
+    by_name = {str(item["name"]): item for item in skills}
+
+    assert by_name["tdd-scope"]["path"] == str(skill)
+    assert by_name["implementation-slice-verification"]["path"] is None
+    assert by_name["scope-routing-governance"]["path"] is None
+
+
+def test_harness_worktree_skill_paths_can_use_marker_source_repo_root(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source"
+    source_skill = source / ".agents" / "skills" / "implementation-slice-verification" / "SKILL.md"
+    source_skill.parent.mkdir(parents=True)
+    source_skill.write_text(
+        "---\nname: implementation-slice-verification\ndescription: source skill\n---\n",
+        encoding="utf-8",
+    )
+    worktree = tmp_path / "writer"
+    worktree.mkdir(parents=True)
+    (worktree / ".harness-worktree.json").write_text(
+        json.dumps({"source_repo_common_dir": str(source / ".git")}),
+        encoding="utf-8",
+    )
+
+    skills = role_agent_skills(worktree, "writer")
+    by_name = {str(item["name"]): item for item in skills}
+
+    assert by_name["implementation-slice-verification"]["path"] == str(source_skill)
+    assert by_name["tdd-scope"]["path"] is None
+
+
+def test_harness_worktree_tool_commands_use_current_harness_not_stale_local(
+    tmp_path: Path,
+) -> None:
+    worktree = tmp_path / "writer"
+    worktree.mkdir(parents=True)
+    (worktree / ".harness-worktree.json").write_text("{}", encoding="utf-8")
+    stale_local_harness = worktree / "harness"
+    stale_local_harness.write_text("#!/bin/sh\nexit 99\n", encoding="utf-8")
+    stale_local_harness.chmod(0o755)
+
+    tools = role_agent_tools(worktree, TASK_ID, "writer")
+
+    assert all(str(tool["command"]).startswith("HARNESS_ROLE=writer ") for tool in tools)
+    assert all(str(HARNESS) in str(tool["command"]) for tool in tools)
+    assert all(str(stale_local_harness) not in str(tool["command"]) for tool in tools)
+
+
+def test_script_tool_commands_use_absolute_paths_for_repo_local_scripts(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / "scripts" / "hook_post_tool_use.py"
+    script.parent.mkdir()
+    script.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+
+    tools = role_optional_tools(repo, TASK_ID, "writer", "measurement")
+    hook_tool = tool_by_name(tools, "post-tool-use-hook")
+
+    assert str(script) in hook_tool["command"]
+    assert " python3 scripts/hook_post_tool_use.py" not in hook_tool["command"]
+
+
+def test_active_review_config_wires_semantic_ai_to_repo_root_wrapper() -> None:
+    review = yaml.safe_load((ROOT / ".harness" / "review.yaml").read_text(encoding="utf-8"))
+
+    assert "semantic-ai" in review["default"]["reviewers"]
+    profile = review["profiles"]["semantic-ai"]
+    assert profile["kind"] == "command"
+    assert profile["command"] == [
+        "python3",
+        "{repo_root}/.harness/semantic_ai_reviewer.py",
+        "{review_packet}",
+        "{review_output}",
+    ]
+    assert (ROOT / ".harness" / "semantic_ai_reviewer.py").is_file()
 
 
 def tool_by_name(tools: list[dict[str, Any]], name: str) -> dict[str, Any]:
@@ -269,10 +366,12 @@ def run_tool_command(
     cwd: Path,
     *,
     role: str = "writer",
+    input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         command,
         cwd=cwd,
+        input=input_text,
         capture_output=True,
         text=True,
         timeout=90,
@@ -309,6 +408,53 @@ def test_role_boundaries_reject_disallowed_commands(tmp_path: Path) -> None:
     )
 
 
+def test_active_harness_surface_has_no_phantom_rfc_and_tools_match_roles(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+
+    help_result = run_harness(repo, "--help")
+    assert help_result.returncode == 0
+    assert "rfc" not in help_result.stdout
+
+    phantom = run_harness(repo, "rfc", TASK_ID, "approve", "RFC-1", "--reason", "ok")
+    assert phantom.returncode != 0
+    assert "deferred_in_mvp" not in phantom.stdout
+    assert run_harness(repo, "report", TASK_ID, "--type", "rfc").returncode == 0
+
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    groups = load_runtime_json(repo, "agent-tools.json")
+    reviewer_tools = tool_names(groups["reviewer"])
+    integrator_tools = tool_names(groups["integrator"])
+    assert "review-collect" not in reviewer_tools
+    assert "review-collect" in integrator_tools
+    assert all(str(tool["command"]).startswith("HARNESS_ROLE=writer ") for tool in groups["writer"])
+    assert all(
+        str(tool["command"]).startswith("HARNESS_ROLE=reviewer ") for tool in groups["reviewer"]
+    )
+    assert all(
+        str(tool["command"]).startswith("HARNESS_ROLE=integrator ")
+        for tool in groups["integrator"]
+        if tool["name"]
+        in {
+            "review-collect",
+            "scope-map-reverse",
+            "affected",
+            "dispatch",
+            "integrate",
+            "gate",
+            "land",
+            "push",
+        }
+    )
+
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    collect_tool = tool_by_name(groups["integrator"], "review-collect")
+    collect_smoke = run_tool_command(collect_tool["command"], repo / ".harness")
+    assert collect_smoke.returncode == 0, collect_smoke.stdout + collect_smoke.stderr
+
+
 def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
 
@@ -318,11 +464,16 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
     names = tool_names(capsule["agent_tools"])
     skills = skill_names(capsule["agent_skills"])
 
-    assert {
+    assert names == {
         "scope-map-forward",
+        "explain",
+        "context-audit",
         "verify",
         "submit",
         "report-rfc",
+        "report-metric",
+    }
+    assert {
         "nfr-metric",
         "bench-compare",
         "abrun",
@@ -331,23 +482,119 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "quality-gate",
         "measure-eval",
         "surface-issues",
-    }.issubset(names)
+        "context-scope-check",
+    }.isdisjoint(names)
     assert {
         "tdd-scope",
         "implementation-slice-verification",
         "scope-routing-governance",
     }.issubset(skills)
     assert all(not str(tool["command"]).startswith("./harness") for tool in capsule["agent_tools"])
-    assert any("nfr_metric.py" in tool["command"] for tool in capsule["agent_tools"])
+    assert all("nfr_metric.py" not in tool["command"] for tool in capsule["agent_tools"])
     scope_tool = tool_by_name(capsule["agent_tools"], "scope-map-forward")
     smoke = run_tool_command(scope_tool["command"], repo / ".harness")
     assert smoke.returncode == 0, smoke.stdout + smoke.stderr
     groups = load_runtime_json(repo, "agent-tools.json")
     assert "scope-map-reverse" in tool_names(groups["reviewer"])
+    assert "review-collect" not in tool_names(groups["reviewer"])
     assert "affected" in tool_names(groups["integrator"])
+    assert "review-collect" in tool_names(groups["integrator"])
     skill_groups = load_runtime_json(repo, "agent-skills.json")
     assert "release-check" in skill_names(skill_groups["reviewer"])
     assert "merge-integrity-governance" in skill_names(skill_groups["integrator"])
+
+    optional = run_harness(repo, "tools", TASK_ID, "--role", "writer", "--profile", "measurement")
+    assert optional.returncode == 0, optional.stdout + optional.stderr
+    optional_tools = json.loads(optional.stdout)["tools"]
+    optional_names = tool_names(optional_tools)
+    assert {
+        "nfr-metric",
+        "bench-compare",
+        "abrun",
+        "check-runner",
+        "verdict",
+        "quality-gate",
+        "measure-eval",
+        "surface-issues",
+        "post-tool-use-hook",
+    }.issubset(optional_names)
+
+
+def test_measurement_tool_ingests_observed_trajectory_into_task_metrics(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    optional = run_harness(repo, "tools", TASK_ID, "--role", "writer", "--profile", "measurement")
+    optional_tools = json.loads(optional.stdout)["tools"]
+    hook_tool = tool_by_name(optional_tools, "post-tool-use-hook")
+    measure_tool = tool_by_name(optional_tools, "measure-eval")
+    assert f"FOUNDATION_REPO_ROOT={repo}" in hook_tool["command"]
+    assert f"FOUNDATION_PROJECT_ID={TASK_ID}" in hook_tool["command"]
+    assert "HARNESS_ROLE=writer" in hook_tool["command"]
+    assert f"FOUNDATION_REPO_ROOT={repo}" in measure_tool["command"]
+
+    for payload in (
+        {
+            "session_id": "agent-run",
+            "tool_name": "Bash",
+            "tool_input": {"command": "harness verify"},
+            "tool_response": {"exit_code": 0},
+        },
+        {
+            "session_id": "agent-run",
+            "tool_name": "Skill",
+            "tool_input": {"name": "tdd-scope"},
+            "tool_response": {"exit_code": 0},
+        },
+    ):
+        recorded = run_tool_command(
+            hook_tool["command"],
+            repo / ".harness",
+            input_text=json.dumps(payload),
+        )
+        assert recorded.returncode == 0, recorded.stdout + recorded.stderr
+    trajectory_file = repo / "artifact" / TASK_ID / "trajectory" / "agent-run.jsonl"
+    events = [
+        json.loads(line)
+        for line in trajectory_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert [event["role"] for event in events] == ["writer", "writer"]
+
+    measured = run_tool_command(measure_tool["command"], repo / ".harness")
+
+    assert measured.returncode == 0, measured.stdout + measured.stderr
+    measurement = json.loads(measured.stdout)
+    assert measurement["runs_measured"] == 1
+    assert measurement["report"]["mean_tool_call_rate"] == 1.0
+    assert measurement["report"]["mean_skill_usage_rate"] == 0.5
+    assert (repo / "artifact" / TASK_ID / "metrics" / "eval.db").is_file()
+    with MetricsStore(repo / "artifact" / TASK_ID / "metrics" / "eval.db") as store:
+        assert store.metrics_count() == 1
+        stats = {(stat.kind, stat.name): stat for stat in store.tool_stats()}
+    assert stats[("tool", "Bash")].calls == 1
+    assert stats[("skill", "tdd-scope")].calls == 1
+
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo, "review", TASK_ID, "--run", "reader-correctness", role="reviewer"
+        ).returncode
+        == 0
+    )
+    assert (
+        run_harness(repo, "review", TASK_ID, "--run", "reader-scope", role="reviewer").returncode
+        == 0
+    )
+    gate = run_harness(repo, "gate", TASK_ID, role="integrator")
+    assert gate.returncode == 0, gate.stdout + gate.stderr
+    metrics = json.loads(gate.stdout)["metrics"]
+    assert metrics["usage_observed"] is True
+    assert metrics["tool_calls"] == 2
+    assert metrics["skill_uses"] == 1
+    assert metrics["skill_usage_rate"] == 0.5
 
 
 def test_explain_lists_agent_tools(tmp_path: Path) -> None:
@@ -359,8 +606,122 @@ def test_explain_lists_agent_tools(tmp_path: Path) -> None:
     assert "writer tools:" in explained.stdout
     assert "writer skills:" in explained.stdout
     assert "scope-map-forward" in explained.stdout
-    assert "nfr-metric" in explained.stdout
+    assert "report-rfc" in explained.stdout
+    assert "nfr-metric" not in explained.stdout
     assert "tdd-scope" in explained.stdout
+
+
+def test_launch_writer_prepares_worktree_and_returns_interactive_command(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+
+    launched = run_harness(repo, "launch-writer", TASK_ID)
+
+    assert launched.returncode == 0, launched.stdout + launched.stderr
+    session = json.loads(launched.stdout)
+    writer_path = Path(session["worktree"]["path"])
+    assert session["status"] == "ready"
+    assert session["role"] == "writer"
+    assert writer_path.is_dir()
+    assert session["cwd"] == str(writer_path)
+    assert session["env"]["HARNESS_ROLE"] == "writer"
+    assert session["env"]["FOUNDATION_REPO_ROOT"] == str(repo)
+    assert session["env"]["FOUNDATION_PROJECT_ID"] == TASK_ID
+    assert session["env"]["FOUNDATION_TASK_ID"] == TASK_ID
+    assert "codex --yolo" in session["command"]
+    assert str(writer_path) in session["command"]
+    assert str(HARNESS) in session["handoff"]["verify"]
+    assert str(HARNESS) in session["handoff"]["submit"]
+    assert str(HARNESS) in session["handoff"]["submit_and_wait"]
+    assert "./harness" not in session["handoff"]["verify"]
+    assert "scope-map-forward" in {
+        tool["name"] for tool in session["initial_context"]["agent_tools"]
+    }
+    assert "context-audit" in {tool["name"] for tool in session["initial_context"]["agent_tools"]}
+    assert "tdd-scope" in {skill["name"] for skill in session["initial_context"]["agent_skills"]}
+    assert load_runtime_json(repo, "writer-session.json")["command"] == session["command"]
+    assert session["context_audit"]["roles"]["writer"]["status"] in {"pass", "fail"}
+
+
+def test_launch_writer_resumes_existing_dirty_sealed_writer_worktree(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+    (writer_path / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    (writer_path / "src" / "notes.txt").write_text("untracked writer note\n", encoding="utf-8")
+    assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
+    assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
+
+    launched = run_harness(repo, "launch-writer", TASK_ID)
+
+    assert launched.returncode == 0, launched.stdout + launched.stderr
+    session = json.loads(launched.stdout)
+    assert session["status"] == "ready"
+    assert session["worktree"]["path"] == str(writer_path)
+    assert session["worktree"]["state"] == "sealed_for_review"
+    assert session["worktree"]["dirty"] is True
+    assert session["cwd"] == str(writer_path)
+    assert str(HARNESS) in session["handoff"]["verify"]
+    assert (writer_path / "src" / "app.txt").read_text(encoding="utf-8") == "candidate\n"
+    assert (writer_path / "src" / "notes.txt").read_text(encoding="utf-8") == (
+        "untracked writer note\n"
+    )
+
+
+def test_context_audit_from_writer_worktree_flags_missing_required_skill_paths(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+
+    audited = run_harness(writer_path, "context-audit", TASK_ID)
+
+    assert audited.returncode != 0
+    audit = json.loads(audited.stdout)
+    assert audit["status"] == "fail"
+    writer_audit = audit["roles"]["writer"]
+    assert writer_audit["status"] == "fail"
+    assert "skill_path:implementation-slice-verification" in writer_audit["missing_required"]
+    assert "skill_path:tdd-scope" in writer_audit["missing_required"]
+    assert "scope-map-forward" in writer_audit["tools"]
+    assert "budget" not in json.dumps(audit)
+
+
+def test_context_audit_quantifies_role_context_without_budget_escape(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+
+    audited = run_harness(repo, "context-audit", TASK_ID)
+
+    assert audited.returncode == 0, audited.stdout + audited.stderr
+    audit = json.loads(audited.stdout)
+    assert audit["status"] == "pass"
+    assert audit["pressure_estimator"] == "utf8_json_bytes_and_chars_div_4"
+    assert "budget" not in json.dumps(audit)
+    assert set(audit["roles"]) == {"writer", "reviewer", "integrator"}
+    for _role, packet in audit["roles"].items():
+        assert packet["status"] == "pass"
+        assert packet["bytes"] > 0
+        assert packet["estimated_tokens"] > 0
+        assert packet["missing_required"] == []
+        assert packet["tool_count"] > 0
+        assert packet["skill_count"] > 0
+    assert "scope-map-forward" in audit["roles"]["writer"]["tools"]
+    assert "scope-map-reverse" in audit["roles"]["reviewer"]["tools"]
+    assert "dispatch" in audit["roles"]["integrator"]["tools"]
+    assert load_runtime_json(repo, "context-audit.json")["status"] == "pass"
 
 
 def test_scope_map_forward_and_reverse_are_thin_scope_evidence(tmp_path: Path) -> None:
@@ -518,6 +879,64 @@ def test_submit_wait_dispatches_in_integrator_boundary(tmp_path: Path) -> None:
     assert handoff["integration_workspace"]["kind"] == "integrator"
 
 
+def test_submit_wait_uses_canonical_harness_config_when_worktrees_lack_harness_dir(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir(parents=True)
+    git(repo, "init")
+    git(repo, "config", "user.email", "test@example.com")
+    git(repo, "config", "user.name", "Test User")
+    git(repo, "branch", "-M", "main")
+    (repo / "src").mkdir()
+    (repo / "src" / "app.txt").write_text("base\n", encoding="utf-8")
+    (repo / "Makefile").write_text("check-required:\n\t@true\n", encoding="utf-8")
+    git(repo, "add", "src/app.txt", "Makefile")
+    git(repo, "commit", "-m", "base without harness config")
+    remote = tmp_path / "remote.git"
+    git(tmp_path, "init", "--bare", str(remote))
+    git(repo, "remote", "add", "origin", str(remote))
+    git(repo, "push", "-u", "origin", "main")
+    write_harness_config(repo, "python -c 'raise SystemExit(0)'", reject_unexpected=False)
+    (repo / ".harness" / "policy.yaml").write_text(policy_yaml(), encoding="utf-8")
+    semantic = repo / ".harness" / "semantic_reviewer.py"
+    semantic.write_text(
+        "import json, pathlib, sys\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "assert pathlib.Path.cwd() == pathlib.Path(packet['review_workspace']['path'])\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': ['canonical_config_wrapper'],\n"
+        "  'reason': 'control-plane reviewer wrapper ran from integration worktree'\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", "{repo_root}/.harness/semantic_reviewer.py"]),
+        encoding="utf-8",
+    )
+
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+    assert not (writer_path / ".harness" / "review.yaml").exists()
+    (writer_path / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
+
+    waited = run_harness(writer_path, "submit", TASK_ID, "--wait")
+
+    assert waited.returncode == 0, waited.stdout + waited.stderr
+    result = json.loads(waited.stdout)
+    assert result["status"] == "integrated"
+    integration_path = Path(result["integration_workspace"]["path"])
+    assert not (integration_path / ".harness" / "review.yaml").exists()
+    semantic_result = load_runtime_json(repo, "reviews/semantic-ai.json")
+    assert semantic_result["labels"] == ["canonical_config_wrapper"]
+    assert load_runtime_json(repo, "integration-result.json")["status"] == "integrated"
+
+
 def test_e2e_integrator_dispatch_then_land_keeps_integrator_worktree_reusable(
     tmp_path: Path,
 ) -> None:
@@ -548,16 +967,381 @@ def test_e2e_integrator_dispatch_then_land_keeps_integrator_worktree_reusable(
     assert land_result["worktree_path"] == str(integrator_path)
 
 
+def test_land_default_gate_reruns_task_verifiers_not_broad_make(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path, make_exit=1)
+    enable_policy_and_remote(tmp_path, repo)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+    (writer_path / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
+    assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+
+    landed = run_harness(repo, "land", TASK_ID, role="integrator")
+
+    assert landed.returncode == 0, landed.stdout + landed.stderr
+    land_result = json.loads(landed.stdout)
+    assert land_result["status"] == "landed"
+    land_gate = land_result["land_gate"]
+    assert land_gate["status"] == "pass"
+    assert land_gate["command"] == "harness verifiers: unit"
+    assert len(land_gate["verifiers"]) == 1
+    assert land_gate["verifiers"][0]["id"] == "unit"
+    assert land_gate["verifiers"][0]["status"] == "pass"
+    assert land_gate["verifiers"][0]["exit_code"] == 0
+
+
+def test_land_explicit_gate_tier_blocks_and_records_gate_result(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path, make_exit=1)
+    enable_policy_and_remote(tmp_path, repo)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+    (writer_path / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
+    assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+
+    landed = run_harness(
+        repo,
+        "land",
+        TASK_ID,
+        role="integrator",
+        extra_env={"FOUNDATION_GATE_TIER": "check-required"},
+    )
+
+    assert landed.returncode != 0
+    land_result = json.loads(landed.stdout)
+    assert land_result["status"] == "rework_required"
+    assert land_result["reason"] == "machine_gate_failed"
+    land_gate = land_result["land_gate"]
+    assert land_gate["status"] == "fail"
+    assert land_gate["command"] == "make check-required"
+    assert land_gate["exit_code"] != 0
+
+    retry = run_harness(repo, "land", TASK_ID, role="integrator")
+    assert retry.returncode == 0, retry.stdout + retry.stderr
+    retry_result = json.loads(retry.stdout)
+    assert retry_result["status"] == "landed"
+    assert retry_result["land_gate"]["status"] == "pass"
+
+
+def test_land_commits_on_agent_branch_when_hooks_reject_detached_head(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    hooks = repo / "hooks"
+    hooks.mkdir()
+    pre_commit = hooks / "pre-commit"
+    pre_commit.write_text(
+        "#!/bin/sh\n"
+        "branch=$(git branch --show-current)\n"
+        '[ -n "$branch" ] || { echo detached >&2; exit 2; }\n'
+        'case "$branch" in\n'
+        "  agent/*/*/*) exit 0 ;;\n"
+        "  *) echo bad-branch >&2; exit 2 ;;\n"
+        "esac\n",
+        encoding="utf-8",
+    )
+    pre_commit.chmod(0o755)
+    git(repo, "add", "hooks/pre-commit")
+    git(repo, "commit", "-m", "add detached guard hook")
+    enable_policy_and_remote(tmp_path, repo)
+    git(repo, "config", "core.hooksPath", "hooks")
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+    (writer_path / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
+    assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+
+    landed = run_harness(repo, "land", TASK_ID, role="integrator")
+
+    assert landed.returncode == 0, landed.stdout + landed.stderr
+    result = json.loads(landed.stdout)
+    assert result["status"] == "landed"
+    worktree_path = Path(result["worktree_path"])
+    assert git(worktree_path, "branch", "--show-current") == f"agent/{TASK_ID}/integrator/land"
+
+
+def test_parallel_land_same_branch_blocks_one_task_without_mixing_evidence(
+    tmp_path: Path,
+) -> None:
+    task_a = "T-parallel-a"
+    task_b = "T-parallel-b"
+    repo = init_repo(
+        tmp_path,
+        verifier_command='python -c "import time; time.sleep(2); raise SystemExit(0)"',
+    )
+    (repo / ".harness" / "tasks" / task_a).mkdir(parents=True)
+    (repo / ".harness" / "tasks" / task_a / "task.yaml").write_text(
+        task_yaml("generated", task_a),
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "tasks" / task_b).mkdir(parents=True)
+    (repo / ".harness" / "tasks" / task_b / "task.yaml").write_text(
+        task_yaml("generated", task_b),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/tasks")
+    git(repo, "commit", "-m", "add parallel tasks")
+    enable_policy_and_remote(tmp_path, repo)
+    for task_id, path, content in (
+        (task_a, "src/parallel-a.txt", "candidate a\n"),
+        (task_b, "src/parallel-b.txt", "candidate b\n"),
+    ):
+        assert run_harness(repo, "prepare", task_id).returncode == 0
+        writer = json.loads(
+            run_harness(repo, "worktree", task_id, "--writer", role="integrator").stdout
+        )
+        writer_path = Path(writer["path"])
+        (writer_path / path).write_text(content, encoding="utf-8")
+        assert run_harness(writer_path, "verify", task_id).returncode == 0
+        assert run_harness(writer_path, "submit", task_id).returncode == 0
+        dispatched = run_harness(repo, "dispatch", task_id, role="integrator")
+        assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+
+    first = subprocess.Popen(
+        [str(HARNESS), "land", task_a],
+        cwd=repo,
+        env={**os.environ, "HARNESS_ROLE": "integrator"},
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    lock_dir = runtime_root(repo) / "locks"
+    deadline = time.monotonic() + 10
+    while (
+        not list(lock_dir.glob("land-*.lock"))
+        and first.poll() is None
+        and time.monotonic() < deadline
+    ):
+        time.sleep(0.05)
+    assert list(lock_dir.glob("land-*.lock"))
+
+    blocked = run_harness(repo, "land", task_b, role="integrator")
+    first_stdout, first_stderr = first.communicate(timeout=30)
+
+    assert first.returncode == 0, first_stdout + first_stderr
+    first_result = json.loads(first_stdout)
+    assert first_result["status"] == "landed"
+    assert first_result["task_id"] == task_a
+    assert first_result["land_gate"]["status"] == "pass"
+    assert blocked.returncode != 0
+    blocked_result = json.loads(blocked.stdout)
+    assert blocked_result["task_id"] == task_b
+    assert blocked_result["status"] == "blocked"
+    assert blocked_result["reason"] == "blocked_by_lock"
+    assert (
+        blocked_result["candidate_diff_sha256"]
+        == load_runtime_json(repo, "verify-result.json", task_b)["candidate_diff_sha256"]
+    )
+    assert load_runtime_json(repo, "land-result.json", task_a)["status"] == "landed"
+    assert load_runtime_json(repo, "land-result.json", task_b)["status"] == "blocked"
+
+    retry = run_harness(repo, "land", task_b, role="integrator")
+    assert retry.returncode == 0, retry.stdout + retry.stderr
+    retry_result = json.loads(retry.stdout)
+    assert retry_result["task_id"] == task_b
+    assert retry_result["status"] == "landed"
+    assert retry_result["land_gate"]["status"] == "pass"
+
+
+def test_parallel_submit_wait_keeps_reviewer_and_integrator_evidence_per_task(
+    tmp_path: Path,
+) -> None:
+    task_a = "T-submit-a"
+    task_b = "T-submit-b"
+    repo = init_repo(
+        tmp_path,
+        verifier_command='python -c "import time; time.sleep(0.2); raise SystemExit(0)"',
+    )
+    script = repo / ".harness" / "semantic_reviewer.py"
+    script.write_text(
+        "import json, pathlib, sys, time\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "task_id = packet['task_id']\n"
+        "assert task_id in packet['candidate_diff']\n"
+        "assert packet['verify_result']['task_id'] == task_id\n"
+        "time.sleep(0.4)\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': ['semantic_' + task_id],\n"
+        "  'reason': 'reviewed ' + task_id\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", "{repo_root}/.harness/semantic_reviewer.py"]),
+        encoding="utf-8",
+    )
+    for task_id in (task_a, task_b):
+        task_dir_path = repo / ".harness" / "tasks" / task_id
+        task_dir_path.mkdir(parents=True)
+        (task_dir_path / "task.yaml").write_text(
+            task_yaml("generated", task_id),
+            encoding="utf-8",
+        )
+    git(repo, "add", ".harness")
+    git(repo, "commit", "-m", "add parallel submit tasks")
+    enable_policy_and_remote(tmp_path, repo)
+    writers: dict[str, Path] = {}
+    for task_id in (task_a, task_b):
+        assert run_harness(repo, "prepare", task_id).returncode == 0
+        writer = json.loads(
+            run_harness(repo, "worktree", task_id, "--writer", role="integrator").stdout
+        )
+        writer_path = Path(writer["path"])
+        writers[task_id] = writer_path
+        (writer_path / "src" / f"{task_id}.txt").write_text(
+            f"candidate {task_id}\n",
+            encoding="utf-8",
+        )
+        assert run_harness(writer_path, "verify", task_id).returncode == 0
+
+    processes = {
+        task_id: subprocess.Popen(
+            [str(HARNESS), "submit", task_id, "--wait"],
+            cwd=writer_path,
+            env={**os.environ, "HARNESS_ROLE": "writer"},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        for task_id, writer_path in writers.items()
+    }
+
+    results: dict[str, dict[str, Any]] = {}
+    for task_id, process in processes.items():
+        stdout, stderr = process.communicate(timeout=30)
+        assert process.returncode == 0, stdout + stderr
+        result = json.loads(stdout)
+        results[task_id] = result
+        assert result["task_id"] == task_id
+        assert result["status"] == "integrated"
+        assert result["review"]["review_pass"] is True
+        assert result["review"]["stale"] == []
+        assert result["review"]["fresh_semantic_approves"] == 1
+
+    for task_id, result in results.items():
+        verify = load_runtime_json(repo, "verify-result.json", task_id)
+        semantic = load_runtime_json(repo, "reviews/semantic-ai.json", task_id)
+        packet = load_runtime_json(repo, "reviews/semantic-ai.review-packet.json", task_id)
+        integration = load_runtime_json(repo, "integration-result.json", task_id)
+        collected = run_harness(repo, "review", task_id, "--collect", role="integrator")
+        summary = json.loads(collected.stdout)
+
+        assert semantic["labels"] == [f"semantic_{task_id}"]
+        assert semantic["evidence_seen"]["candidate_diff_sha256"] == verify["candidate_diff_sha256"]
+        assert packet["task_id"] == task_id
+        assert task_id in packet["candidate_diff"]
+        assert integration["task_id"] == task_id
+        assert integration["candidate_diff_sha256"] == result["candidate_diff_sha256"]
+        assert summary["review_pass"] is True
+        assert summary["stale"] == []
+
+
+def test_local_land_lock_is_scoped_to_target_branch(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    with (
+        local_lock(
+            repo,
+            "land",
+            task_id="T-main",
+            target_branch="main",
+            base_sha="base-main",
+            timeout_s=900,
+        ) as main_lock,
+        local_lock(
+            repo,
+            "land",
+            task_id="T-release",
+            target_branch="release/v1",
+            base_sha="base-release",
+            timeout_s=900,
+        ) as release_lock,
+    ):
+        assert main_lock != release_lock
+        assert main_lock.is_file()
+        assert release_lock.is_file()
+
+
+def test_local_land_lock_still_blocks_same_target_branch(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    with (
+        local_lock(
+            repo,
+            "land",
+            task_id="T-first",
+            target_branch="main",
+            base_sha="base-main",
+            timeout_s=900,
+        ),
+        pytest.raises(LockBlocked),
+        local_lock(
+            repo,
+            "land",
+            task_id="T-second",
+            target_branch="main",
+            base_sha="base-main",
+            timeout_s=900,
+        ),
+    ):
+        pass
+
+
 def test_integrator_failure_writes_rework_packet(tmp_path: Path) -> None:
     repo = init_repo(tmp_path, make_exit=1)
     (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
     assert run_harness(repo, "verify", TASK_ID).returncode == 0
     assert run_harness(repo, "submit", TASK_ID).returncode == 0
-    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+    dispatched = run_harness(
+        repo,
+        "dispatch",
+        TASK_ID,
+        role="integrator",
+        extra_env={"FOUNDATION_GATE_TIER": "check-required"},
+    )
     assert dispatched.returncode != 0
     result = load_runtime_json(repo, "integration-result.json")
     assert result["status"] == "rework_required"
     assert result["reason"] == "machine_gate_failed"
+
+
+def test_integrator_default_completion_gate_reruns_task_verifiers_not_broad_make(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path, make_exit=1)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    result = json.loads(dispatched.stdout)
+    assert result["status"] == "integrated"
+    assert result["reason"] == "ok"
+    completion = result["completion"]
+    assert completion["status"] == "pass"
+    assert completion["command"] == "harness verifiers: unit"
+    assert len(completion["verifiers"]) == 1
+    assert completion["verifiers"][0]["id"] == "unit"
+    assert completion["verifiers"][0]["status"] == "pass"
+    assert completion["verifiers"][0]["exit_code"] == 0
+    evidence = json.loads(Path(completion["evidence_path"]).read_text(encoding="utf-8"))
+    assert evidence["command"] == "harness verifiers: unit"
 
 
 def test_semantic_ai_reviewer_receives_diff_and_test_interpretation(tmp_path: Path) -> None:
@@ -574,7 +1358,51 @@ def test_semantic_ai_reviewer_receives_diff_and_test_interpretation(tmp_path: Pa
     assert semantic["reason"] == "diff and tests reviewed"
     packet = load_runtime_json(repo, "reviews/semantic-ai.review-packet.json")
     assert "candidate\n" in packet["candidate_diff"]
+    assert (
+        packet["candidate_diff_sha256"]
+        == load_runtime_json(repo, "verify-result.json")["candidate_diff_sha256"]
+    )
+    assert packet["requires_artifact_read"] is False
+    assert packet["omitted_required_evidence"] == []
+    assert "context_manifest" not in packet
+    assert "budget" not in json.dumps(packet)
     assert packet["test_interpretation"]["required_verifiers_passed"] is True
+
+
+def test_large_diff_is_not_inlined_in_semantic_reviewer_packet(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "semantic_reviewer.py"
+    script.write_text(
+        "import hashlib, json, pathlib, sys\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "assert packet['candidate_diff'] == ''\n"
+        "assert packet['requires_artifact_read'] is True\n"
+        "assert packet['omitted_required_evidence'] == ['candidate_diff']\n"
+        "diff_path = pathlib.Path(packet['candidate_diff_path'])\n"
+        "digest = 'sha256:' + hashlib.sha256(diff_path.read_bytes()).hexdigest()\n"
+        "assert digest == packet['candidate_diff_sha256']\n"
+        "assert 'budget' not in json.dumps(packet)\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': ['artifact_diff_reviewed'],\n"
+        "  'reason': 'large diff read from candidate artifact'\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", ".harness/semantic_reviewer.py"]),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/semantic_reviewer.py")
+    git(repo, "commit", "-m", "enable large diff reviewer")
+    (repo / "src" / "large.txt").write_text("candidate\n" * 12000, encoding="utf-8")
+
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    semantic = load_runtime_json(repo, "reviews/semantic-ai.json")
+    assert semantic["labels"] == ["artifact_diff_reviewed"]
 
 
 def test_e2e_semantic_reviewer_receives_writer_handoff_diff_index_tools_and_skills(
@@ -660,6 +1488,12 @@ def test_semantic_reviewer_runs_in_sealed_writer_worktree(tmp_path: Path) -> Non
     assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
     assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
     submission = load_runtime_json(repo, "submission.json")
+    writer_skill_paths = [
+        skill.get("path")
+        for skill in submission["writer_handoff"]["agent_skills"]
+        if skill.get("path") is not None
+    ]
+    assert all(str(path).startswith(str(writer_path)) for path in writer_skill_paths)
     assert submission["candidate_workspace"]["path"] == str(writer_path)
     assert submission["candidate_workspace"]["state"] == "sealed_for_review"
     marker = json.loads((writer_path / ".harness-worktree.json").read_text(encoding="utf-8"))
@@ -672,6 +1506,47 @@ def test_semantic_reviewer_runs_in_sealed_writer_worktree(tmp_path: Path) -> Non
     assert semantic["labels"] == ["sealed_workspace"]
     packet = load_runtime_json(repo, "reviews/semantic-ai.review-packet.json")
     assert packet["review_workspace"]["path"] == str(writer_path)
+
+
+def test_semantic_reviewer_command_can_use_repo_root_placeholder_from_writer_worktree(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "root_only_semantic.py"
+    script.write_text(
+        "import json, pathlib, sys\n"
+        "cwd = pathlib.Path.cwd().resolve()\n"
+        "assert not (cwd / '.harness' / 'root_only_semantic.py').exists()\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "assert packet['review_workspace']['path'] == str(cwd)\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': ['repo_root_wrapper'],\n"
+        "  'reason': 'repo root reviewer wrapper ran from sealed worktree'\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", "{repo_root}/.harness/root_only_semantic.py"]),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml")
+    git(repo, "commit", "-m", "enable root wrapper semantic reviewer")
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+    assert not (writer_path / ".harness" / "root_only_semantic.py").exists()
+    (writer_path / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+
+    assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
+    assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    semantic = load_runtime_json(repo, "reviews/semantic-ai.json")
+    assert semantic["labels"] == ["repo_root_wrapper"]
 
 
 def test_semantic_reviewer_mutating_sealed_worktree_blocks_without_crashing(
@@ -978,6 +1853,72 @@ def test_tool_candidates_and_reviewer_policy_anchor_reach_semantic_reviewer(
     assert semantic["labels"] == ["tool_generalized"]
 
 
+def test_configured_semantic_reviewer_is_required_even_when_quorum_is_lower(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "semantic_reviewer.py"
+    script.write_text(
+        "import json, pathlib, sys\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "assert packet['verify_result']['status'] == 'pass'\n"
+        "assert 'candidate\\n' in packet['candidate_diff']\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': ['semantic_required'],\n"
+        "  'reason': 'semantic reviewer consumed diff and tests'\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        "default:\n"
+        "  quorum: 2\n"
+        "  reviewers:\n"
+        "    - reader-correctness\n"
+        "    - reader-scope\n"
+        "    - semantic-ai\n"
+        "  background_auto_run: false\n"
+        "  blocking_labels:\n"
+        "    - semantic_gap\n"
+        "profiles:\n"
+        "  semantic-ai:\n"
+        "    kind: command\n"
+        "    command:\n"
+        '      - "python"\n'
+        '      - ".harness/semantic_reviewer.py"\n'
+        "metrics:\n"
+        "  reject_unexpected_actions: false\n",
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/semantic_reviewer.py")
+    git(repo, "commit", "-m", "enable semantic reviewer with low quorum")
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo, "review", TASK_ID, "--run", "reader-correctness", role="reviewer"
+        ).returncode
+        == 0
+    )
+    assert (
+        run_harness(repo, "review", TASK_ID, "--run", "reader-scope", role="reviewer").returncode
+        == 0
+    )
+
+    collected = run_harness(repo, "review", TASK_ID, "--collect", role="integrator")
+    summary = json.loads(collected.stdout)
+    assert summary["fresh_approves"] == 2
+    assert summary["semantic_review_required"] is True
+    assert summary["review_pass"] is False
+
+    reviewed = run_harness(repo, "review", TASK_ID, "--run", "semantic-ai", role="reviewer")
+    assert reviewed.returncode == 0, reviewed.stdout + reviewed.stderr
+    recovered = run_harness(repo, "review", TASK_ID, "--collect", role="integrator")
+    recovered_summary = json.loads(recovered.stdout)
+    assert recovered_summary["fresh_semantic_approves"] == 1
+    assert recovered_summary["review_pass"] is True
+
+
 def test_review_required_tool_candidate_needs_semantic_reviewer(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
     (repo / ".harness" / "owners.yaml").write_text(
@@ -1094,6 +2035,73 @@ def test_metric_evidence_reaches_semantic_reviewer(tmp_path: Path) -> None:
     assert semantic["labels"] == ["metrics_reviewed"]
 
 
+def test_worktree_semantic_review_uses_canonical_metric_evidence(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "semantic_reviewer.py"
+    script.write_text(
+        "import json, pathlib, sys\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "assert packet['metric_evidence']['eval']['tool_call_rate'] == 0.5\n"
+        "assert packet['test_interpretation']['metrics']['status'] == 'present'\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': ['canonical_metrics_reviewed'],\n"
+        "  'reason': 'canonical metric evidence reviewed from worktree'\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", "{repo_root}/.harness/semantic_reviewer.py"]),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/semantic_reviewer.py")
+    git(repo, "commit", "-m", "enable canonical metric reviewer")
+    enable_policy_and_remote(tmp_path, repo)
+    metrics_dir = repo / "artifact" / TASK_ID / "metrics"
+    with MetricsStore(metrics_dir / "eval.db") as store:
+        store.record_run(
+            EvalScore(
+                run_id="r1",
+                succeeded=True,
+                event_count=4,
+                tool_calls=2,
+                tool_call_rate=0.5,
+                skill_uses=1,
+                skill_usage_rate=0.5,
+                unexpected_actions=[],
+            ),
+            raw_trajectory="{}",
+            created_at="2026-06-15T00:00:00Z",
+        )
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+    assert not (writer_path / "artifact" / TASK_ID / "metrics" / "eval.db").exists()
+    (writer_path / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
+
+    waited = run_harness(writer_path, "submit", TASK_ID, "--wait")
+
+    assert waited.returncode == 0, waited.stdout + waited.stderr
+    result = json.loads(waited.stdout)
+    assert result["status"] == "integrated"
+    assert result["metrics"]["usage_observed"] is True
+    assert result["metrics"]["tool_call_rate"] == 0.5
+    semantic = load_runtime_json(repo, "reviews/semantic-ai.json")
+    assert semantic["labels"] == ["canonical_metrics_reviewed"]
+    integration = load_runtime_json(repo, "integration-result.json")
+    assert integration["metrics"]["usage_observed"] is True
+    collected = run_harness(repo, "review", TASK_ID, "--collect", role="integrator")
+    assert collected.returncode == 0, collected.stdout + collected.stderr
+    summary = json.loads(collected.stdout)
+    assert summary["review_pass"] is True
+    assert summary["stale"] == []
+
+
 def test_missing_quality_evidence_blocks_gate(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
     (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
@@ -1131,6 +2139,157 @@ def test_quality_evidence_stales_only_semantic_reviewer_and_recovers_minimally(
     assert rerun.returncode == 0, rerun.stdout + rerun.stderr
     recovered = run_harness(repo, "review", TASK_ID, "--collect", role="integrator")
     assert json.loads(recovered.stdout)["fresh_approves"] == 3
+
+
+def test_metric_evidence_stales_only_semantic_reviewer_and_recovers_minimally(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "semantic_reviewer.py"
+    script.write_text(
+        "import json, pathlib, sys\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "runs = packet['metric_evidence']['eval']['runs']\n"
+        "assert packet['test_interpretation']['metrics']['status'] == 'present'\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': ['metrics_runs_' + str(runs)],\n"
+        "  'reason': 'metric evidence reviewed'\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", ".harness/semantic_reviewer.py"]),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/semantic_reviewer.py")
+    git(repo, "commit", "-m", "enable metric stale reviewer")
+    metrics_dir = repo / "artifact" / TASK_ID / "metrics"
+    with MetricsStore(metrics_dir / "eval.db") as store:
+        store.record_run(
+            EvalScore(
+                run_id="r1",
+                succeeded=True,
+                event_count=4,
+                tool_calls=2,
+                tool_call_rate=0.5,
+                skill_uses=1,
+                skill_usage_rate=0.5,
+                unexpected_actions=[],
+            ),
+            raw_trajectory="{}",
+            created_at="2026-06-15T00:00:00Z",
+        )
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    assert load_runtime_json(repo, "reviews/semantic-ai.json")["labels"] == ["metrics_runs_1"]
+
+    with MetricsStore(metrics_dir / "eval.db") as store:
+        store.record_run(
+            EvalScore(
+                run_id="r2",
+                succeeded=True,
+                event_count=6,
+                tool_calls=4,
+                tool_call_rate=0.67,
+                skill_uses=2,
+                skill_usage_rate=0.33,
+                unexpected_actions=[],
+            ),
+            raw_trajectory="{}",
+            created_at="2026-06-15T00:01:00Z",
+        )
+    collected = run_harness(repo, "review", TASK_ID, "--collect", role="integrator")
+    summary = json.loads(collected.stdout)
+    assert summary["fresh_approves"] == 2
+    assert summary["stale"] == ["semantic-ai"]
+    assert summary["review_pass"] is False
+
+    rerun = run_harness(repo, "review", TASK_ID, "--run", "semantic-ai", role="reviewer")
+    assert rerun.returncode == 0, rerun.stdout + rerun.stderr
+    assert load_runtime_json(repo, "reviews/semantic-ai.json")["labels"] == ["metrics_runs_2"]
+    recovered = run_harness(repo, "review", TASK_ID, "--collect", role="integrator")
+    recovered_summary = json.loads(recovered.stdout)
+    assert recovered_summary["fresh_approves"] == 3
+    assert recovered_summary["review_pass"] is True
+
+
+def test_metric_evidence_change_after_submit_requires_resubmit_before_dispatch(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "semantic_reviewer.py"
+    script.write_text(
+        "import json, pathlib, sys\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "runs = packet['metric_evidence']['eval']['runs']\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': ['submission_metrics_runs_' + str(runs)],\n"
+        "  'reason': 'submission metric evidence reviewed'\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", ".harness/semantic_reviewer.py"]),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/semantic_reviewer.py")
+    git(repo, "commit", "-m", "enable metric submit reviewer")
+    metrics_dir = repo / "artifact" / TASK_ID / "metrics"
+    with MetricsStore(metrics_dir / "eval.db") as store:
+        store.record_run(
+            EvalScore(
+                run_id="r1",
+                succeeded=True,
+                event_count=4,
+                tool_calls=2,
+                tool_call_rate=0.5,
+                skill_uses=1,
+                skill_usage_rate=0.5,
+                unexpected_actions=[],
+            ),
+            raw_trajectory="{}",
+            created_at="2026-06-15T00:00:00Z",
+        )
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+    first_submission = load_runtime_json(repo, "submission.json")
+
+    with MetricsStore(metrics_dir / "eval.db") as store:
+        store.record_run(
+            EvalScore(
+                run_id="r2",
+                succeeded=True,
+                event_count=6,
+                tool_calls=4,
+                tool_call_rate=0.67,
+                skill_uses=2,
+                skill_usage_rate=0.33,
+                unexpected_actions=[],
+            ),
+            raw_trajectory="{}",
+            created_at="2026-06-15T00:01:00Z",
+        )
+    stale = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+    assert stale.returncode != 0
+    assert json.loads(stale.stdout)["reason"] == "stale_submission"
+    assert load_runtime_json(repo, "integration-result.json")["reason"] == "stale_submission"
+
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+    second_submission = load_runtime_json(repo, "submission.json")
+    assert second_submission["metric_evidence_sha256"] != first_submission["metric_evidence_sha256"]
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    result = json.loads(dispatched.stdout)
+    assert result["status"] == "integrated"
+    semantic = load_runtime_json(repo, "reviews/semantic-ai.json")
+    assert semantic["labels"] == ["submission_metrics_runs_2"]
+    assert load_runtime_json(repo, "integration-result.json")["reason"] == "ok"
 
 
 def test_semantic_ai_reviewer_not_invoked_until_machine_verification_passes(
@@ -1249,8 +2408,15 @@ def test_review_quorum_stale_malformed_and_gate_success(tmp_path: Path) -> None:
     assert gate.returncode == 0, gate.stdout + gate.stderr
     gate_result = json.loads(gate.stdout)
     assert gate_result["mergeable"] is True
+    assert gate_result["metrics"]["usage_observed"] is False
     assert gate_result["metrics"]["tool_call_rate"] == 0.0
     assert gate_result["metrics"]["skill_usage_rate"] == 0.0
+    exposure = gate_result["metrics"]["packet_exposure"]
+    assert exposure["status"] == "present"
+    assert exposure["roles"]["writer"]["tool_count"] >= 6
+    assert exposure["roles"]["writer"]["skill_count"] >= 3
+    assert exposure["roles"]["reviewer"]["tool_count"] >= 2
+    assert exposure["roles"]["integrator"]["tool_count"] >= 8
     assert (repo / "artifact" / TASK_ID / "tier" / "called.txt").read_text() == "custom"
     assert git(repo, "rev-parse", "HEAD") == before_head
     assert (repo / "artifact" / TASK_ID / "evidence").is_dir()

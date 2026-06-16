@@ -226,7 +226,6 @@ Archived heavy-contract patterns are not defaults. They are not a runtime
 scheduler. In short: not a runtime scheduler, worker heartbeat, queue, or
 completion claim.
 
-- approved spec freeze
 - final handoff
 - convergence decision
 - traceability matrix

@@ -21,14 +21,20 @@ def _env(tmp_path: Path) -> dict[str, str]:
     return {**os.environ, "FOUNDATION_REPO_ROOT": str(tmp_path), "FOUNDATION_PROJECT_ID": "t"}
 
 
-def _run(script: str, args: list[str], tmp_path: Path) -> subprocess.CompletedProcess[str]:
+def _run(
+    script: str,
+    args: list[str],
+    tmp_path: Path,
+    *,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, str(ROOT / "scripts" / script), *args],
         capture_output=True,
         text=True,
         timeout=30,
         check=False,
-        env=_env(tmp_path),
+        env={**_env(tmp_path), **(env or {})},
     )
 
 
@@ -133,6 +139,55 @@ def test_bench_run_no_command_after_dashdash_exit_3(tmp_path: Path) -> None:
         env=_env(tmp_path),
     )
     assert r.returncode == 3, r.stderr
+
+
+def test_bench_run_default_timeout_from_env_exit_3(tmp_path: Path) -> None:
+    r = _run(
+        "bench_compare.py",
+        [
+            "run",
+            "slow",
+            "--label",
+            "candidate",
+            "--repeat",
+            "1",
+            "--warmup",
+            "0",
+            "--",
+            sys.executable,
+            "-c",
+            "import time; time.sleep(2)",
+        ],
+        tmp_path,
+        env={"FOUNDATION_BENCH_TIMEOUT_S": "0.01"},
+    )
+    assert r.returncode == 3
+    assert "timed out" in r.stderr
+
+
+def test_bench_run_timeout_override_allows_fast_command(tmp_path: Path) -> None:
+    r = _run(
+        "bench_compare.py",
+        [
+            "run",
+            "quick",
+            "--label",
+            "candidate",
+            "--repeat",
+            "1",
+            "--warmup",
+            "0",
+            "--timeout-s",
+            "5",
+            "--",
+            sys.executable,
+            "-c",
+            "print('ok')",
+        ],
+        tmp_path,
+        env={"FOUNDATION_BENCH_TIMEOUT_S": "0.01"},
+    )
+    assert r.returncode == 0, r.stderr
 
 
 def test_bench_bogus_flag_exit_3(tmp_path: Path) -> None:

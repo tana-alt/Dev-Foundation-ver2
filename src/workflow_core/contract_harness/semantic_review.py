@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.contract_harness.agent_tools import role_agent_skills, role_agent_tools
-from workflow_core.contract_harness.config import ConfigError
+from workflow_core.contract_harness.config import ConfigError, control_root
 from workflow_core.contract_harness.evidence import machine_artifact_hashes
 from workflow_core.contract_harness.hashing import file_hash
 from workflow_core.contract_harness.jsonio import read_json, write_json
@@ -24,6 +24,8 @@ from workflow_core.contract_harness.worktree import (
     resolve_candidate_workspace,
     workspace_candidate_hash,
 )
+
+_INLINE_DIFF_MAX_BYTES = 64 * 1024
 
 
 def run_command_profile(
@@ -47,7 +49,7 @@ def run_command_profile(
     before_hash = workspace_candidate_hash(workspace_path, task_id)
     packet_path, output_path = _write_packet(root, task_id, reviewer_id, verify_result, workspace)
     completed = subprocess.run(
-        _command(profile, packet_path, output_path, task_id),
+        _command(root, profile, packet_path, output_path, task_id),
         cwd=workspace_path,
         capture_output=True,
         text=True,
@@ -118,6 +120,7 @@ def _packet(
     reverse_scope_map = scope_map_result(root, task_id, "reverse")
     candidate_path = runtime / "candidate.diff"
     candidate_diff = candidate_path.read_text(encoding="utf-8")
+    candidate_diff_inline, omitted_required, requires_artifact_read = _bounded_diff(candidate_diff)
     return {
         "task_id": task_id,
         "capsule": read_json(runtime / "capsule.json"),
@@ -127,9 +130,17 @@ def _packet(
         "writer_handoff": _writer_handoff(runtime),
         "review_workspace": workspace,
         "scope_map": {"reverse": reverse_scope_map},
-        "candidate_diff": candidate_diff,
+        "candidate_diff": candidate_diff_inline,
         "candidate_diff_path": str(candidate_path),
+        "candidate_diff_sha256": verify_result.get("candidate_diff_sha256"),
         "candidate_diff_index": diff_index(candidate_diff),
+        "diff_instruction": (
+            "Review the candidate diff and machine evidence. If candidate_diff is empty, "
+            "read candidate_diff_path and verify it against candidate_diff_sha256. "
+            "Block when required diff or evidence is absent."
+        ),
+        "omitted_required_evidence": omitted_required,
+        "requires_artifact_read": requires_artifact_read,
         "verify_result": verify_result,
         "mutation_result": mutation_result,
         "quality_result": quality,
@@ -144,6 +155,12 @@ def _packet(
             metrics,
         ),
     }
+
+
+def _bounded_diff(candidate_diff: str) -> tuple[str, list[str], bool]:
+    if len(candidate_diff.encode("utf-8")) <= _INLINE_DIFF_MAX_BYTES:
+        return candidate_diff, [], False
+    return "", ["candidate_diff"], True
 
 
 def _test_interpretation(
@@ -226,6 +243,7 @@ def _reviewer_policy() -> dict[str, str]:
 
 
 def _command(
+    root: Path,
     profile: dict[str, Any],
     packet_path: Path,
     output_path: Path,
@@ -234,7 +252,9 @@ def _command(
     command = profile.get("command")
     if not isinstance(command, list) or not command:
         raise ConfigError("semantic reviewer command must be a non-empty list")
+    repo_root = control_root(root)
     replacements = {
+        "{repo_root}": str(repo_root),
         "{review_packet}": str(packet_path),
         "{review_output}": str(output_path),
         "{task_id}": task_id,

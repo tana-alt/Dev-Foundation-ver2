@@ -250,3 +250,45 @@ def test_context_manager_protocol(tmp_path: Path) -> None:
     with RunStore(tmp_path / "runs.db") as store:
         make_run(store, "r1")
         assert store.get_run("r1") is not None
+
+
+def test_runstore_sets_schema_user_version_on_fresh_store(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    version = store._conn.execute("PRAGMA user_version").fetchone()[0]
+    assert version == RunStore.SCHEMA_VERSION
+    store.close()
+
+
+def test_runstore_migrates_legacy_zero_version_without_losing_rows(tmp_path: Path) -> None:
+    db = tmp_path / "runs.db"
+    conn = sqlite3.connect(db)
+    conn.executescript(
+        """
+        CREATE TABLE runs (
+            run_id TEXT PRIMARY KEY,
+            task_id TEXT,
+            worktree TEXT,
+            commit_sha TEXT,
+            started_at TEXT,
+            env_fingerprint TEXT,
+            config_hash TEXT,
+            tool_versions_json TEXT,
+            metadata_json TEXT
+        );
+        INSERT INTO runs VALUES (
+            'legacy', 'task', '/wt', 'sha', 't', 'fp', 'cfg', '{"tool":"1"}', '{"note":"x"}'
+        );
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    store = RunStore(db)
+    version = store._conn.execute("PRAGMA user_version").fetchone()[0]
+    run = store.get_run("legacy")
+
+    assert version == RunStore.SCHEMA_VERSION
+    assert run is not None
+    assert run.tool_versions == {"tool": "1"}
+    assert run.metadata == {"note": "x"}
+    store.close()

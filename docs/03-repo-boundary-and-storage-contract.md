@@ -40,10 +40,6 @@ Do not store raw bodies, credentials, local runtime ledgers, browser sessions,
 secret-bearing metadata, or unrelated context in docs, plans, artifacts,
 templates, or prompts.
 
-Heavy contract artifacts such as final handoffs, traceability matrices,
-convergence decisions, source snapshot locks, operational scorecards, and
-residual-risk carryover records are archived patterns, not default storage.
-
 ## Skills And Plugins
 
 Skills are compact routing helpers. They do not override the user request,

@@ -2,9 +2,8 @@
 
 Satisfies workflow_core.runtime.AgentRuntime structurally. The completion gate,
 trajectory recorder, handoff builder, and eval runner are all developed and
-tested against this -- no Codex or Claude process required. The real bindings
-(Codex SDK / app-server, Claude hooks) are thin adapters that satisfy the same
-port; nothing downstream depends on which runtime is behind it.
+tested against this local runtime. External agent bindings are not active repo
+surfaces.
 """
 
 from __future__ import annotations

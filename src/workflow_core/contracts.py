@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from enum import StrEnum
 from typing import Any, Literal, Self
 
@@ -22,6 +23,25 @@ class WorkflowStatus(StrEnum):
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+def validate_execution_boundaries(
+    *,
+    goal: str,
+    source_refs: Sequence[str],
+    allowed_write_targets: Sequence[str],
+    verification: Sequence[str],
+) -> None:
+    required_lists = {
+        "source_refs": source_refs,
+        "allowed_write_targets": allowed_write_targets,
+        "verification": verification,
+    }
+    for field_name, values in required_lists.items():
+        if not values or any(not value.strip() for value in values):
+            raise ValueError(f"{field_name} must be a non-empty string list")
+    if not goal.strip():
+        raise ValueError("goal must be non-empty")
 
 
 class GitScope(StrictModel):
@@ -56,16 +76,12 @@ class ApprovedWorkContract(StrictModel):
 
     @model_validator(mode="after")
     def required_execution_boundaries_are_present(self) -> Self:
-        required_lists = {
-            "source_refs": self.source_refs,
-            "allowed_write_targets": self.allowed_write_targets,
-            "verification": self.verification,
-        }
-        for field_name, values in required_lists.items():
-            if not values or any(not value.strip() for value in values):
-                raise ValueError(f"{field_name} must be a non-empty string list")
-        if not self.goal.strip():
-            raise ValueError("goal must be non-empty")
+        validate_execution_boundaries(
+            goal=self.goal,
+            source_refs=self.source_refs,
+            allowed_write_targets=self.allowed_write_targets,
+            verification=self.verification,
+        )
         return self
 
 

@@ -13,14 +13,18 @@ from workflow_core.contract_harness.affected import classify_affected_set
 from workflow_core.contract_harness.agent_tools import (
     agent_skill_groups,
     agent_tool_groups,
+    optional_agent_tool_groups,
     role_agent_tools,
+    role_optional_tools,
 )
 from workflow_core.contract_harness.config import ConfigError
+from workflow_core.contract_harness.context_audit import audit_context
 from workflow_core.contract_harness.contract import load_contract, prepare
 from workflow_core.contract_harness.gate import gate_task
 from workflow_core.contract_harness.gitutil import GitError, repo_root
 from workflow_core.contract_harness.integration import dispatch_task, integrate_task
 from workflow_core.contract_harness.land import land_task
+from workflow_core.contract_harness.launch import writer_session
 from workflow_core.contract_harness.push import push_task
 from workflow_core.contract_harness.report import write_report
 from workflow_core.contract_harness.roles import RoleError, require_allowed
@@ -73,6 +77,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         "affected": lambda: _json(classify_affected_set(root, args.task_id), 0),
         "scope-map": lambda: _json(_scope_map(root, args), 0),
         "tools": lambda: _json(_tools(root, args), 0),
+        "context-audit": lambda: _context_audit(root, args.task_id),
+        "launch-writer": lambda: _launch_writer(root, args),
         "land": lambda: _json_pair(land_task(root, args.task_id)),
         "push": lambda: _json_pair(push_task(root, args.task_id)),
         "report": lambda: _json(write_report(root, args.task_id, args.type), 0),
@@ -133,13 +139,38 @@ def _scope_map(root: Path, args: argparse.Namespace) -> dict[str, Any]:
 
 def _tools(root: Path, args: argparse.Namespace) -> dict[str, Any]:
     role = str(args.role)
+    profile = str(args.profile)
     if role == "all":
-        return {"task_id": args.task_id, "tools": agent_tool_groups(root, args.task_id)}
+        tools = (
+            agent_tool_groups(root, args.task_id)
+            if profile == "default"
+            else optional_agent_tool_groups(root, args.task_id, profile)
+        )
+        return {"task_id": args.task_id, "profile": profile, "tools": tools}
+    tools = (
+        role_agent_tools(root, args.task_id, role)
+        if profile == "default"
+        else role_optional_tools(root, args.task_id, role, profile)
+    )
     return {
         "task_id": args.task_id,
         "role": role,
-        "tools": role_agent_tools(root, args.task_id, role),
+        "profile": profile,
+        "tools": tools,
     }
+
+
+def _launch_writer(root: Path, args: argparse.Namespace) -> int:
+    session = writer_session(root, args.task_id, agent_command=args.agent_command)
+    if args.shell:
+        print(session["command"])
+        return 0
+    return _json(session, 0)
+
+
+def _context_audit(root: Path, task_id: str) -> int:
+    result = audit_context(root, task_id)
+    return _json(result, 0 if result.get("status") == "pass" else 1)
 
 
 def _worktree(root: Path, args: argparse.Namespace) -> dict[str, Any]:
@@ -185,12 +216,13 @@ def _parser() -> argparse.ArgumentParser:
     _task_command(sub, "affected")
     _scope_map_command(sub)
     _tools_command(sub)
+    _task_command(sub, "context-audit")
+    _launch_writer_command(sub)
     _report_command(sub)
     _review_command(sub)
     _worktree_command(sub)
     _task_command(sub, "land")
     _task_command(sub, "push")
-    _rfc_command(sub)
     return parser
 
 
@@ -228,6 +260,14 @@ def _tools_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser.add_argument(
         "--role", choices=["writer", "reviewer", "integrator", "all"], default="all"
     )
+    parser.add_argument("--profile", choices=["default", "measurement"], default="default")
+
+
+def _launch_writer_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("launch-writer")
+    parser.add_argument("task_id")
+    parser.add_argument("--agent-command", default="codex --yolo")
+    parser.add_argument("--shell", action="store_true")
 
 
 def _report_command(sub: argparse._SubParsersAction[Any]) -> None:
@@ -246,14 +286,6 @@ def _review_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser.add_argument("verdict", nargs="?", choices=["approve", "block"])
     parser.add_argument("--label", action="append")
     parser.add_argument("--reason")
-
-
-def _rfc_command(sub: argparse._SubParsersAction[Any]) -> None:
-    parser = sub.add_parser("rfc")
-    parser.add_argument("task_id")
-    parser.add_argument("decision", choices=["approve", "reject"])
-    parser.add_argument("rfc_id")
-    parser.add_argument("--reason", required=True)
 
 
 if __name__ == "__main__":

@@ -1037,11 +1037,6 @@ def test_templates_validate_with_pydantic_models() -> None:
         ("templates/rework-record.yaml", ReworkRecordTemplate),
         ("templates/project-storage-map.yaml", ProjectStorageMapTemplate),
         ("templates/parallel-lane-map.yaml", ParallelLaneMapTemplate),
-        ("templates/specification-packet.yaml", SpecificationPacketTemplate),
-        ("templates/specification-review-record.yaml", SpecificationReviewRecordTemplate),
-        ("templates/implementation-policy-record.yaml", ImplementationPolicyRecordTemplate),
-        ("templates/workflow-run-record.yaml", WorkflowRunRecordTemplate),
-        ("templates/inconsistency-register.yaml", InconsistencyRegisterTemplate),
     )
 
     for relative_path, model in cases:
@@ -1132,68 +1127,6 @@ def test_parallel_lane_map_rejects_no_overlap_path_collisions() -> None:
 
     with pytest.raises(ValidationError):
         ParallelLaneMapTemplate.model_validate(data)
-
-
-def test_specification_packet_rejects_implementation_policy_refs() -> None:
-    data = load_yaml("templates/specification-packet.yaml")
-    data["implementation_policy_refs"] = ["pyproject.toml"]
-
-    with pytest.raises(ValidationError):
-        SpecificationPacketTemplate.model_validate(data)
-
-
-def test_specification_packet_rejects_operational_implementation_keys() -> None:
-    data = load_yaml("templates/specification-packet.yaml")
-    behavior_contract = cast(dict[str, Any], data["behavior_contract"])
-    requirements = cast(list[dict[str, Any]], behavior_contract["requirements"])
-    requirements[0]["library_choice"] = "Use a specific internal library."
-
-    with pytest.raises(ValidationError):
-        SpecificationPacketTemplate.model_validate(data)
-
-
-def test_specification_review_rejects_invalid_decision() -> None:
-    data = load_yaml("templates/specification-review-record.yaml")
-    decision = cast(dict[str, Any], data["decision"])
-    decision["result"] = "approved_without_human_review"
-
-    with pytest.raises(ValidationError):
-        SpecificationReviewRecordTemplate.model_validate(data)
-
-
-def test_implementation_policy_requires_behavior_authority_ref() -> None:
-    data = load_yaml("templates/implementation-policy-record.yaml")
-    scope = cast(dict[str, Any], data["scope"])
-    scope["behavior_authority_ref"] = ""
-
-    with pytest.raises(ValidationError):
-        ImplementationPolicyRecordTemplate.model_validate(data)
-
-
-def test_implementation_policy_rejects_behavior_redefinition_in_policy() -> None:
-    data = load_yaml("templates/implementation-policy-record.yaml")
-    policy = cast(dict[str, Any], data["policy"])
-    policy["requirements"] = ["Redefine behavior from inside HOW guidance."]
-
-    with pytest.raises(ValidationError):
-        ImplementationPolicyRecordTemplate.model_validate(data)
-
-
-def test_workflow_run_rejects_runtime_state_fields() -> None:
-    data = load_yaml("templates/workflow-run-record.yaml")
-    data["worker_heartbeats"] = []
-
-    with pytest.raises(ValidationError):
-        WorkflowRunRecordTemplate.model_validate(data)
-
-
-def test_inconsistency_register_rejects_invalid_inc_id() -> None:
-    data = load_yaml("templates/inconsistency-register.yaml")
-    items = cast(list[dict[str, Any]], data["items"])
-    items[0]["id"] = "ISSUE-001"
-
-    with pytest.raises(ValidationError):
-        InconsistencyRegisterTemplate.model_validate(data)
 
 
 def test_parallel_lane_map_rejects_lane_requirement_outside_spec_scope() -> None:

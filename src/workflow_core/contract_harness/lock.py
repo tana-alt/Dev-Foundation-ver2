@@ -4,6 +4,7 @@ import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 
 from workflow_core.contract_harness.jsonio import read_json, write_json_atomic
@@ -24,7 +25,7 @@ def local_lock(
     base_sha: str,
     timeout_s: int,
 ) -> Iterator[Path]:
-    path = locks_dir(root) / f"{name}.lock"
+    path = _lock_path(root, name, target_branch)
     path.parent.mkdir(parents=True, exist_ok=True)
     _remove_stale(path, timeout_s)
     payload = {
@@ -61,3 +62,14 @@ def _remove_stale(path: Path, timeout_s: int) -> None:
     age = (datetime.now(UTC) - created).total_seconds()
     if age > timeout_s:
         path.unlink(missing_ok=True)
+
+
+def _lock_path(root: Path, name: str, target_branch: str) -> Path:
+    return locks_dir(root) / f"{_ref_component(name)}-{_ref_component(target_branch)}.lock"
+
+
+def _ref_component(value: str) -> str:
+    cleaned = "".join(ch if ch.isalnum() or ch in "._-" else "-" for ch in value)
+    compact = cleaned.strip(".-")[:80] or "ref"
+    digest = sha256(value.encode("utf-8")).hexdigest()[:12]
+    return f"{compact}-{digest}"

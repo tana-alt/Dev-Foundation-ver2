@@ -6,8 +6,8 @@ pipeline (abrun -> verdict -> check -> gate).
 
 ## Observe-Mode Pipeline
 
-Wire `templates/claude-hooks-settings.json` (or the Codex equivalent) to turn a
-normal agent session into a recorded run:
+Wire local hook settings outside the active template surface to turn a normal
+agent session into a recorded run:
 
 - `SessionStart` -> `scripts/hook_session_start.py` replays open issues into
   the session context.
