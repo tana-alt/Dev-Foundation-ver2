@@ -27,7 +27,6 @@ and denied context.
 
 - `AGENTS.md`
 - `docs/01-agent-operating-contract.md`
-- `templates/context-scope-manifest.yaml`
 
 ## Context Budget
 
@@ -59,8 +58,9 @@ For ordinary work, output an inline scope decision:
 - any context expansion reason
 - next action
 
-Create a `context_scope_manifest_ref` only when the user asks for a durable
-record or the workflow is substantial enough that a later worker needs it.
+Create a durable scope record only when the user explicitly asks for one or a
+later worker needs it. Prefer an inline scope decision or the current Plan log;
+do not require a template file for ordinary work.
 
 ## Stop / Carryover Conditions
 

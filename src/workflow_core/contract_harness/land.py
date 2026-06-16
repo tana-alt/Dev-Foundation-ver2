@@ -6,12 +6,14 @@ from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.contract_harness.affected import classify_affected_set
+from workflow_core.contract_harness.contract import load_verifier_plan
 from workflow_core.contract_harness.gitutil import git
 from workflow_core.contract_harness.jsonio import read_json, write_json
 from workflow_core.contract_harness.lock import LockBlocked, local_lock
 from workflow_core.contract_harness.policy import integration_target, load_policy
 from workflow_core.contract_harness.runtime_paths import task_dir
 from workflow_core.contract_harness.submission import validate_submission
+from workflow_core.contract_harness.verifier import all_passed, run_verifiers
 from workflow_core.contract_harness.worktree import create_worktree
 
 
@@ -50,8 +52,16 @@ def _land_with_lock(
         return _rework_result(root, task_id, affected, "rebase_required", path)
     if not _apply_candidate(root, task_id, path):
         return _rework_result(root, task_id, affected, "candidate_apply_failed", path)
-    if not _run_machine_gate(path):
-        return _rework_result(root, task_id, affected, "machine_gate_failed", path)
+    land_gate = _run_machine_gate(path, task_id)
+    if land_gate["status"] != "pass":
+        return _rework_result(
+            root,
+            task_id,
+            affected,
+            "machine_gate_failed",
+            path,
+            land_gate=land_gate,
+        )
     landed_commit = _commit_land(path, task_id)
     return (
         _result(
@@ -62,6 +72,7 @@ def _land_with_lock(
             reason="ok",
             worktree_path=path,
             landed_commit=landed_commit,
+            land_gate=land_gate,
         ),
         0,
     )
@@ -73,6 +84,7 @@ def _rework_result(
     affected: dict[str, Any],
     reason: str,
     worktree_path: Path,
+    land_gate: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], int]:
     return (
         _result(
@@ -82,6 +94,7 @@ def _rework_result(
             status="rework_required",
             reason=reason,
             worktree_path=worktree_path,
+            land_gate=land_gate,
         ),
         1,
     )
@@ -93,15 +106,30 @@ def _apply_candidate(root: Path, task_id: str, path: Path) -> bool:
     return applied.returncode == 0
 
 
-def _run_machine_gate(path: Path) -> bool:
+def _run_machine_gate(path: Path, task_id: str) -> dict[str, Any]:
+    if "FOUNDATION_GATE_TIER" not in os.environ:
+        verifiers = run_verifiers(path, load_verifier_plan(path, task_id))
+        passed = all_passed(verifiers)
+        return {
+            "status": "pass" if passed else "fail",
+            "command": "harness verifiers: "
+            + ", ".join(str(item.get("id", "")) for item in verifiers),
+            "exit_code": 0 if passed else 1,
+            "verifiers": verifiers,
+        }
+    tier = os.environ.get("FOUNDATION_GATE_TIER", "check-required")
     completed = subprocess.run(
-        ["make", os.environ.get("FOUNDATION_GATE_TIER", "check-required")],
+        ["make", tier],
         cwd=path,
         capture_output=True,
         text=True,
         timeout=int(os.environ.get("FOUNDATION_GATE_TIMEOUT_S", "900")),
     )
-    return completed.returncode == 0
+    return {
+        "status": "pass" if completed.returncode == 0 else "fail",
+        "command": f"make {tier}",
+        "exit_code": completed.returncode,
+    }
 
 
 def _commit_land(path: Path, task_id: str) -> str:
@@ -119,6 +147,7 @@ def _result(
     reason: str,
     worktree_path: Path | None = None,
     landed_commit: str | None = None,
+    land_gate: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     verify_result = read_json(task_dir(root, task_id) / "verify-result.json")
     return {
@@ -133,6 +162,7 @@ def _result(
         "machine_evidence_sha256": verify_result.get("machine_evidence_sha256"),
         "worktree_path": str(worktree_path) if worktree_path else None,
         "landed_commit": landed_commit,
+        "land_gate": land_gate or {"status": "not_run"},
     }
 
 

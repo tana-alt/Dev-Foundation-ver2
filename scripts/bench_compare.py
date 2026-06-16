@@ -28,7 +28,8 @@ Exit codes (R6 convention -- see docs/reference/exit-codes-reference.md):
   3  missing samples on either side or tool error (bad arguments, broken command)
 
 Env: FOUNDATION_PROJECT_ID, FOUNDATION_REPO_ROOT,
-FOUNDATION_BENCH_MAX_SAMPLES (default 1000, applied on record/run).
+FOUNDATION_BENCH_MAX_SAMPLES (default 1000, applied on record/run),
+FOUNDATION_BENCH_TIMEOUT_S (default 60, per measured iteration).
 """
 
 from __future__ import annotations
@@ -59,6 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--repeat", type=int, default=5)
     run.add_argument("--warmup", type=int, default=1)
     run.add_argument("--run-id", default="")
+    run.add_argument("--timeout-s", type=float, default=None)
 
     record = commands.add_parser("record", help="append one externally measured sample")
     record.add_argument("benchmark")
@@ -102,12 +104,27 @@ def _record_samples(
     store.enforce_retention(max_samples_per_label=max_samples)
 
 
-def _measure_command(command: list[str], *, repeat: int, warmup: int) -> list[float] | None:
+def _measure_command(
+    command: list[str],
+    *,
+    repeat: int,
+    warmup: int,
+    timeout_s: float,
+) -> list[float] | None:
     """Wall-clock samples in ms, or None when an iteration fails."""
     samples: list[float] = []
     for i in range(warmup + repeat):
         started = time.perf_counter()
-        proc = subprocess.run(command, capture_output=True, text=True)
+        try:
+            proc = subprocess.run(command, capture_output=True, text=True, timeout=timeout_s)
+        except subprocess.TimeoutExpired:
+            elapsed_ms = (time.perf_counter() - started) * 1000.0
+            print(
+                f"bench: iteration {i + 1} timed out after {timeout_s:g}s; "
+                f"elapsed {elapsed_ms:.1f}ms; nothing recorded",
+                file=sys.stderr,
+            )
+            return None
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         if proc.returncode != 0:
             tail = proc.stderr.strip().splitlines()[-3:]
@@ -123,6 +140,8 @@ def _measure_command(command: list[str], *, repeat: int, warmup: int) -> list[fl
 
 
 def _cmd_run(args: argparse.Namespace, store: BenchStore) -> int:
+    from workflow_core.env import env_float
+
     command = list(args.cmd)
     if not command:
         print("bench: run needs a command after --", file=sys.stderr)
@@ -130,7 +149,20 @@ def _cmd_run(args: argparse.Namespace, store: BenchStore) -> int:
     if args.repeat < 1 or args.warmup < 0:
         print("bench: --repeat must be >= 1 and --warmup >= 0", file=sys.stderr)
         return 3
-    samples = _measure_command(command, repeat=args.repeat, warmup=args.warmup)
+    timeout_s = (
+        args.timeout_s
+        if args.timeout_s is not None
+        else env_float("FOUNDATION_BENCH_TIMEOUT_S", 60.0)
+    )
+    if timeout_s <= 0:
+        print("bench: --timeout-s must be > 0", file=sys.stderr)
+        return 3
+    samples = _measure_command(
+        command,
+        repeat=args.repeat,
+        warmup=args.warmup,
+        timeout_s=timeout_s,
+    )
     if samples is None:
         return 3
     _record_samples(store, args.benchmark, args.label, samples, unit="ms", run_id=args.run_id)

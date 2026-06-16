@@ -4,10 +4,8 @@ This repo distills a small development foundation for agents, humans, tools,
 and automations. Keep it simple: active behavior belongs in three short docs,
 and detailed source material belongs in routed references only.
 
-For a compact external overview, see
-`artifact/workflow-ui-commondb-20260608/output/docs/external-facing-overview.md`. It explains the repo as an agent governance
-and workflow foundation, including current runnable/check surfaces, non-goals,
-human gates, and a small demo artifact outline.
+The canonical entrypoint is `AGENTS.md`; active repo-wide behavior is kept in
+the three short docs below.
 
 ## Active Docs
 
@@ -16,8 +14,6 @@ human gates, and a small demo artifact outline.
 - `docs/02-output-verification-contract.md`: evidence, verification, and gates.
 - `docs/03-repo-boundary-and-storage-contract.md`: folders, storage, secrets,
   skills, and plugins.
-- `artifact/workflow-ui-commondb-20260608/output/docs/external-facing-overview.md`: external-facing summary of what this
-  foundation is, what can be run today, and what it intentionally does not do.
 
 ## References
 
@@ -38,6 +34,68 @@ make check-foundation
 guard. It expects `shellcheck` and `gitleaks` on `PATH`. CI installs those OSS
 check tools, then runs the same gate through `.github/workflows/ci.yml`. Run
 `make doctor` for a read-only local environment inspection.
+
+## Contract Harness
+
+The contract harness is the active agent execution path for task-oriented work.
+It is intentionally small: the writer gets a bounded task packet and tool list,
+the reviewer reads fresh machine evidence plus the candidate diff, and the
+integrator performs review collection, integration checks, land, and optional
+push under policy.
+
+Minimal flow:
+
+```sh
+./harness prepare <task_id>
+./harness launch-writer <task_id> --agent-command "codex --yolo"
+```
+
+`launch-writer` creates or resumes the writer worktree and prints the command
+to run the interactive writer there. The writer should implement the task,
+then run:
+
+```sh
+HARNESS_ROLE=writer ./harness verify <task_id>
+HARNESS_ROLE=writer ./harness submit <task_id> --wait
+```
+
+`submit --wait` hands off to the integrator boundary. The integrator runs
+missing reviewers, collects verdicts, and writes the integration result. Manual
+inspection commands are still available when needed:
+
+```sh
+HARNESS_ROLE=reviewer ./harness review <task_id> --run <reviewer_id>
+HARNESS_ROLE=integrator ./harness review <task_id> --collect
+HARNESS_ROLE=integrator ./harness dispatch <task_id>
+HARNESS_ROLE=integrator ./harness land <task_id>
+HARNESS_ROLE=integrator ./harness push <task_id>
+```
+
+Architecture:
+
+- `.harness/` is the control plane: task YAML, verifier config, review config,
+  semantic reviewer wrapper, and policy.
+- `./harness` is the CLI entrypoint. Role checks happen at this CLI
+  orchestration boundary; they are not a security boundary against a malicious
+  local worker.
+- Harness runtime state is stored under the Git common directory at
+  `harness-runtime/`, not in tracked `.harness/state`.
+- Writer, reviewer, and integrator worktrees are task-owned under
+  `harness-runtime/worktrees/<task_id>/`.
+- Writer handoff evidence lives in
+  `harness-runtime/state/tasks/<task_id>/`: `contract.lock.json`,
+  `verify-result.json`, `candidate.diff`, `submission.json`, reviewer packets,
+  verdicts, and `integration-result.json`.
+- Reviewer freshness is evidence-hash based. If diff, verifier output, quality
+  evidence, scope map, metrics, mutation output, or reviewer-consumed artifacts
+  change, stale reviewer lanes must be rerun instead of reusing old verdicts.
+- Policy controls external writes. Land and push use integrator authority and
+  write rescue, lock, sync, and result evidence where configured.
+
+The normal stop condition is an `integrated` or `landed` result with fresh
+review evidence and passing machine checks. Rework is a normal workflow result:
+the writer should receive the evidence and continue unless the task is
+irreversible, policy-violating, or looping without progress.
 
 ## Restore Agent Environment
 

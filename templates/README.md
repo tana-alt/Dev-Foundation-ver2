@@ -27,36 +27,13 @@ Use existing project `Plan/<project_id>/plans/Plan_N0001.md` and
 ## Optional Templates
 
 - `templates/parallel-lane-map.yaml`: only for real parallel write work.
-- `templates/specification-packet.yaml`: legacy structured spec packet; prefer
-  `templates/detailed-spec.md` unless the user explicitly wants packet-shaped
-  compatibility.
 - `templates/work-contract.yaml`: only when a separate worker needs a bounded
   task packet.
 - `templates/evidence-record.yaml` and `templates/verification-record.yaml`:
   only when inline verification notes are not enough.
 
-## Archived Heavy-Contract Templates
+## Archived Template Surfaces
 
-The following templates are retained only for migration or archive inspection.
-They are not default workflow outputs:
-
-- approved spec freeze
-- final handoff
-- fix handoff
-- convergence decision
-- requirement traceability matrix
-- source snapshot lock
-- audit trail index
-- operational scorecard
-- residual-risk carryover
-- review assignment
-- narrow/wide/security/fix review records
-- inconsistency register
-- implementation policy record
-- check result envelope
-- budget override
-- exception pack
-- phase gate matrix
-
-Do not create these records unless the user explicitly asks to restore or audit
-the heavy-contract workflow.
+Heavy-contract, workflow UI, SDK, app-server, context-request/result, and hook
+configuration templates are not active templates. They were moved under
+`archive/` for inspection only.

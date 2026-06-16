@@ -122,6 +122,17 @@ def _worktree_path(root: Path, task_id: str, kind: str, reviewer_id: str | None)
     return base / kind
 
 
+def _branch_name(task_id: str, kind: str) -> str | None:
+    if kind != "integrator":
+        return None
+    return f"agent/{_ref_component(task_id)}/integrator/land"
+
+
+def _ref_component(value: str) -> str:
+    cleaned = "".join(ch if ch.isalnum() or ch in "._-" else "-" for ch in value)
+    return cleaned.strip(".-") or "task"
+
+
 def _ensure_worktree(
     root: Path,
     path: Path,
@@ -142,10 +153,9 @@ def _ensure_worktree(
             reviewer_id=reviewer_id,
         )
         _write_worktree_exclude(path)
-        _refuse_dirty_destructive_reuse(path)
-        git(path, ["checkout", "--detach", base_ref])
-        git(path, ["reset", "--hard", base_ref])
-        git(path, ["clean", "-fd"])
+        if kind != "integrator":
+            _refuse_dirty_destructive_reuse(path)
+        _reset_worktree(path, base_ref, branch_name=_branch_name(task_id, kind))
         _write_marker(
             root,
             path,
@@ -159,6 +169,7 @@ def _ensure_worktree(
     path.parent.mkdir(parents=True, exist_ok=True)
     git(root, ["worktree", "add", "--detach", str(path), base_ref])
     _write_worktree_exclude(path)
+    _checkout_branch(path, base_ref, branch_name=_branch_name(task_id, kind))
     _write_marker(
         root,
         path,
@@ -269,6 +280,21 @@ def _refuse_dirty_destructive_reuse(path: Path) -> None:
     status = git(path, ["status", "--porcelain=v1"]).stdout.strip()
     if status:
         raise ValueError(f"harness worktree is dirty; refusing destructive reuse: {path}")
+
+
+def _reset_worktree(path: Path, base_ref: str, *, branch_name: str | None) -> None:
+    git(path, ["reset", "--hard"])
+    git(path, ["clean", "-fd"])
+    _checkout_branch(path, base_ref, branch_name=branch_name)
+    git(path, ["reset", "--hard", base_ref])
+    git(path, ["clean", "-fd"])
+
+
+def _checkout_branch(path: Path, base_ref: str, *, branch_name: str | None) -> None:
+    if branch_name is None:
+        git(path, ["checkout", "--detach", base_ref])
+        return
+    git(path, ["switch", "--no-track", "-C", branch_name, base_ref])
 
 
 def _submitted_candidate_workspace(root: Path, task_id: str) -> dict[str, Any]:

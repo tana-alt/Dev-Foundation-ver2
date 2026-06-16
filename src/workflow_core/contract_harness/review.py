@@ -250,6 +250,9 @@ def _collect_summary(
 
 
 def _semantic_review_required(root: Path, task_id: str) -> bool:
+    settings = review_settings(root)
+    if any(_uses_semantic_evidence(root, str(reviewer)) for reviewer in settings["reviewers"]):
+        return True
     quality = quality_result(root, task_id)
     tools = tool_candidates_result(root, task_id)
     return quality.get("status") == "review_required" or tools.get("status") == "review_required"

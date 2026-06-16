@@ -1,0 +1,22 @@
+project_id: system-improvement
+plans:
+  - plan_id: Plan_N0001
+    status: completed
+    plan_path: Plan/system-improvement/plans/Plan_N0001.md
+    log_path: Plan/system-improvement/logs/Plan_N0001.log.md
+  - plan_id: Plan_N0002
+    status: completed
+    plan_path: Plan/system-improvement/plans/Plan_N0002.md
+    log_path: Plan/system-improvement/logs/Plan_N0002.log.md
+  - plan_id: Plan_N0003
+    status: completed
+    plan_path: Plan/system-improvement/plans/Plan_N0003.md
+    log_path: Plan/system-improvement/logs/Plan_N0003.log.md
+  - plan_id: Plan_N0004
+    status: draft
+    plan_path: Plan/system-improvement/plans/Plan_N0004.md
+    log_path: Plan/system-improvement/logs/Plan_N0004.log.md
+  - plan_id: Plan_N0005
+    status: completed
+    plan_path: Plan/system-improvement/plans/Plan_N0005.md
+    log_path: Plan/system-improvement/logs/Plan_N0005.log.md

@@ -1,23 +1,34 @@
-from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import pytest
-import yaml
 
 from workflow_core.checks import WorkflowCheckError, check_execution_ready, check_transition
 from workflow_core.contracts import WorkflowStatus
 
-ROOT = Path(__file__).resolve().parents[2]
-
 
 def valid_contract() -> dict[str, Any]:
-    raw = yaml.safe_load((ROOT / "templates/approved-work-contract.yaml").read_text())
-    assert isinstance(raw, dict)
-    data = cast(dict[str, Any], raw)
-    data.pop("schema_version")
-    data.pop("record_type")
-    data.pop("status")
-    return data
+    return {
+        "work_contract_id": "work-001",
+        "issue_id": "issue-001",
+        "proposal_id": "proposal-001",
+        "project_id": "project-001",
+        "goal": "Implement the approved task.",
+        "source_refs": ["AGENTS.md"],
+        "allowed_write_targets": ["src/**"],
+        "denied_context": ["secrets", "runtime_state"],
+        "verification": ["make test"],
+        "human_gate": {"status": "approved", "approved_by": "", "evidence_ref": ""},
+        "risk_flags": [],
+        "git_scope": {
+            "mode": "parallel",
+            "base_ref": "origin/main",
+            "merge_target": "origin/main",
+            "branch_target": "agent/work-001/impl/task",
+            "worktree_target": "../worktrees/repo/work-001-impl",
+            "sibling_branch_refs": [],
+            "conflict_policy": "no_overlap",
+        },
+    }
 
 
 def execution_record(status: str = "approved_work_contract") -> dict[str, object]:

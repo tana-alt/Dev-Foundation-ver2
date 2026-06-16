@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +15,28 @@ CONFIG_FILES = ("bottleneck.yaml", "owners.yaml", "verifiers.yaml", "review.yaml
 
 
 def harness_dir(root: Path) -> Path:
-    return root / ".harness"
+    return control_root(root) / ".harness"
+
+
+def control_root(root: Path) -> Path:
+    source = _marker_source_root(root)
+    if source is not None and (source / ".harness").is_dir():
+        return source
+    return root
+
+
+def _marker_source_root(root: Path) -> Path | None:
+    marker = root / ".harness-worktree.json"
+    if not marker.is_file():
+        return None
+    try:
+        data = json.loads(marker.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    common = data.get("source_repo_common_dir") if isinstance(data, dict) else None
+    if not common:
+        return None
+    return Path(str(common)).resolve().parent
 
 
 def load_yaml(path: Path) -> dict[str, Any]:

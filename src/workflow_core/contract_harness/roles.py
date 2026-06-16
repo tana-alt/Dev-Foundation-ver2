@@ -8,8 +8,24 @@ class RoleError(RuntimeError):
 
 
 _ALLOWED = {
-    "writer": {"prepare", "explain", "verify", "report", "submit", "scope-map", "tools"},
-    "reviewer": {"review:run", "review:write-verdict", "scope-map", "tools"},
+    "writer": {
+        "prepare",
+        "explain",
+        "verify",
+        "report",
+        "submit",
+        "scope-map",
+        "tools",
+        "context-audit",
+        "launch-writer",
+    },
+    "reviewer": {
+        "review:run",
+        "review:write-verdict",
+        "scope-map",
+        "tools",
+        "context-audit",
+    },
     "integrator": {
         "review:collect",
         "gate",
@@ -19,6 +35,8 @@ _ALLOWED = {
         "affected",
         "scope-map",
         "tools",
+        "context-audit",
+        "launch-writer",
         "land",
         "push",
     },

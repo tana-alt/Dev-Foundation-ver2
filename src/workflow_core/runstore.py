@@ -141,8 +141,10 @@ class MetricAggregate(StrictModel):
 class RunStore(SqliteStore):
     """Durable store for AB runs, raw samples, and derived judgements."""
 
+    SCHEMA_VERSION = 1
+
     def __init__(self, path: object) -> None:
-        super().__init__(str(path), schema=_SCHEMA)
+        super().__init__(str(path), schema=_SCHEMA, schema_version=self.SCHEMA_VERSION)
 
     # -- runs ---------------------------------------------------------------
 
