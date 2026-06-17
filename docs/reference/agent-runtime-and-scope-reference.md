@@ -3,7 +3,7 @@ status: reference
 owner: foundation
 source_of_truth_level: reference
 created_at: 2026-05-06
-updated_at: 2026-06-17
+updated_at: 2026-06-10
 ---
 
 # Runtime And Scope Reference
@@ -58,45 +58,6 @@ scoped repair.
 This repo does not define a scheduler, runtime queue, lock system, heartbeat, or
 dashboard. External runtime scope is just input; it does not override
 `AGENTS.md`, allowed writes, verification, storage boundaries, or human gates.
-
-## Harness-Owned Task Loop
-
-For `./harness` task work, completion is not the writer saying that a task is
-done. The harness closes the loop by moving a candidate through:
-
-```text
-prepare -> writer verify -> submit -> review/gate -> land -> push
-```
-
-Each machine-owned phase records evidence under
-`harness-runtime/state/tasks/<task_id>/`. The writer produces a candidate diff
-and verification output; the integrator owns review collection, mergeability,
-land, and push decisions. A previous verdict, JSON record, or natural-language
-claim is not merge authority unless the relevant gate re-checks it against the
-current candidate and target state.
-
-Loop ownership rules:
-
-- Treat writer output as a candidate, not as completion.
-- Treat `rework_required`, reviewer failure, verifier failure,
-  `candidate_apply_failed`, `machine_gate_failed`, and merge-oracle red results
-  as ordinary loop outputs. The next step is writer rework on the same task
-  unless policy says the task is terminal.
-- Retries must start from current target facts and pinned candidate or test
-  hashes. Do not repair a loop by editing runtime JSON, reusing stale verdicts,
-  or assuming a prior branch base is still fresh.
-- Stop conditions are machine states: integrated, landed or pushed as required
-  by the active flow, or an explicit terminal rework/escalation state.
-- Worktree cleanup, branch deletion, protected pushes, deploys, and destructive
-  recovery remain human-gated actions; loop closure does not bypass those
-  gates.
-
-When the target branch advances while a candidate is pending, the loop should
-not hand the problem back as manual branch choreography by default. The
-integrator should re-evaluate the candidate against the current target and
-return either a fresh machine-green integration result or a precise rework
-reason. Concrete branch/worktree mechanics for that path live in
-`docs/reference/git-worktree-and-branch-reference.md`.
 
 ## Optional Parallel Lanes
 
