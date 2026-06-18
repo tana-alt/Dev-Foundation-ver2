@@ -14,7 +14,11 @@ report_block() {
   fi
 }
 
-tracked_ignored="$(git -C "$ROOT" ls-files -ci --exclude-standard)"
+tracked_ignored="$(
+  git -C "$ROOT" ls-files -ci --exclude-standard | awk '
+    $0 != "artifact/.gitkeep" && $0 != "artifact/README.md" { print $0 }
+  '
+)"
 report_block "tracked ignored files:" "$tracked_ignored"
 
 forbidden_tracked=""

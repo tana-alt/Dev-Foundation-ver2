@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from workflow_core.contract_harness.agent_tools import role_agent_skills, role_agent_tools
+from workflow_core.contract_harness.command_runner import (
+    command_result_artifact,
+    env_timeout_s,
+    run_command,
+)
 from workflow_core.contract_harness.evidence import artifact_hashes
 from workflow_core.contract_harness.hashing import file_hash
 from workflow_core.contract_harness.jsonio import read_json, write_json, write_json_atomic
@@ -104,14 +108,13 @@ def wait_for_dispatch(
             "written_by": "harness",
         },
     )
-    completed = subprocess.run(
+    completed = run_command(
         [str(executable), "dispatch", task_id],
         cwd=dispatch_root,
-        capture_output=True,
-        text=True,
-        timeout=int(os.environ.get("FOUNDATION_GATE_TIMEOUT_S", "900")),
+        timeout_s=env_timeout_s("FOUNDATION_GATE_TIMEOUT_S", 900),
         env={**os.environ, "HARNESS_ROLE": "integrator"},
     )
+    _write_dispatch_result(root, task_id, completed)
     return _dispatch_result(completed)
 
 
@@ -207,12 +210,27 @@ def _matches_mutation_result(root: Path, task_id: str, submission: dict[str, Any
     return path.is_file() and file_hash(path) == expected
 
 
-def _dispatch_result(completed: subprocess.CompletedProcess[str]) -> tuple[dict[str, Any], int]:
+def _write_dispatch_result(root: Path, task_id: str, result: dict[str, Any]) -> None:
+    write_json(
+        task_dir(root, task_id) / "dispatch-result.json",
+        {
+            "task_id": task_id,
+            "phase": "submit_wait_dispatch",
+            **command_result_artifact(result),
+            "written_by": "harness",
+        },
+    )
+
+
+def _dispatch_result(completed: dict[str, Any]) -> tuple[dict[str, Any], int]:
     try:
-        data = read_json_from_text(completed.stdout)
+        data = read_json_from_text(str(completed.get("stdout") or ""))
     except ValueError:
-        data = {"ok": False, "reason": completed.stderr.strip() or "dispatch_failed"}
-    return data, completed.returncode
+        data = {
+            "ok": False,
+            "reason": str(completed.get("stderr") or "").strip() or "dispatch_failed",
+        }
+    return data, int(completed["exit_code"])
 
 
 def read_json_from_text(text: str) -> dict[str, Any]:

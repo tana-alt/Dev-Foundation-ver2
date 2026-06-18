@@ -311,6 +311,14 @@ def test_hook_stop_submitted_delegates_to_harness_dispatch(tmp_path: Path) -> No
         "dispatch_returncode": 1,
         "reason": "review_quorum_unmet",
     }
+    observation = json.loads(
+        (runtime / "state" / "tasks" / project / "hook-stop-dispatch.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert observation["status"] == "failed"
+    assert observation["reason"] == "review_quorum_unmet"
+    assert observation["dispatch_returncode"] == 1
 
 
 def test_hook_stop_submitted_without_plan_still_dispatches(tmp_path: Path) -> None:
@@ -464,6 +472,13 @@ def test_hook_stop_missing_harness_is_observational_fail_open(tmp_path: Path) ->
     assert result.returncode == 0
     assert result.stdout == ""
     assert "harness gate skipped" in result.stderr
+    observation = json.loads(
+        (runtime / "state" / "tasks" / project / "hook-stop-dispatch.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert observation["status"] == "skipped"
+    assert observation["reason"] == "FileNotFoundError"
 
 
 def test_hook_stop_responsibility_classification_is_explicit() -> None:

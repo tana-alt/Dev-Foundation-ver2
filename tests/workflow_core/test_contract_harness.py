@@ -16,7 +16,7 @@ from workflow_core.contract_harness.agent_tools import (
     role_optional_tools,
 )
 from workflow_core.contract_harness.hashing import file_hash
-from workflow_core.contract_harness.lock import LockBlocked, local_lock
+from workflow_core.contract_harness.lock import LockBlocked, _lock_path, local_lock
 from workflow_core.contract_harness.verify import recompute_machine_evidence
 from workflow_core.evaluation import EvalScore
 from workflow_core.metrics_store import MetricsStore
@@ -468,6 +468,8 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "scope-map-forward",
         "explain",
         "context-audit",
+        "status",
+        "spawn-writer",
         "verify",
         "submit",
         "report-rfc",
@@ -642,6 +644,1012 @@ def test_launch_writer_prepares_worktree_and_returns_interactive_command(
     assert "tdd-scope" in {skill["name"] for skill in session["initial_context"]["agent_skills"]}
     assert load_runtime_json(repo, "writer-session.json")["command"] == session["command"]
     assert session["context_audit"]["roles"]["writer"]["status"] in {"pass", "fail"}
+
+
+def test_spawn_writer_assigns_role_without_running_verify(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    spawned = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "writer",
+        "--agent",
+        "codex",
+        "--agent-command",
+        "codex --yolo",
+        "--comm",
+    )
+
+    assert spawned.returncode == 0, spawned.stdout + spawned.stderr
+    session = json.loads(spawned.stdout)
+    writer_path = Path(session["worktree"]["path"])
+    assert session["status"] == "ready"
+    assert session["role"] == "writer"
+    assert session["agent"] == "codex"
+    assert session["env"]["HARNESS_ROLE"] == "writer"
+    assert session["env"]["FOUNDATION_AGENT_ID"] == session["agent_id"]
+    assert writer_path.is_dir()
+    assert not (runtime_task_dir(repo) / "verify-result.json").exists()
+    assert not (runtime_task_dir(repo) / "transcripts").exists()
+    assert (runtime_task_dir(repo) / "comm" / "sessions" / f"{session['agent_id']}.json").is_file()
+    assert (runtime_task_dir(repo) / "comm" / "rebind" / f"{session['agent_id']}.json").is_file()
+
+
+def test_spawn_writes_rebind_packet_without_transcript(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    spawned = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "writer",
+        "--agent",
+        "codex",
+        "--comm",
+    )
+
+    assert spawned.returncode == 0, spawned.stdout + spawned.stderr
+    session = json.loads(spawned.stdout)
+    rebind = load_runtime_json(
+        repo,
+        f"comm/rebind/{session['agent_id']}.json",
+    )
+    assert rebind["role"] == "writer"
+    assert rebind["transcript_included"] is False
+    assert "transcript_path" not in rebind
+    assert "body_markdown" not in rebind
+
+
+def test_rebind_packet_excludes_transcript(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    spawned = run_harness(repo, "spawn", TASK_ID, "--role", "writer", "--agent", "codex")
+
+    assert spawned.returncode == 0, spawned.stdout + spawned.stderr
+    session = json.loads(spawned.stdout)
+    rebind = load_runtime_json(repo, f"comm/rebind/{session['agent_id']}.json")
+    assert "transcripts" not in json.dumps(rebind, sort_keys=True)
+    assert not (runtime_task_dir(repo) / "comm" / "transcripts").exists()
+
+
+def test_launch_writer_is_spawn_writer_wrapper(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    launched = run_harness(repo, "launch-writer", TASK_ID)
+
+    assert launched.returncode == 0, launched.stdout + launched.stderr
+    session = json.loads(launched.stdout)
+    assert session["role"] == "writer"
+    assert session["agent"] == "codex"
+    assert session["agent_id"] == f"writer.codex.{TASK_ID}"
+    assert load_runtime_json(repo, "writer-session.json")["agent_id"] == session["agent_id"]
+
+
+def test_spawn_does_not_import_gate_land_push(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    spawned = run_harness(repo, "spawn", TASK_ID, "--role", "writer", "--agent", "codex")
+
+    assert spawned.returncode == 0, spawned.stdout + spawned.stderr
+    session = json.loads(spawned.stdout)
+    tool_set = tool_names(session["initial_context"]["agent_tools"])
+    assert not {"gate", "land", "push", "oracle", "compose", "compose-push"} & tool_set
+
+
+def test_spawn_reviewer_requires_reviewer_id(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    spawned = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "reviewer",
+        "--agent",
+        "codex",
+        role="reviewer",
+    )
+
+    assert spawned.returncode != 0
+    assert "reviewer-id is required" in spawned.stdout
+
+
+def test_spawn_integrator_sets_integrator_role(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    enable_policy_and_remote(tmp_path, repo)
+
+    spawned = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "integrator",
+        "--agent",
+        "codex",
+        "--agent-command",
+        "codex --yolo",
+        role="integrator",
+    )
+
+    assert spawned.returncode == 0, spawned.stdout + spawned.stderr
+    session = json.loads(spawned.stdout)
+    assert session["role"] == "integrator"
+    assert session["env"]["HARNESS_ROLE"] == "integrator"
+    assert session["worktree"]["kind"] == "integrator"
+    assert Path(session["cwd"]).is_dir()
+
+
+def test_spawn_target_role_validation_blocks_writer_spawning_integrator(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    enable_policy_and_remote(tmp_path, repo)
+
+    spawned = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "integrator",
+        "--agent",
+        "codex",
+    )
+
+    assert spawned.returncode != 0
+    assert "role writer cannot spawn integrator" in spawned.stdout
+
+
+def test_task_yaml_acceptance_mode_must_be_generated(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    task_file = repo / ".harness" / "tasks" / TASK_ID / "task.yaml"
+    task_file.write_text(task_yaml("manual"), encoding="utf-8")
+
+    from workflow_core.contract_harness.config import ConfigError, load_task
+
+    with pytest.raises(ConfigError, match="acceptance.mode must be generated"):
+        load_task(repo, TASK_ID)
+
+
+def test_status_query_returns_partial_when_artifacts_are_missing(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+
+    status = run_harness(repo, "status", TASK_ID)
+
+    assert status.returncode == 0, status.stdout + status.stderr
+    result = json.loads(status.stdout)
+    assert result["schema_version"] == 1
+    assert result["task_id"] == TASK_ID
+    assert result["phase"] == "submitted"
+    assert result["authority"] == {
+        "complete": False,
+        "source": "missing gate-result.json",
+    }
+    assert "verify-result.json" in result["artifacts"]["present"]
+    assert "submission.json" in result["artifacts"]["present"]
+    assert "gate-result.json" in result["artifacts"]["missing"]
+    assert "land-result.json" in result["artifacts"]["missing"]
+    assert "push-result.json" in result["artifacts"]["missing"]
+    assert result["written_by"] == "harness"
+    assert not (runtime_task_dir(repo) / "status-result.json").exists()
+
+
+def test_status_reports_rework_when_integration_result_requires_rework(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    runtime = runtime_task_dir(repo)
+    (runtime / "integration-result.json").write_text(
+        json.dumps(
+            {
+                "task_id": TASK_ID,
+                "role": "integrator",
+                "status": "rework_required",
+                "reason": "stale_submission",
+                "review": {},
+                "completion": {"status": "not_run"},
+                "metrics": {},
+                "head_unchanged": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status = run_harness(repo, "status", TASK_ID)
+
+    assert status.returncode == 0, status.stdout + status.stderr
+    result = json.loads(status.stdout)
+    assert result["phase"] == "rework_required"
+    assert result["authority"] == {
+        "complete": False,
+        "source": "missing gate-result.json",
+    }
+
+
+def test_status_reports_config_health_for_missing_task_paths(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / ".harness" / "owners.yaml").write_text(
+        "scopes:\n"
+        "  demo:\n"
+        "    allowed_paths:\n"
+        "      - src/missing_feature.py\n"
+        "    forbidden_paths:\n"
+        "      - forbidden/**\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "verifiers.yaml").write_text(
+        "default:\n"
+        "  - id: missing-test\n"
+        '    command: "uv run pytest -q tests/missing_feature_test.py"\n'
+        "    applies_to:\n"
+        "      - tests/missing_feature_test.py\n"
+        "    always: true\n",
+        encoding="utf-8",
+    )
+
+    status = run_harness(repo, "status", TASK_ID)
+
+    assert status.returncode == 0, status.stdout + status.stderr
+    health = json.loads(status.stdout)["health"]
+    assert health["status"] == "warn"
+    missing = health["missing_paths"]
+    assert {
+        "source": "owners.yaml allowed_paths",
+        "path": "src/missing_feature.py",
+    } in missing
+    assert {
+        "source": "verifier missing-test applies_to",
+        "path": "tests/missing_feature_test.py",
+    } in missing
+    assert {
+        "source": "verifier missing-test command",
+        "path": "tests/missing_feature_test.py",
+    } in missing
+
+
+def test_status_reports_review_config_health_warnings(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / ".harness" / "review.yaml").write_text(
+        "default:\n"
+        "  quorum: 4\n"
+        "  reviewers:\n"
+        "    - reader-correctness\n"
+        "    - reader-scope\n"
+        "    - broken-reviewer\n"
+        "  background_auto_run: false\n",
+        encoding="utf-8",
+    )
+
+    status = run_harness(repo, "status", TASK_ID)
+
+    assert status.returncode == 0, status.stdout + status.stderr
+    health = json.loads(status.stdout)["health"]
+    assert health["status"] == "warn"
+    assert {
+        "source": "review.quorum",
+        "reason": "quorum 4 exceeds reviewer count 3",
+    } in health["warnings"]
+    assert {
+        "source": "review.background_auto_run",
+        "reason": "manual reviewer runs required",
+    } in health["warnings"]
+    assert {
+        "source": "reviewer broken-reviewer",
+        "reason": "unknown reviewer profile",
+    } in health["warnings"]
+
+
+def test_status_reports_missing_command_reviewer_executable(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / ".harness" / "review.yaml").write_text(
+        "default:\n"
+        "  quorum: 3\n"
+        "  reviewers:\n"
+        "    - reader-correctness\n"
+        "    - reader-scope\n"
+        "    - semantic-ai\n"
+        "  background_auto_run: true\n"
+        "profiles:\n"
+        "  semantic-ai:\n"
+        "    kind: command\n"
+        "    command:\n"
+        "      - definitely-missing-reviewer-command\n"
+        "      - .harness/semantic_reviewer.py\n",
+        encoding="utf-8",
+    )
+
+    status = run_harness(repo, "status", TASK_ID)
+
+    assert status.returncode == 0, status.stdout + status.stderr
+    warnings = json.loads(status.stdout)["health"]["warnings"]
+    assert {
+        "source": "reviewer semantic-ai command",
+        "reason": "executable not found: definitely-missing-reviewer-command",
+    } in warnings
+
+
+def test_verifier_plan_preserves_configured_timeout_s() -> None:
+    from workflow_core.contract_harness.config import verifier_plan
+
+    plan = verifier_plan(
+        {
+            "default": [
+                {
+                    "id": "slow-check",
+                    "command": "python -c 'raise SystemExit(0)'",
+                    "timeout_s": 12,
+                }
+            ]
+        },
+        "demo",
+    )
+
+    assert plan[0]["timeout_s"] == 12
+
+
+def test_status_response_is_allowed_when_artifact_backed(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+
+    from workflow_core.contract_harness.agent_comm import build_status_response
+
+    message = build_status_response(
+        repo,
+        TASK_ID,
+        from_agent_id="writer.codex.1",
+        from_role="writer",
+        to_agent_id="writer.claude.1",
+        to_role="writer",
+    )
+
+    assert message["kind"] == "status_response"
+    assert "completion authority: missing gate-result.json" in message["body_markdown"]
+    assert any(ref["type"] == "verify_result" for ref in message["basis_refs"])
+    assert any(ref["type"] == "submission" for ref in message["basis_refs"])
+    inbox = runtime_task_dir(repo) / "comm" / "inbox" / "writer.claude.1"
+    assert (inbox / f"{message['message_sha256']}.json").is_file()
+
+
+def test_switchboard_auto_attaches_basis_refs_for_status_query(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+
+    from workflow_core.contract_harness.agent_comm import send_message
+
+    message = send_message(
+        repo,
+        TASK_ID,
+        from_agent_id="writer.codex.1",
+        from_role="writer",
+        to_agent_id="writer.claude.1",
+        to_role="writer",
+        kind="status_query",
+        subject="where are we",
+        body_markdown="今どうなっている？",
+    )
+
+    assert any(ref["type"] == "candidate_diff" for ref in message["basis_refs"])
+    assert any(ref["type"] == "verify_result" for ref in message["basis_refs"])
+
+
+def test_status_response_cannot_mark_completion_without_harness_result(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+
+    from workflow_core.contract_harness.agent_comm import build_status_response
+
+    message = build_status_response(
+        repo,
+        TASK_ID,
+        from_agent_id="writer.codex.1",
+        from_role="writer",
+        to_agent_id="writer.claude.1",
+        to_role="writer",
+    )
+
+    status_refs = [ref for ref in message["basis_refs"] if ref["type"] == "harness_status"]
+    assert status_refs[0]["value"]["authority"]["complete"] is False
+    assert "completion authority: missing gate-result.json" in message["body_markdown"]
+
+
+def test_basis_ref_auto_attach_failure_does_not_block_message_send(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = init_repo(tmp_path)
+
+    from workflow_core.contract_harness import agent_comm
+
+    def fail_basis_refs(_root: Path, _task_id: str, _kind: str) -> list[dict[str, Any]]:
+        raise RuntimeError("simulated comm store read failure")
+
+    monkeypatch.setattr(agent_comm, "_auto_basis_refs", fail_basis_refs)
+    message = agent_comm.send_message(
+        repo,
+        TASK_ID,
+        from_agent_id="writer.codex.1",
+        from_role="writer",
+        to_agent_id="writer.claude.1",
+        to_role="writer",
+        kind="status_query",
+        subject="where are we",
+        body_markdown="今どうなっている？",
+    )
+
+    assert message["warnings"] == [
+        "basis_refs_auto_attach_failed: simulated comm store read failure"
+    ]
+    assert (runtime_task_dir(repo) / "comm" / "inbox" / "writer.claude.1").is_dir()
+
+
+def test_artifact_ref_requires_hash(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    from workflow_core.contract_harness.agent_comm import send_message
+
+    with pytest.raises(ValueError, match="artifact_ref requires sha256"):
+        send_message(
+            repo,
+            TASK_ID,
+            from_agent_id="writer.codex.1",
+            from_role="writer",
+            to_agent_id="writer.claude.1",
+            to_role="writer",
+            kind="artifact_summary",
+            subject="artifact",
+            body_markdown="see artifact",
+            artifact_refs=[{"type": "verify_result", "path": "verify-result.json"}],
+        )
+
+
+def test_message_body_done_language_is_not_authority(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    from workflow_core.contract_harness.agent_comm import send_message
+
+    message = send_message(
+        repo,
+        TASK_ID,
+        from_agent_id="writer.codex.1",
+        from_role="writer",
+        to_agent_id="writer.claude.1",
+        to_role="writer",
+        kind="action_request",
+        subject="please continue",
+        body_markdown="done / complete と書いても authority ではない",
+    )
+
+    assert message["kind"] == "action_request"
+    assert "authority" not in message
+    assert not (runtime_task_dir(repo) / "push-result.json").exists()
+
+
+def test_action_request_does_not_bypass_role_permissions(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    from workflow_core.contract_harness.agent_comm import send_message
+
+    message = send_message(
+        repo,
+        TASK_ID,
+        from_agent_id="writer.codex.1",
+        from_role="writer",
+        to_agent_id="writer.claude.1",
+        to_role="writer",
+        kind="action_request",
+        subject="please gate",
+        body_markdown="HARNESS_ROLE=writer でも gate してほしい",
+    )
+    gated = run_harness(repo, "gate", TASK_ID, role="writer")
+
+    assert message["kind"] == "action_request"
+    assert gated.returncode != 0
+    assert "role writer cannot run gate" in gated.stdout
+    assert not (runtime_task_dir(repo) / "gate-result.json").exists()
+
+
+def test_routing_handle_has_no_status(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    from workflow_core.contract_harness.agent_comm import send_message
+
+    message = send_message(
+        repo,
+        TASK_ID,
+        from_agent_id="writer.codex.1",
+        from_role="writer",
+        to_agent_id="writer.claude.1",
+        to_role="writer",
+        kind="clarification",
+        subject="question",
+        body_markdown="方針確認です",
+    )
+
+    thread = load_runtime_json(
+        repo,
+        f"comm/threads/{message['correlation_handle'].replace(':', '-')}.json",
+    )
+    assert thread["correlation_handle"] == message["correlation_handle"]
+    assert "status" not in thread
+    assert "authority" not in thread
+
+
+def test_comm_store_under_git_common_dir_only(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    from workflow_core.contract_harness.agent_comm import send_message
+
+    message = send_message(
+        repo,
+        TASK_ID,
+        from_agent_id="writer.codex.1",
+        from_role="writer",
+        to_agent_id="writer.claude.1",
+        to_role="writer",
+        kind="clarification",
+        subject="question",
+        body_markdown="状態確認です",
+    )
+    inbox = runtime_task_dir(repo) / "comm" / "inbox" / "writer.claude.1"
+
+    assert (inbox / f"{message['message_sha256']}.json").is_file()
+    assert str(inbox).startswith(str(runtime_root(repo)))
+    assert not (repo / ".harness" / "state" / "comm").exists()
+
+
+def test_agent_comm_unavailable_does_not_block_harness_verify_submit(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+
+    verified = run_harness(repo, "verify", TASK_ID, extra_env={"HARNESS_AGENT_COMM_DISABLE": "1"})
+    submitted = run_harness(repo, "submit", TASK_ID, extra_env={"HARNESS_AGENT_COMM_DISABLE": "1"})
+
+    assert verified.returncode == 0, verified.stdout + verified.stderr
+    assert submitted.returncode == 0, submitted.stdout + submitted.stderr
+    assert load_runtime_json(repo, "submission.json")["status"] == "submitted"
+
+
+def test_mcp_readonly_facade_exposes_resources_without_write_tools(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+
+    from workflow_core.contract_harness import mcp_readonly
+
+    resources = mcp_readonly.list_resources(repo, TASK_ID)
+    verify_resource = next(item for item in resources if item["name"] == "verify-result.json")
+    assert verify_resource["present"] is True
+    assert verify_resource["readonly"] is True
+    read = mcp_readonly.read_resource(repo, TASK_ID, "verify-result.json")
+    assert '"status": "pass"' in read["content"]
+    assert mcp_readonly.exposed_tools() == ()
+    assert not {"verify", "submit", "gate", "land", "push"} & set(mcp_readonly.exposed_tools())
+
+
+def test_pass_id_is_content_addressed_not_bearer(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    from workflow_core.contract_harness.certification import (
+        validate_pass_certificate,
+        write_pass_certificate,
+    )
+    from workflow_core.contract_harness.hashing import hash_json
+
+    certificate = write_pass_certificate(repo, TASK_ID, "reader-correctness")
+
+    assert certificate["pass_subject_sha256"] == hash_json(certificate["subject"])
+    assert validate_pass_certificate(repo, TASK_ID, certificate) is True
+    assert (
+        runtime_task_dir(repo)
+        / "reviews"
+        / "certificates"
+        / f"{certificate['pass_subject_sha256']}.json"
+    ).is_file()
+
+
+def test_certify_cli_is_reviewer_only(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    blocked = run_harness(
+        repo,
+        "certify",
+        TASK_ID,
+        "--reviewer-id",
+        "reader-correctness",
+        role="writer",
+    )
+    certified = run_harness(
+        repo,
+        "certify",
+        TASK_ID,
+        "--reviewer-id",
+        "reader-correctness",
+        role="reviewer",
+    )
+
+    assert blocked.returncode != 0
+    assert "role writer cannot run certify" in blocked.stdout
+    assert certified.returncode == 0, certified.stdout + certified.stderr
+    assert json.loads(certified.stdout)["pass_subject_sha256"].startswith("sha256:")
+
+
+def test_pass_id_rejects_different_candidate_diff(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    from workflow_core.contract_harness.certification import (
+        validate_pass_certificate,
+        write_pass_certificate,
+    )
+
+    certificate = write_pass_certificate(repo, TASK_ID, "reader-correctness")
+    certificate["subject"] = {
+        **certificate["subject"],
+        "candidate_diff_sha256": "sha256:" + "0" * 64,
+    }
+
+    assert validate_pass_certificate(repo, TASK_ID, certificate) is False
+
+
+def test_pass_id_rejects_different_task_with_same_token(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    other_task = "T-0002"
+    (repo / ".harness" / "tasks" / other_task).mkdir()
+    (repo / ".harness" / "tasks" / other_task / "task.yaml").write_text(
+        task_yaml("generated", task_id=other_task),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/tasks/T-0002/task.yaml")
+    git(repo, "commit", "-m", "add second task")
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "verify", other_task).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    from workflow_core.contract_harness.certification import (
+        validate_pass_certificate,
+        write_pass_certificate,
+    )
+
+    certificate = write_pass_certificate(repo, TASK_ID, "reader-correctness")
+
+    assert validate_pass_certificate(repo, other_task, certificate) is False
+
+
+def test_pass_certificate_excludes_transcript_and_thread(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    from workflow_core.contract_harness.certification import write_pass_certificate
+
+    certificate = write_pass_certificate(repo, TASK_ID, "reader-correctness")
+
+    serialized = json.dumps(certificate, sort_keys=True)
+    assert "transcript" not in serialized
+    assert "thread" not in serialized
+    assert "correlation_handle" not in serialized
+
+
+def test_certified_test_content_hash_is_pinned(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    from workflow_core.contract_harness.certification import write_pass_certificate
+
+    certified_tests = [
+        {
+            "id": "behavior_x_pytest",
+            "kind": "pytest",
+            "content_sha256": "sha256:" + "a" * 64,
+            "runner": "pytest",
+            "covers": ["behavior-x"],
+        }
+    ]
+    certificate = write_pass_certificate(
+        repo,
+        TASK_ID,
+        "reader-correctness",
+        certified_tests=certified_tests,
+    )
+    assert certificate["subject"]["certified_tests"] == certified_tests
+    with pytest.raises(ValueError, match="content_sha256"):
+        write_pass_certificate(
+            repo,
+            TASK_ID,
+            "reader-correctness",
+            certified_tests=[{"id": "missing-hash", "kind": "pytest", "runner": "pytest"}],
+        )
+
+
+def test_trivial_certified_test_fails_mutation_adequacy(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    from workflow_core.contract_harness.certification import write_pass_certificate
+
+    with pytest.raises(ValueError, match="trivial certified test"):
+        write_pass_certificate(
+            repo,
+            TASK_ID,
+            "reader-correctness",
+            certified_tests=[
+                {
+                    "id": "empty_test",
+                    "kind": "pytest",
+                    "content_sha256": (
+                        "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    ),
+                    "runner": "pytest",
+                    "covers": [],
+                }
+            ],
+        )
+
+
+def test_certified_test_mutation_failure_invalidates_certify_claim(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    mutation_script = repo / ".harness" / "mutation_survivor.py"
+    mutation_script.write_text(
+        "import json, pathlib, sys\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'status': 'review_required',\n"
+        "  'survivor_count': 1,\n"
+        "  'survivors': [{'path': 'src/app.txt', 'reason': 'survived'}]\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        review_yaml()
+        + "mutation:\n"
+        + "  command:\n"
+        + "    - python\n"
+        + "    - .harness/mutation_survivor.py\n"
+        + "  timeout_s: 30\n",
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/mutation_survivor.py")
+    git(repo, "commit", "-m", "enable mutation survivor")
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    from workflow_core.contract_harness.certification import write_pass_certificate
+
+    with pytest.raises(ValueError, match="mutation adequacy failed"):
+        write_pass_certificate(
+            repo,
+            TASK_ID,
+            "reader-correctness",
+            certified_tests=[
+                {
+                    "id": "behavior_x_pytest",
+                    "kind": "pytest",
+                    "content_sha256": "sha256:" + "b" * 64,
+                    "runner": "pytest",
+                    "covers": ["behavior-x"],
+                }
+            ],
+        )
+
+
+def test_certified_tests_do_not_replace_required_verifiers_until_policy_allows(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+
+    from workflow_core.contract_harness.certification import write_pass_certificate
+
+    write_pass_certificate(
+        repo,
+        TASK_ID,
+        "reader-correctness",
+        certified_tests=[
+            {
+                "id": "behavior_x_pytest",
+                "kind": "pytest",
+                "content_sha256": "sha256:" + "c" * 64,
+                "runner": "pytest",
+                "covers": ["behavior-x"],
+            }
+        ],
+    )
+
+    verifiers = load_runtime_json(repo, "verifier-plan.json")["verifiers"]
+    assert [verifier["id"] for verifier in verifiers] == ["unit"]
+
+
+def test_reviewer_frozen_test_cannot_be_weakened_by_writer(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    from workflow_core.contract_harness.frozen_tests import (
+        certified_test_freeze_violations,
+        freeze_certified_test_paths,
+    )
+
+    result = freeze_certified_test_paths(
+        repo,
+        "harness-review",
+        [
+            {
+                "id": "reviewer_behavior",
+                "kind": "pytest",
+                "path": "tests/reviewer/test_behavior.py",
+                "content_sha256": "sha256:" + "d" * 64,
+                "runner": "pytest",
+                "covers": ["behavior-x"],
+            }
+        ],
+    )
+
+    assert Path(result["frozen_file"]).is_file()
+    assert certified_test_freeze_violations(
+        repo,
+        "harness-review",
+        ["tests/reviewer/test_behavior.py"],
+    ) == ["tests/reviewer/test_behavior.py"]
+    assert certified_test_freeze_violations(repo, "harness-review", ["src/app.py"]) == []
+
+
+def test_reviewer_can_write_harness_certificate_but_not_candidate_tree(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo,
+            "review",
+            TASK_ID,
+            "--write-verdict",
+            "reader-correctness",
+            "approve",
+            role="reviewer",
+        ).returncode
+        == 0
+    )
+    before = (repo / "src" / "app.txt").read_text(encoding="utf-8")
+
+    from workflow_core.contract_harness.certification import write_pass_certificate
+
+    certificate = write_pass_certificate(repo, TASK_ID, "reader-correctness")
+
+    assert certificate["written_by"] == "harness"
+    assert (repo / "src" / "app.txt").read_text(encoding="utf-8") == before
 
 
 def test_launch_writer_resumes_existing_dirty_sealed_writer_worktree(
@@ -856,6 +1864,85 @@ def test_dispatch_rejects_stale_submission_and_integrate_runs_reviewers(tmp_path
     assert git(repo, "rev-parse", "HEAD") == before_head
 
 
+def test_dispatch_writes_review_runner_diagnosis_when_reviewer_subprocess_fails(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    (repo / ".harness" / "review.yaml").write_text(
+        "default:\n"
+        "  quorum: 3\n"
+        "  reviewers:\n"
+        "    - reader-correctness\n"
+        "    - reader-scope\n"
+        "    - broken-reviewer\n"
+        "  background_auto_run: true\n"
+        "  blocking_labels:\n"
+        "    - semantic_gap\n"
+        "metrics:\n"
+        "  reject_unexpected_actions: false\n",
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml")
+    git(repo, "commit", "-m", "add broken reviewer")
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+
+    assert dispatched.returncode != 0
+    result = json.loads(dispatched.stdout)
+    assert result["status"] == "rework_required"
+    assert result["reason"] == "reviewer_failed:broken-reviewer"
+    run_result = load_runtime_json(repo, "review-runs/broken-reviewer.json")
+    assert run_result["reviewer_id"] == "broken-reviewer"
+    assert run_result["status"] == "fail"
+    assert run_result["exit_code"] == 1
+    assert "unknown reviewer: broken-reviewer" in (
+        run_result["stdout_tail"] + run_result["stderr_tail"]
+    )
+    assert load_runtime_json(repo, "integration-result.json")["reason"] == (
+        "reviewer_failed:broken-reviewer"
+    )
+
+
+def test_gate_writes_review_runner_diagnosis_when_auto_reviewer_fails(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    (repo / ".harness" / "review.yaml").write_text(
+        "default:\n"
+        "  quorum: 3\n"
+        "  reviewers:\n"
+        "    - reader-correctness\n"
+        "    - reader-scope\n"
+        "    - broken-reviewer\n"
+        "  background_auto_run: true\n"
+        "  blocking_labels:\n"
+        "    - semantic_gap\n"
+        "metrics:\n"
+        "  reject_unexpected_actions: false\n",
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml")
+    git(repo, "commit", "-m", "add broken reviewer")
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+
+    gated = run_harness(repo, "gate", TASK_ID, role="integrator")
+
+    assert gated.returncode != 0
+    result = json.loads(gated.stdout)
+    assert result["reason"] == "reviewer_failed:broken-reviewer"
+    run_result = load_runtime_json(repo, "review-runs/broken-reviewer.json")
+    assert run_result["mode"] == "in_process"
+    assert run_result["status"] == "fail"
+    assert "unknown reviewer: broken-reviewer" in run_result["stderr_tail"]
+    assert load_runtime_json(repo, "gate-result.json")["reason"] == (
+        "reviewer_failed:broken-reviewer"
+    )
+
+
 def test_submit_wait_dispatches_in_integrator_boundary(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
     enable_policy_and_remote(tmp_path, repo)
@@ -877,6 +1964,33 @@ def test_submit_wait_dispatches_in_integrator_boundary(tmp_path: Path) -> None:
     handoff = load_runtime_json(repo, "integrator-handoff.json")
     assert handoff["from_workspace"] == str(writer_path)
     assert handoff["integration_workspace"]["kind"] == "integrator"
+
+
+def test_submit_wait_records_dispatch_subprocess_diagnosis(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    enable_policy_and_remote(tmp_path, repo)
+    fake_harness = repo / "fake-harness"
+    fake_harness.write_text(
+        "#!/usr/bin/env sh\n"
+        "printf 'not json output\\n'\n"
+        "printf 'dispatch exploded\\n' >&2\n"
+        "exit 7\n",
+        encoding="utf-8",
+    )
+    fake_harness.chmod(0o755)
+
+    from workflow_core.contract_harness.submission import wait_for_dispatch
+
+    result, code = wait_for_dispatch(repo, TASK_ID, harness_bin=fake_harness)
+
+    assert code == 7
+    assert result["ok"] is False
+    assert result["reason"] == "dispatch exploded"
+    dispatch_result = load_runtime_json(repo, "dispatch-result.json")
+    assert dispatch_result["status"] == "fail"
+    assert dispatch_result["exit_code"] == 7
+    assert dispatch_result["stdout_tail"] == "not json output\n"
+    assert dispatch_result["stderr_tail"] == "dispatch exploded\n"
 
 
 def test_submit_wait_uses_canonical_harness_config_when_worktrees_lack_harness_dir(
@@ -937,7 +2051,7 @@ def test_submit_wait_uses_canonical_harness_config_when_worktrees_lack_harness_d
     assert load_runtime_json(repo, "integration-result.json")["status"] == "integrated"
 
 
-def test_e2e_integrator_dispatch_then_land_keeps_integrator_worktree_reusable(
+def test_e2e_integrator_dispatch_land_then_push_blocks_under_dry_run(
     tmp_path: Path,
 ) -> None:
     repo = init_repo(tmp_path)
@@ -965,6 +2079,16 @@ def test_e2e_integrator_dispatch_then_land_keeps_integrator_worktree_reusable(
     land_result = json.loads(landed.stdout)
     assert land_result["status"] == "landed"
     assert land_result["worktree_path"] == str(integrator_path)
+
+    pushed = run_harness(repo, "push", TASK_ID, role="integrator")
+
+    assert pushed.returncode != 0
+    push_result = json.loads(pushed.stdout)
+    assert push_result["status"] == "blocked"
+    assert push_result["reason"] == "protected_external_write"
+    assert push_result["landed_commit"] == land_result["landed_commit"]
+    assert push_result["lock_acquire"]["status"] == "not_attempted"
+    assert load_runtime_json(repo, "push-result.json")["reason"] == "protected_external_write"
 
 
 def test_land_default_gate_reruns_task_verifiers_not_broad_make(tmp_path: Path) -> None:
@@ -1143,6 +2267,8 @@ def test_parallel_land_same_branch_blocks_one_task_without_mixing_evidence(
     assert blocked_result["task_id"] == task_b
     assert blocked_result["status"] == "blocked"
     assert blocked_result["reason"] == "blocked_by_lock"
+    assert blocked_result["lock"]["read_status"] == "readable"
+    assert blocked_result["lock"]["task_id"] == task_a
     assert (
         blocked_result["candidate_diff_sha256"]
         == load_runtime_json(repo, "verify-result.json", task_b)["candidate_diff_sha256"]
@@ -1156,6 +2282,35 @@ def test_parallel_land_same_branch_blocks_one_task_without_mixing_evidence(
     assert retry_result["task_id"] == task_b
     assert retry_result["status"] == "landed"
     assert retry_result["land_gate"]["status"] == "pass"
+
+
+def test_land_blocked_by_corrupt_local_lock_reports_lock_diagnostics(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    enable_policy_and_remote(tmp_path, repo)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    writer = json.loads(
+        run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
+    )
+    writer_path = Path(writer["path"])
+    (writer_path / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
+    assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
+    assert run_harness(repo, "dispatch", TASK_ID, role="integrator").returncode == 0
+    lock_dir = runtime_root(repo) / "locks"
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = next(lock_dir.glob("land-*.lock"), None)
+    assert lock_path is None
+    corrupt = _lock_path(repo, "land", "main")
+    corrupt.write_text("not json", encoding="utf-8")
+
+    landed = run_harness(repo, "land", TASK_ID, role="integrator")
+
+    assert landed.returncode != 0
+    result = json.loads(landed.stdout)
+    assert result["status"] == "blocked"
+    assert result["reason"] == "blocked_by_lock"
+    assert result["lock"]["read_status"] == "invalid_json"
+    assert result["lock"]["path"] == str(corrupt)
 
 
 def test_parallel_submit_wait_keeps_reviewer_and_integrator_evidence_per_task(
@@ -1784,6 +2939,95 @@ def test_quality_hard_fail_blocks_submit_before_semantic_reviewer(tmp_path: Path
     assert not marker.exists()
 
 
+def test_semantic_reviewer_timeout_writes_command_diagnosis(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "slow_semantic_reviewer.py"
+    script.write_text(
+        "import time\ntime.sleep(2)\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", ".harness/slow_semantic_reviewer.py"]),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/slow_semantic_reviewer.py")
+    git(repo, "commit", "-m", "enable slow semantic reviewer")
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+
+    reviewed = run_harness(
+        repo,
+        "review",
+        TASK_ID,
+        "--run",
+        "semantic-ai",
+        role="reviewer",
+        extra_env={"FOUNDATION_REVIEW_TIMEOUT_S": "1"},
+    )
+
+    assert reviewed.returncode == 0, reviewed.stdout + reviewed.stderr
+    semantic = load_runtime_json(repo, "reviews/semantic-ai.json")
+    assert semantic["verdict"] == "block"
+    assert semantic["labels"] == ["reviewer_infra_failed"]
+    assert (
+        semantic["reason"] == "semantic reviewer infrastructure failed; reviewer agent not active"
+    )
+    command_result = load_runtime_json(repo, "review-runs/semantic-ai-command.json")
+    assert command_result["status"] == "timeout"
+    assert command_result["timed_out"] is True
+    assert command_result["exit_code"] == 124
+    assert command_result["agent_activity"]["status"] == "not_active"
+    assert command_result["agent_activity"]["reviewer_id"] == "semantic-ai"
+    assert command_result["next_action"] == "resume_reviewer_agent"
+    assert "spawn" in command_result["resume_command"]
+    assert "semantic-ai" in command_result["resume_command"]
+
+
+def test_semantic_reviewer_command_failure_prompts_rerun_when_agent_session_exists(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "failing_semantic_reviewer.py"
+    script.write_text(
+        "raise SystemExit(17)\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        semantic_review_yaml(command=["python", ".harness/failing_semantic_reviewer.py"]),
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/failing_semantic_reviewer.py")
+    git(repo, "commit", "-m", "enable failing semantic reviewer")
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    spawned = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "reviewer",
+        "--reviewer-id",
+        "semantic-ai",
+        "--agent",
+        "codex",
+        role="integrator",
+    )
+    assert spawned.returncode == 0, spawned.stdout + spawned.stderr
+
+    reviewed = run_harness(repo, "review", TASK_ID, "--run", "semantic-ai", role="reviewer")
+
+    assert reviewed.returncode == 0, reviewed.stdout + reviewed.stderr
+    semantic = load_runtime_json(repo, "reviews/semantic-ai.json")
+    assert semantic["verdict"] == "block"
+    assert semantic["labels"] == ["reviewer_infra_failed"]
+    command_result = load_runtime_json(repo, "review-runs/semantic-ai-command.json")
+    assert command_result["status"] == "fail"
+    assert command_result["exit_code"] == 17
+    assert command_result["agent_activity"]["status"] == "active"
+    assert command_result["next_action"] == "rerun_semantic_review"
+    assert command_result["rerun_command"].endswith(" review T-0001 --run semantic-ai")
+
+
 def test_tool_candidates_and_reviewer_policy_anchor_reach_semantic_reviewer(
     tmp_path: Path,
 ) -> None:
@@ -1985,7 +3229,13 @@ def test_broken_tool_candidate_probe_hard_fails_verify(tmp_path: Path) -> None:
     assert verify.returncode != 0
     tool_candidates = load_runtime_json(repo, "tool-candidates.json")
     assert tool_candidates["status"] == "fail"
-    assert any(item["kind"] == "script_help_probe" for item in tool_candidates["hard_failures"])
+    probe_failures = [
+        item
+        for item in tool_candidates["hard_failures"]
+        if item["path"] == "scripts/bad_tool.py" and item["kind"] == "script_help_probe"
+    ]
+    assert probe_failures
+    assert "Traceback (most recent call last):" in probe_failures[0]["message"]
 
 
 def test_metric_evidence_reaches_semantic_reviewer(tmp_path: Path) -> None:

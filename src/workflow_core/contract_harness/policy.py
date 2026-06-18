@@ -64,6 +64,16 @@ def integration_target(policy: dict[str, Any]) -> tuple[str, str, dict[str, Any]
     return remote, branch, branch_policy
 
 
+def max_remote_changed_retries(policy: dict[str, Any]) -> int:
+    integration = _integration_bottlenecks(policy)
+    return int(integration.get("max_remote_changed_retries", 0))
+
+
+def oracle_timeout_s(policy: dict[str, Any]) -> int:
+    integration = _integration_bottlenecks(policy)
+    return int(integration.get("oracle_timeout_s", 900))
+
+
 def _blocked(
     *,
     role: str,
@@ -114,6 +124,12 @@ def _require_mapping(data: dict[str, Any], key: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ConfigError(f"policy.yaml {key} must be a mapping")
     return value
+
+
+def _integration_bottlenecks(policy: dict[str, Any]) -> dict[str, Any]:
+    bottlenecks = _require_mapping(policy, "bottlenecks")
+    integration = bottlenecks.get("integration")
+    return integration if isinstance(integration, dict) else {}
 
 
 def _required_target_text(target: dict[str, Any], key: str) -> str:

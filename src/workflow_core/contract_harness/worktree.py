@@ -265,9 +265,15 @@ def _append_exclude_patterns(exclude: Path) -> None:
     exclude.parent.mkdir(parents=True, exist_ok=True)
     if not exclude.is_file():
         exclude.write_text("", encoding="utf-8")
-    lines = exclude.read_text(encoding="utf-8").splitlines()
-    additions = [".harness-worktree.json", "artifact/"]
-    changed = False
+    original = exclude.read_text(encoding="utf-8").splitlines()
+    lines = [line for line in original if line != "artifact/"]
+    additions = [
+        ".harness-worktree.json",
+        "artifact/*",
+        "!artifact/.gitkeep",
+        "!artifact/README.md",
+    ]
+    changed = lines != original
     for item in additions:
         if item not in lines:
             lines.append(item)

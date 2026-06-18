@@ -90,7 +90,7 @@ def review_settings(root: Path) -> dict[str, Any]:
     metrics: dict[str, Any] = metrics_obj if isinstance(metrics_obj, dict) else {}
     reviewers = default.get("reviewers") or ["reader-correctness", "reader-scope"]
     return {
-        "quorum": int(default.get("quorum", 2)),
+        "quorum": _positive_int(default.get("quorum", 2), "review.quorum"),
         "reviewers": [str(item) for item in reviewers],
         "background_auto_run": bool(default.get("background_auto_run", True)),
         "blocking_labels": list(default.get("blocking_labels") or []),
@@ -151,9 +151,22 @@ def _list_of_maps(value: object) -> list[dict[str, Any]]:
 def _normalize_verifier(item: dict[str, Any]) -> dict[str, Any]:
     if not item.get("id") or not item.get("command"):
         raise ConfigError("verifier entries require id and command")
-    return {
+    normalized = {
         "id": str(item["id"]),
         "command": str(item["command"]),
         "applies_to": list(item.get("applies_to") or ["**/*"]),
         "always": bool(item.get("always", True)),
     }
+    if "timeout_s" in item:
+        normalized["timeout_s"] = _positive_int(item["timeout_s"], "verifier.timeout_s")
+    return normalized
+
+
+def _positive_int(value: object, field: str) -> int:
+    try:
+        parsed = int(str(value))
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"{field} must be a positive integer") from exc
+    if parsed <= 0:
+        raise ConfigError(f"{field} must be a positive integer")
+    return parsed

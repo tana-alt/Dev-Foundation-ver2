@@ -10,6 +10,7 @@ import pytest
 from workflow_core.contract_harness.config import ConfigError
 
 ROOT = Path(__file__).resolve().parents[2]
+HARNESS = ROOT / "harness"
 TASK_ID = "T-0001"
 
 
@@ -37,6 +38,7 @@ def init_policy_repo(tmp_path: Path, *, policy_text: str | None = None) -> Path:
     harness = repo / ".harness"
     (harness / "tasks" / TASK_ID).mkdir(parents=True)
     (harness / "rfc-decisions").mkdir()
+    (harness / "bottleneck.yaml").write_text("version: 1\n", encoding="utf-8")
     (harness / "policy.yaml").write_text(policy_text or policy_yaml(), encoding="utf-8")
     (harness / "owners.yaml").write_text(
         "scopes:\n  demo:\n    allowed_paths:\n      - src/**\n",
@@ -146,6 +148,42 @@ def test_policy_yaml_rejects_scope_keys(tmp_path: Path) -> None:
         load_policy(repo)
 
 
+def test_plan_n0003_saved_under_plan_harness_review_plans() -> None:
+    plan = ROOT / "Plan" / "harness-review" / "plans" / "Plan_N0003.md"
+
+    assert plan.is_file()
+    assert "Harness Authority" in plan.read_text(encoding="utf-8")
+
+
+def test_policy_oracle_retry_defaults_to_zero_until_enabled(tmp_path: Path) -> None:
+    repo = init_policy_repo(tmp_path)
+
+    from workflow_core.contract_harness.policy import (
+        load_policy,
+        max_remote_changed_retries,
+        oracle_timeout_s,
+    )
+
+    policy = load_policy(repo)
+    assert max_remote_changed_retries(policy) == 0
+    assert oracle_timeout_s(policy) == 900
+
+    enabled_root = tmp_path / "enabled"
+    enabled_root.mkdir()
+    enabled_policy = policy_yaml().replace(
+        "    lock_timeout_s: 900\n",
+        ("    lock_timeout_s: 900\n    max_remote_changed_retries: 2\n    oracle_timeout_s: 123\n"),
+    )
+    enabled = load_policy(
+        init_policy_repo(
+            enabled_root,
+            policy_text=enabled_policy,
+        )
+    )
+    assert max_remote_changed_retries(enabled) == 2
+    assert oracle_timeout_s(enabled) == 123
+
+
 def test_runtime_root_rejects_tracked_harness_state(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -157,6 +195,24 @@ def test_runtime_root_rejects_tracked_harness_state(
 
     with pytest.raises(ConfigError, match=r"\.harness/state"):
         runtime_root(repo)
+
+
+def test_runtime_artifacts_never_written_under_tracked_harness_state(tmp_path: Path) -> None:
+    repo = init_policy_repo(tmp_path)
+    prepared = subprocess.run(
+        [str(HARNESS), "prepare", TASK_ID],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={**os.environ, "HARNESS_ROLE": "writer"},
+    )
+
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    common = git(repo, "rev-parse", "--git-common-dir").stdout.strip()
+    runtime = repo / common if not Path(common).is_absolute() else Path(common)
+    assert (runtime / "harness-runtime" / "state" / "tasks" / TASK_ID).is_dir()
+    assert not (repo / ".harness" / "state").exists()
 
 
 def test_external_write_decision_blocks_non_integrator_and_dry_run(

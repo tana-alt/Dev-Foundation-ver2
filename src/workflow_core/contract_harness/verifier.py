@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import subprocess
-import time
 from pathlib import Path
 from typing import Any
 
+from workflow_core.contract_harness.command_runner import run_command
 from workflow_core.contract_harness.hashing import hash_json
 
 
@@ -41,19 +40,16 @@ def machine_evidence_hash(
 
 
 def _run_one(root: Path, verifier: dict[str, Any]) -> dict[str, Any]:
-    start = time.monotonic()
-    completed = subprocess.run(
+    completed = run_command(
         str(verifier["command"]),
         cwd=root,
         shell=True,
-        capture_output=True,
-        text=True,
-        timeout=int(verifier.get("timeout_s", 900)),
+        timeout_s=int(verifier.get("timeout_s", 900)),
     )
-    duration_ms = int((time.monotonic() - start) * 1000)
     return {
         "id": str(verifier["id"]),
-        "status": "pass" if completed.returncode == 0 else "fail",
-        "exit_code": completed.returncode,
-        "duration_ms": duration_ms,
+        "status": "pass" if int(completed["exit_code"]) == 0 else "fail",
+        "exit_code": completed["exit_code"],
+        "duration_ms": completed["duration_ms"],
+        "timed_out": completed["timed_out"],
     }

@@ -128,59 +128,220 @@ def role_agent_skills(root: Path, role: str) -> list[dict[str, Any]]:
     return [_skill(root, name, phase, purpose) for name, phase, purpose in specs[role]]
 
 
+_WRITER_TOOL_SPECS = (
+    (
+        "scope-map-forward",
+        "before_edit",
+        "{harness} scope-map {task_id} --forward",
+        "Thin implementation discovery map; advisory only.",
+    ),
+    (
+        "explain",
+        "before_edit",
+        "{harness} explain {task_id}",
+        "Show the task capsule, path contract, verifier ids, and visible tools.",
+    ),
+    (
+        "context-audit",
+        "before_edit",
+        "{harness} context-audit {task_id}",
+        "Quantify role packet size and required tool or skill visibility.",
+    ),
+    (
+        "status",
+        "coordination",
+        "{harness} status {task_id}",
+        "Read artifact-backed task status without changing workflow state.",
+    ),
+    (
+        "spawn-writer",
+        "coordination",
+        "{harness} spawn {task_id} --role writer --agent codex",
+        "Start or rebind a writer session without running verification.",
+    ),
+    (
+        "verify",
+        "before_submit",
+        "{harness} verify {task_id}",
+        "Write candidate diff and machine evidence for the current worktree.",
+    ),
+    (
+        "submit",
+        "handoff",
+        "{harness} submit {task_id}",
+        "Submit fresh verified evidence for reviewer and integrator processing.",
+    ),
+    (
+        "report-rfc",
+        "exception",
+        "{harness} report {task_id} --type rfc",
+        "Create durable RFC evidence for irreversible or policy-sensitive work.",
+    ),
+    (
+        "report-metric",
+        "exception",
+        "{harness} report {task_id} --type metric",
+        "Create durable metric evidence summary when quantitative results matter.",
+    ),
+)
+
+_INTEGRATOR_TOOL_SPECS = (
+    (
+        "review-collect",
+        "merge_preflight",
+        "{harness} review {task_id} --collect",
+        "Collect fresh, stale, approving, and blocking reviewer verdicts.",
+    ),
+    (
+        "scope-map-reverse",
+        "merge_preflight",
+        "{harness} scope-map {task_id} --reverse",
+        "Diff impact map for merge-boundary diagnosis; advisory only.",
+    ),
+    (
+        "affected",
+        "merge_preflight",
+        "{harness} affected {task_id}",
+        "Classify FAST, PARTIAL, or REBASE against the integration target.",
+    ),
+    (
+        "context-audit",
+        "merge_preflight",
+        "{harness} context-audit {task_id}",
+        "Quantify role packet size and required tool or skill visibility.",
+    ),
+    (
+        "status",
+        "coordination",
+        "{harness} status {task_id}",
+        "Read artifact-backed task status without changing workflow state.",
+    ),
+    (
+        "spawn",
+        "coordination",
+        "{harness} spawn {task_id} --role writer --agent codex",
+        "Start or rebind a role session without running authority actions.",
+    ),
+    (
+        "dispatch",
+        "integration",
+        "{harness} dispatch {task_id}",
+        "Run missing reviewers and integration gate from the integrator boundary.",
+    ),
+    (
+        "integrate",
+        "integration",
+        "{harness} integrate {task_id}",
+        "Run integration checks and write rework or integrated result evidence.",
+    ),
+    (
+        "gate",
+        "completion",
+        "{harness} gate {task_id}",
+        "Run final machine gate and reviewer freshness checks.",
+    ),
+    (
+        "land",
+        "merge",
+        "{harness} land {task_id}",
+        "Merge the candidate under push lock and affected-set policy.",
+    ),
+    (
+        "compose",
+        "merge",
+        "{harness} compose {task_id} <other-task-id>",
+        "Compose a deterministic pending candidate set and localize red candidates.",
+    ),
+    (
+        "compose-push",
+        "external_write",
+        "{harness} compose-push {task_id} <other-task-id>",
+        "Push a green composed candidate set with exact-CAS, lock, and rescue evidence.",
+    ),
+    (
+        "oracle",
+        "merge",
+        "{harness} oracle {task_id} --target-head <sha>",
+        "Reapply the submitted candidate on a target head and run machine validation.",
+    ),
+    (
+        "push",
+        "external_write",
+        "{harness} push {task_id}",
+        "Push through policy checks and rescue ref handling.",
+    ),
+)
+
+_MEASUREMENT_TOOL_SPECS = (
+    (
+        "post-tool-use-hook",
+        "observe",
+        "scripts/hook_post_tool_use.py",
+        "{env} python3 {{script}}",
+        "PostToolUse hook command that records task-scoped trajectory JSONL from stdin.",
+    ),
+    (
+        "nfr-metric",
+        "measure",
+        "scripts/nfr_metric.py",
+        "{env} python3 {{script}} summary",
+        "Record and evaluate latency or other NFR samples in nfr.db.",
+    ),
+    (
+        "bench-compare",
+        "measure",
+        "scripts/bench_compare.py",
+        "{env} python3 {{script}} summary",
+        "Record, summarize, and compare benchmark distributions in bench.db.",
+    ),
+    (
+        "abrun",
+        "measure",
+        "scripts/abrun.py",
+        "{env} python3 {{script}} run --config <config.json>",
+        "Run AB baseline/candidate measurements into runs.db.",
+    ),
+    (
+        "check-runner",
+        "measure",
+        "scripts/check_runner.py",
+        "{env} python3 {{script}} run --run-id <run-id> --worktree <path>",
+        "Run functional checks and record check evidence in runs.db.",
+    ),
+    (
+        "verdict",
+        "measure",
+        "scripts/verdict.py",
+        "{env} python3 {{script}} compare --baseline-run <id> --candidate-run <id>",
+        "Statistically compare baseline and candidate samples from runs.db.",
+    ),
+    (
+        "quality-gate",
+        "measure",
+        "scripts/quality_gate.py",
+        "{env} python3 {{script}} evaluate --policy <policy.json>",
+        "Aggregate functional and statistical policy conditions.",
+    ),
+    (
+        "measure-eval",
+        "observe",
+        "scripts/measure_eval.py",
+        "{env} python3 {{script}}",
+        "Ingest trajectory JSONL into eval.db and summarize tool/skill signals.",
+    ),
+    (
+        "surface-issues",
+        "observe",
+        "scripts/surface_issues.py",
+        "{env} python3 {{script}}",
+        "Surface recurring issues from eval.db for later sessions.",
+    ),
+)
+
+
 def _writer_harness_tools(root: Path, task_id: str) -> list[dict[str, Any]]:
     harness = _harness_command(root)
-    return [
-        _harness_tool(
-            "writer",
-            "scope-map-forward",
-            "before_edit",
-            f"{harness} scope-map {task_id} --forward",
-            "Thin implementation discovery map; advisory only.",
-        ),
-        _harness_tool(
-            "writer",
-            "explain",
-            "before_edit",
-            f"{harness} explain {task_id}",
-            "Show the task capsule, path contract, verifier ids, and visible tools.",
-        ),
-        _harness_tool(
-            "writer",
-            "context-audit",
-            "before_edit",
-            f"{harness} context-audit {task_id}",
-            "Quantify role packet size and required tool or skill visibility.",
-        ),
-        _harness_tool(
-            "writer",
-            "verify",
-            "before_submit",
-            f"{harness} verify {task_id}",
-            "Write candidate diff and machine evidence for the current worktree.",
-        ),
-        _harness_tool(
-            "writer",
-            "submit",
-            "handoff",
-            f"{harness} submit {task_id}",
-            "Submit fresh verified evidence for reviewer and integrator processing.",
-        ),
-        _harness_tool(
-            "writer",
-            "report-rfc",
-            "exception",
-            f"{harness} report {task_id} --type rfc",
-            "Create durable RFC evidence for irreversible or policy-sensitive work.",
-        ),
-        _harness_tool(
-            "writer",
-            "report-metric",
-            "exception",
-            f"{harness} report {task_id} --type metric",
-            "Create durable metric evidence summary when quantitative results matter.",
-        ),
-    ]
+    return _harness_tools_from_specs("writer", harness, task_id, _WRITER_TOOL_SPECS)
 
 
 def _reviewer_harness_tools(root: Path, task_id: str) -> list[dict[str, Any]]:
@@ -202,81 +363,31 @@ def _reviewer_harness_tools(root: Path, task_id: str) -> list[dict[str, Any]]:
         ),
         _harness_tool(
             "reviewer",
+            "status",
+            "review",
+            f"{harness} status {task_id}",
+            "Read artifact-backed task status without changing workflow state.",
+        ),
+        _harness_tool(
+            "reviewer",
             "review-verdict",
             "review",
             f"{harness} review {task_id} --write-verdict <reviewer> approve|block",
             "Write a harness-owned reviewer verdict with current evidence hashes.",
+        ),
+        _harness_tool(
+            "reviewer",
+            "certify",
+            "review",
+            f"{harness} certify {task_id} --reviewer-id <reviewer>",
+            "Write a content-bound pass certificate for a fresh approve verdict.",
         ),
     ]
 
 
 def _integrator_tools(root: Path, task_id: str) -> list[dict[str, Any]]:
     harness = _harness_command(root)
-    return [
-        _harness_tool(
-            "integrator",
-            "review-collect",
-            "merge_preflight",
-            f"{harness} review {task_id} --collect",
-            "Collect fresh, stale, approving, and blocking reviewer verdicts.",
-        ),
-        _harness_tool(
-            "integrator",
-            "scope-map-reverse",
-            "merge_preflight",
-            f"{harness} scope-map {task_id} --reverse",
-            "Diff impact map for merge-boundary diagnosis; advisory only.",
-        ),
-        _harness_tool(
-            "integrator",
-            "affected",
-            "merge_preflight",
-            f"{harness} affected {task_id}",
-            "Classify FAST, PARTIAL, or REBASE against the integration target.",
-        ),
-        _harness_tool(
-            "integrator",
-            "context-audit",
-            "merge_preflight",
-            f"{harness} context-audit {task_id}",
-            "Quantify role packet size and required tool or skill visibility.",
-        ),
-        _harness_tool(
-            "integrator",
-            "dispatch",
-            "integration",
-            f"{harness} dispatch {task_id}",
-            "Run missing reviewers and integration gate from the integrator boundary.",
-        ),
-        _harness_tool(
-            "integrator",
-            "integrate",
-            "integration",
-            f"{harness} integrate {task_id}",
-            "Run integration checks and write rework or integrated result evidence.",
-        ),
-        _harness_tool(
-            "integrator",
-            "gate",
-            "completion",
-            f"{harness} gate {task_id}",
-            "Run final machine gate and reviewer freshness checks.",
-        ),
-        _harness_tool(
-            "integrator",
-            "land",
-            "merge",
-            f"{harness} land {task_id}",
-            "Merge the candidate under push lock and affected-set policy.",
-        ),
-        _harness_tool(
-            "integrator",
-            "push",
-            "external_write",
-            f"{harness} push {task_id}",
-            "Push through policy checks and rescue ref handling.",
-        ),
-    ]
+    return _harness_tools_from_specs("integrator", harness, task_id, _INTEGRATOR_TOOL_SPECS)
 
 
 def _measurement_tools(root: Path, task_id: str, role: str) -> list[dict[str, Any]]:
@@ -293,70 +404,9 @@ def _measurement_tool_specs(
     role: str,
 ) -> tuple[tuple[str, str, str, str, str], ...]:
     env = _measurement_env(root, task_id, role)
-    return (
-        (
-            "post-tool-use-hook",
-            "observe",
-            "scripts/hook_post_tool_use.py",
-            f"{env} python3 {{script}}",
-            "PostToolUse hook command that records task-scoped trajectory JSONL from stdin.",
-        ),
-        (
-            "nfr-metric",
-            "measure",
-            "scripts/nfr_metric.py",
-            f"{env} python3 {{script}} summary",
-            "Record and evaluate latency or other NFR samples in nfr.db.",
-        ),
-        (
-            "bench-compare",
-            "measure",
-            "scripts/bench_compare.py",
-            f"{env} python3 {{script}} summary",
-            "Record, summarize, and compare benchmark distributions in bench.db.",
-        ),
-        (
-            "abrun",
-            "measure",
-            "scripts/abrun.py",
-            f"{env} python3 {{script}} run --config <config.json>",
-            "Run AB baseline/candidate measurements into runs.db.",
-        ),
-        (
-            "check-runner",
-            "measure",
-            "scripts/check_runner.py",
-            f"{env} python3 {{script}} run --run-id <run-id> --worktree <path>",
-            "Run functional checks and record check evidence in runs.db.",
-        ),
-        (
-            "verdict",
-            "measure",
-            "scripts/verdict.py",
-            f"{env} python3 {{script}} compare --baseline-run <id> --candidate-run <id>",
-            "Statistically compare baseline and candidate samples from runs.db.",
-        ),
-        (
-            "quality-gate",
-            "measure",
-            "scripts/quality_gate.py",
-            f"{env} python3 {{script}} evaluate --policy <policy.json>",
-            "Aggregate functional and statistical policy conditions.",
-        ),
-        (
-            "measure-eval",
-            "observe",
-            "scripts/measure_eval.py",
-            f"{env} python3 {{script}}",
-            "Ingest trajectory JSONL into eval.db and summarize tool/skill signals.",
-        ),
-        (
-            "surface-issues",
-            "observe",
-            "scripts/surface_issues.py",
-            f"{env} python3 {{script}}",
-            "Surface recurring issues from eval.db for later sessions.",
-        ),
+    return tuple(
+        (name, phase, rel_path, command_template.format(env=env), purpose)
+        for name, phase, rel_path, command_template, purpose in _MEASUREMENT_TOOL_SPECS
     )
 
 
@@ -461,6 +511,24 @@ def _harness_tool(
     purpose: str,
 ) -> dict[str, Any]:
     return _tool(name, phase, f"HARNESS_ROLE={role} {command}", purpose)
+
+
+def _harness_tools_from_specs(
+    role: str,
+    harness: str,
+    task_id: str,
+    specs: tuple[tuple[str, str, str, str], ...],
+) -> list[dict[str, Any]]:
+    return [
+        _harness_tool(
+            role,
+            name,
+            phase,
+            command_template.format(harness=harness, task_id=task_id),
+            purpose,
+        )
+        for name, phase, command_template, purpose in specs
+    ]
 
 
 def _skill(root: Path, name: str, phase: str, purpose: str) -> dict[str, Any]:
