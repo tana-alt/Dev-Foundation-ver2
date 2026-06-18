@@ -165,12 +165,33 @@ def _run_harness_dispatch(root: Path, task_id: str) -> int:
             env=env,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        _write_dispatch_observation(
+            root,
+            task_id,
+            {
+                "status": "skipped",
+                "reason": type(exc).__name__,
+                "dispatch_returncode": None,
+                "error": str(exc),
+            },
+        )
         print(f"hook_stop: harness gate skipped: {exc}", file=sys.stderr)
         return 0
     if completed.returncode == 0:
         reason = _block_reason(completed.stdout)
     else:
         reason = _block_reason(completed.stdout)
+        _write_dispatch_observation(
+            root,
+            task_id,
+            {
+                "status": "failed",
+                "reason": reason,
+                "dispatch_returncode": completed.returncode,
+                "stdout_tail": _tail(completed.stdout),
+                "stderr_tail": _tail(completed.stderr),
+            },
+        )
     print(
         json.dumps(
             {
@@ -182,6 +203,28 @@ def _run_harness_dispatch(root: Path, task_id: str) -> int:
         )
     )
     return 0
+
+
+def _write_dispatch_observation(root: Path, task_id: str, payload: dict[str, object]) -> None:
+    runtime = _runtime_root(root)
+    if runtime is None:
+        return
+    path = runtime / "state" / "tasks" / task_id / "hook-stop-dispatch.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "schema_version": 1,
+        "task_id": task_id,
+        "written_by": "hook_stop",
+        **payload,
+    }
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _tail(value: str, limit: int = 4096) -> str:
+    raw = value.encode("utf-8")
+    if len(raw) <= limit:
+        return value
+    return raw[-limit:].decode("utf-8", errors="replace")
 
 
 def main() -> int:

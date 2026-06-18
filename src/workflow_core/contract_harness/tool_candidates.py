@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
+from workflow_core.contract_harness.command_runner import command_failure_summary, run_command
 from workflow_core.contract_harness.quality_metrics import status_from_findings
 
 TOOL_PROBE_TIMEOUT_S = 5
@@ -123,24 +123,17 @@ def _durable_checks(root: Path, rel_path: str, kind: str, text: str) -> list[dic
 
 
 def _script_help_probe(root: Path, rel_path: str) -> dict[str, str]:
-    try:
-        completed = subprocess.run(
-            [sys.executable, rel_path, "--help"],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            timeout=TOOL_PROBE_TIMEOUT_S,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return {"name": "script_help_probe", "status": "fail", "message": str(exc)}
+    completed = run_command(
+        [sys.executable, rel_path, "--help"],
+        cwd=root,
+        timeout_s=TOOL_PROBE_TIMEOUT_S,
+    )
     message = ""
-    if completed.returncode != 0:
-        message = completed.stderr.strip()
-        if not message and completed.stdout.strip():
-            message = completed.stdout.strip().splitlines()[0]
+    if int(completed["exit_code"]) != 0:
+        message = command_failure_summary(completed)
     return {
         "name": "script_help_probe",
-        "status": "pass" if completed.returncode == 0 else "fail",
+        "status": "pass" if int(completed["exit_code"]) == 0 else "fail",
         "message": message,
     }
 

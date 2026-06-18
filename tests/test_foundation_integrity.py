@@ -747,6 +747,25 @@ def test_repo_hygiene_behavior(tmp_path: Path) -> None:
     assert "tracked ignored files:" in ignored_result.stderr
     assert "ignored.txt" in ignored_result.stderr
 
+    artifact_metadata_repo = tmp_path / "artifact-metadata"
+    init_hygiene_repo(artifact_metadata_repo)
+    (artifact_metadata_repo / ".gitignore").write_text("artifact/\n", encoding="utf-8")
+    artifact_dir = artifact_metadata_repo / "artifact"
+    artifact_dir.mkdir()
+    (artifact_dir / ".gitkeep").write_text("", encoding="utf-8")
+    (artifact_dir / "README.md").write_text("artifact metadata\n", encoding="utf-8")
+    git_add(artifact_metadata_repo, ".gitignore")
+    subprocess.run(
+        ["git", "add", "-f", "artifact/.gitkeep", "artifact/README.md"],
+        cwd=artifact_metadata_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    artifact_metadata_result = run_hygiene_check(artifact_metadata_repo)
+    assert artifact_metadata_result.returncode == 0
+    assert "repo hygiene: passed" in artifact_metadata_result.stdout
+
     forbidden_repo = tmp_path / "forbidden"
     init_hygiene_repo(forbidden_repo)
     forbidden_file = forbidden_repo / "runtime" / "state.txt"

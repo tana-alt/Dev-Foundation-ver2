@@ -17,6 +17,8 @@ from workflow_core.contract_harness.agent_tools import (
     role_agent_tools,
     role_optional_tools,
 )
+from workflow_core.contract_harness.certification import write_pass_certificate
+from workflow_core.contract_harness.compose import compose_candidates, push_composed_candidates
 from workflow_core.contract_harness.config import ConfigError
 from workflow_core.contract_harness.context_audit import audit_context
 from workflow_core.contract_harness.contract import load_contract, prepare
@@ -24,7 +26,8 @@ from workflow_core.contract_harness.gate import gate_task
 from workflow_core.contract_harness.gitutil import GitError, repo_root
 from workflow_core.contract_harness.integration import dispatch_task, integrate_task
 from workflow_core.contract_harness.land import land_task
-from workflow_core.contract_harness.launch import writer_session
+from workflow_core.contract_harness.manual_resolution import check_manual_resolution
+from workflow_core.contract_harness.merge_oracle import run_single_candidate_oracle
 from workflow_core.contract_harness.push import push_task
 from workflow_core.contract_harness.report import write_report
 from workflow_core.contract_harness.roles import RoleError, require_allowed
@@ -33,6 +36,8 @@ from workflow_core.contract_harness.scope_map import (
     write_forward_scope_map,
     write_reverse_scope_map,
 )
+from workflow_core.contract_harness.spawn import spawn_session
+from workflow_core.contract_harness.status import task_status
 from workflow_core.contract_harness.submission import submit_task
 from workflow_core.contract_harness.verify import verify_task
 from workflow_core.contract_harness.worktree import create_worktree
@@ -79,6 +84,23 @@ def _dispatch(args: argparse.Namespace) -> int:
         "tools": lambda: _json(_tools(root, args), 0),
         "context-audit": lambda: _context_audit(root, args.task_id),
         "launch-writer": lambda: _launch_writer(root, args),
+        "spawn": lambda: _spawn(root, args),
+        "status": lambda: _json(task_status(root, args.task_id), 0),
+        "oracle": lambda: _json_pair(
+            run_single_candidate_oracle(
+                root,
+                args.task_id,
+                target_head_sha=args.target_head,
+                attempt=int(args.attempt),
+            )
+        ),
+        "certify": lambda: _json(
+            write_pass_certificate(root, args.task_id, args.reviewer_id),
+            0,
+        ),
+        "compose": lambda: _json_pair(compose_candidates(root, args.task_ids)),
+        "compose-push": lambda: _json_pair(push_composed_candidates(root, args.task_ids)),
+        "manual-resolution-check": lambda: _json_pair(check_manual_resolution(root, args.task_id)),
         "land": lambda: _json_pair(land_task(root, args.task_id)),
         "push": lambda: _json_pair(push_task(root, args.task_id)),
         "report": lambda: _json(write_report(root, args.task_id, args.type), 0),
@@ -161,11 +183,33 @@ def _tools(root: Path, args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _launch_writer(root: Path, args: argparse.Namespace) -> int:
-    session = writer_session(root, args.task_id, agent_command=args.agent_command)
+    session = spawn_session(
+        root,
+        args.task_id,
+        target_role="writer",
+        agent="codex",
+        agent_command=args.agent_command,
+    )
     if args.shell:
         print(session["command"])
         return 0
     return _json(session, 0)
+
+
+def _spawn(root: Path, args: argparse.Namespace) -> int:
+    return _json(
+        spawn_session(
+            root,
+            args.task_id,
+            target_role=args.role,
+            agent=args.agent,
+            agent_command=args.agent_command,
+            reviewer_id=args.reviewer_id,
+            profile=args.profile,
+            comm=bool(args.comm),
+        ),
+        0,
+    )
 
 
 def _context_audit(root: Path, task_id: str) -> int:
@@ -218,6 +262,13 @@ def _parser() -> argparse.ArgumentParser:
     _tools_command(sub)
     _task_command(sub, "context-audit")
     _launch_writer_command(sub)
+    _spawn_command(sub)
+    _task_command(sub, "status")
+    _oracle_command(sub)
+    _certify_command(sub)
+    _compose_command(sub)
+    _compose_push_command(sub)
+    _task_command(sub, "manual-resolution-check")
     _report_command(sub)
     _review_command(sub)
     _worktree_command(sub)
@@ -268,6 +319,40 @@ def _launch_writer_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser.add_argument("task_id")
     parser.add_argument("--agent-command", default="codex --yolo")
     parser.add_argument("--shell", action="store_true")
+
+
+def _spawn_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("spawn")
+    parser.add_argument("task_id")
+    parser.add_argument("--role", choices=["writer", "reviewer", "integrator"], required=True)
+    parser.add_argument("--agent", choices=["codex", "claude", "custom"], required=True)
+    parser.add_argument("--agent-command", default="codex --yolo")
+    parser.add_argument("--reviewer-id")
+    parser.add_argument("--profile", choices=["default", "measurement"], default="default")
+    parser.add_argument("--comm", action="store_true")
+
+
+def _oracle_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("oracle")
+    parser.add_argument("task_id")
+    parser.add_argument("--target-head", required=True)
+    parser.add_argument("--attempt", type=int, default=1)
+
+
+def _certify_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("certify")
+    parser.add_argument("task_id")
+    parser.add_argument("--reviewer-id", required=True)
+
+
+def _compose_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("compose")
+    parser.add_argument("task_ids", nargs="+")
+
+
+def _compose_push_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("compose-push")
+    parser.add_argument("task_ids", nargs="+")
 
 
 def _report_command(sub: argparse._SubParsersAction[Any]) -> None:

@@ -1,30 +1,44 @@
 from __future__ import annotations
 
-import os
-import subprocess
 from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.contract_harness.affected import classify_affected_set
-from workflow_core.contract_harness.contract import load_verifier_plan
-from workflow_core.contract_harness.gitutil import git
 from workflow_core.contract_harness.jsonio import read_json, write_json
+from workflow_core.contract_harness.land_core import (
+    apply_candidate_diff,
+    commit_land,
+    run_machine_gate,
+)
 from workflow_core.contract_harness.lock import LockBlocked, local_lock
 from workflow_core.contract_harness.policy import integration_target, load_policy
 from workflow_core.contract_harness.runtime_paths import task_dir
 from workflow_core.contract_harness.submission import validate_submission
-from workflow_core.contract_harness.verifier import all_passed, run_verifiers
 from workflow_core.contract_harness.worktree import create_worktree
 
 
 def land_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     validate_submission(root, task_id)
-    gate_result = read_json(task_dir(root, task_id) / "gate-result.json")
-    if gate_result.get("mergeable") is not True:
-        raise ValueError("gate-result must be mergeable before land")
     policy = load_policy(root)
     _remote, branch, _branch_policy = integration_target(policy)
     affected = classify_affected_set(root, task_id)
+    gate_result_path = task_dir(root, task_id) / "gate-result.json"
+    if not gate_result_path.is_file():
+        result = _result(root, task_id, affected, status="blocked", reason="gate_result_missing")
+        write_json(task_dir(root, task_id) / "land-result.json", result)
+        return result, 1
+    gate_result = read_json(gate_result_path)
+    if gate_result.get("mergeable") is not True:
+        result = _result(
+            root,
+            task_id,
+            affected,
+            status="blocked",
+            reason="gate_not_mergeable",
+            gate_result=gate_result,
+        )
+        write_json(task_dir(root, task_id) / "land-result.json", result)
+        return result, 1
     timeout_s = _lock_timeout(policy)
     try:
         with local_lock(
@@ -36,8 +50,9 @@ def land_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
             timeout_s=timeout_s,
         ):
             result, code = _land_with_lock(root, task_id, affected)
-    except LockBlocked:
+    except LockBlocked as exc:
         result = _result(root, task_id, affected, status="blocked", reason="blocked_by_lock")
+        result["lock"] = exc.diagnostics
         code = 1
     write_json(task_dir(root, task_id) / "land-result.json", result)
     return result, code
@@ -101,41 +116,16 @@ def _rework_result(
 
 
 def _apply_candidate(root: Path, task_id: str, path: Path) -> bool:
-    candidate = task_dir(root, task_id) / "candidate.diff"
-    applied = git(path, ["apply", "--whitespace=nowarn", str(candidate)], check=False)
+    applied = apply_candidate_diff(root, task_id, path)
     return applied.returncode == 0
 
 
 def _run_machine_gate(path: Path, task_id: str) -> dict[str, Any]:
-    if "FOUNDATION_GATE_TIER" not in os.environ:
-        verifiers = run_verifiers(path, load_verifier_plan(path, task_id))
-        passed = all_passed(verifiers)
-        return {
-            "status": "pass" if passed else "fail",
-            "command": "harness verifiers: "
-            + ", ".join(str(item.get("id", "")) for item in verifiers),
-            "exit_code": 0 if passed else 1,
-            "verifiers": verifiers,
-        }
-    tier = os.environ.get("FOUNDATION_GATE_TIER", "check-required")
-    completed = subprocess.run(
-        ["make", tier],
-        cwd=path,
-        capture_output=True,
-        text=True,
-        timeout=int(os.environ.get("FOUNDATION_GATE_TIMEOUT_S", "900")),
-    )
-    return {
-        "status": "pass" if completed.returncode == 0 else "fail",
-        "command": f"make {tier}",
-        "exit_code": completed.returncode,
-    }
+    return run_machine_gate(path, task_id)
 
 
 def _commit_land(path: Path, task_id: str) -> str:
-    git(path, ["add", "-A"])
-    git(path, ["commit", "-m", f"land {task_id}"])
-    return git(path, ["rev-parse", "HEAD"]).stdout.strip()
+    return commit_land(path, task_id)
 
 
 def _result(
@@ -148,6 +138,7 @@ def _result(
     worktree_path: Path | None = None,
     landed_commit: str | None = None,
     land_gate: dict[str, Any] | None = None,
+    gate_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     verify_result = read_json(task_dir(root, task_id) / "verify-result.json")
     return {
@@ -163,6 +154,7 @@ def _result(
         "worktree_path": str(worktree_path) if worktree_path else None,
         "landed_commit": landed_commit,
         "land_gate": land_gate or {"status": "not_run"},
+        "gate_result": gate_result,
     }
 
 

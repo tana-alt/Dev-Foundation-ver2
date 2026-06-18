@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import os
-import subprocess
 from pathlib import Path
 from typing import Any
 
-from workflow_core.contract_harness.config import review_settings
 from workflow_core.contract_harness.gate import gate_task
 from workflow_core.contract_harness.gitutil import head_sha
 from workflow_core.contract_harness.jsonio import write_json
-from workflow_core.contract_harness.review import stale_or_missing
+from workflow_core.contract_harness.review_runner import (
+    ReviewRunnerError,
+    run_missing_reviewers,
+    run_reviewer_subprocess,
+)
 from workflow_core.contract_harness.runtime_paths import task_dir
 from workflow_core.contract_harness.submission import validate_submission
 
@@ -37,7 +38,21 @@ def integrate_task(
     harness_bin: Path,
 ) -> tuple[dict[str, Any], int]:
     before = head_sha(root)
-    _run_missing_reviewers(root, task_id, harness_bin)
+    try:
+        _run_missing_reviewers(root, task_id, harness_bin)
+    except ReviewRunnerError as exc:
+        result = _result(
+            task_id,
+            status="rework_required",
+            reason=f"reviewer_failed:{exc.reviewer_id}",
+            head_unchanged=before == head_sha(root),
+        )
+        result["review"] = {
+            "failed_reviewer": exc.reviewer_id,
+            "run_result": exc.result,
+        }
+        write_json(task_dir(root, task_id) / "integration-result.json", result)
+        return result, 1
     gate_result, gate_code = gate_task(root, task_id)
     after = head_sha(root)
     status = "integrated" if gate_code == 0 else "rework_required"
@@ -47,24 +62,11 @@ def integrate_task(
 
 
 def _run_missing_reviewers(root: Path, task_id: str, harness_bin: Path) -> None:
-    settings = review_settings(root)
-    if not settings["background_auto_run"]:
-        return
-    for reviewer_id in stale_or_missing(root, task_id):
-        _run_reviewer(root, task_id, reviewer_id, harness_bin)
-
-
-def _run_reviewer(root: Path, task_id: str, reviewer_id: str, harness_bin: Path) -> None:
-    completed = subprocess.run(
-        [str(harness_bin), "review", task_id, "--run", reviewer_id],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        timeout=int(os.environ.get("FOUNDATION_GATE_TIMEOUT_S", "900")),
-        env={**os.environ, "HARNESS_ROLE": "reviewer"},
+    run_missing_reviewers(
+        root,
+        task_id,
+        lambda reviewer_id: run_reviewer_subprocess(root, task_id, reviewer_id, harness_bin),
     )
-    if completed.returncode != 0:
-        raise RuntimeError(completed.stdout.strip() or completed.stderr.strip())
 
 
 def _from_gate(
@@ -92,7 +94,13 @@ def _from_gate(
     }
 
 
-def _result(task_id: str, *, status: str, reason: str) -> dict[str, Any]:
+def _result(
+    task_id: str,
+    *,
+    status: str,
+    reason: str,
+    head_unchanged: bool = True,
+) -> dict[str, Any]:
     return {
         "task_id": task_id,
         "role": "integrator",
@@ -101,5 +109,5 @@ def _result(task_id: str, *, status: str, reason: str) -> dict[str, Any]:
         "review": {},
         "completion": {"status": "not_run"},
         "metrics": {},
-        "head_unchanged": True,
+        "head_unchanged": head_unchanged,
     }

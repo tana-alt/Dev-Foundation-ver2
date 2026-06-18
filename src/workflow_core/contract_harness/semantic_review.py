@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import os
-import subprocess
+import shlex
 from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.contract_harness.agent_tools import role_agent_skills, role_agent_tools
+from workflow_core.contract_harness.command_runner import (
+    command_result_artifact,
+    env_timeout_s,
+    run_command,
+)
 from workflow_core.contract_harness.config import ConfigError, control_root
 from workflow_core.contract_harness.evidence import machine_artifact_hashes
 from workflow_core.contract_harness.hashing import file_hash
@@ -48,12 +53,10 @@ def run_command_profile(
     workspace_path = Path(str(workspace["path"]))
     before_hash = workspace_candidate_hash(workspace_path, task_id)
     packet_path, output_path = _write_packet(root, task_id, reviewer_id, verify_result, workspace)
-    completed = subprocess.run(
+    completed = run_command(
         _command(root, profile, packet_path, output_path, task_id),
         cwd=workspace_path,
-        capture_output=True,
-        text=True,
-        timeout=int(os.environ.get("FOUNDATION_REVIEW_TIMEOUT_S", "900")),
+        timeout_s=env_timeout_s("FOUNDATION_REVIEW_TIMEOUT_S", 900),
         env={
             **os.environ,
             "HARNESS_REVIEW_PACKET": str(packet_path),
@@ -62,12 +65,14 @@ def run_command_profile(
             "HARNESS_TASK_ID": task_id,
         },
     )
-    if completed.returncode != 0:
-        return "block", ["semantic_gap"], completed.stderr.strip() or completed.stdout.strip()
+    activity = _agent_activity(root, task_id, reviewer_id)
+    _write_command_result(root, task_id, reviewer_id, completed, activity=activity)
+    if int(completed["exit_code"]) != 0:
+        return "block", ["reviewer_infra_failed"], _infra_failure_reason(activity)
     after_hash = workspace_candidate_hash(workspace_path, task_id)
     if after_hash != before_hash:
         return "block", ["semantic_gap"], "reviewer mutated candidate workspace"
-    return _read_ai_verdict(output_path, completed.stdout)
+    return _read_ai_verdict(output_path, str(completed.get("stdout") or ""))
 
 
 def _machine_ready(root: Path, task_id: str, verify_result: dict[str, Any]) -> bool:
@@ -280,6 +285,105 @@ def _read_ai_verdict(output_path: Path, stdout: str) -> tuple[str, list[str], st
     labels = [str(item) for item in data.get("labels", []) if isinstance(item, str)]
     reason = str(data.get("reason", ""))
     return verdict, labels, reason
+
+
+def _write_command_result(
+    root: Path,
+    task_id: str,
+    reviewer_id: str,
+    result: dict[str, Any],
+    *,
+    activity: dict[str, Any],
+) -> None:
+    write_json(
+        task_dir(root, task_id) / "review-runs" / f"{reviewer_id}-command.json",
+        {
+            "task_id": task_id,
+            "reviewer_id": reviewer_id,
+            "mode": "command_profile",
+            **command_result_artifact(result),
+            "agent_activity": activity,
+            "next_action": _next_action(activity),
+            "resume_command": _resume_command(root, task_id, reviewer_id),
+            "rerun_command": _rerun_command(root, task_id, reviewer_id),
+            "written_by": "harness",
+        },
+    )
+
+
+def _agent_activity(root: Path, task_id: str, reviewer_id: str) -> dict[str, Any]:
+    runtime = task_dir(root, task_id)
+    session_path = runtime / f"reviewer-session-{_safe_component(reviewer_id)}.json"
+    if session_path.is_file():
+        session = read_json(session_path)
+        status = str(session.get("status") or "unknown")
+        return {
+            "status": "active" if status in {"ready", "active"} else "stopped",
+            "source": str(session_path),
+            "session_status": status,
+            "reviewer_id": reviewer_id,
+            "agent_id": str(session.get("agent_id") or ""),
+        }
+    for path in sorted((runtime / "comm" / "sessions").glob("*.json")):
+        session = read_json(path)
+        if session.get("role") != "reviewer":
+            continue
+        if str(session.get("agent_id") or "").split(".")[-1] != reviewer_id:
+            continue
+        status = str(session.get("status") or "unknown")
+        return {
+            "status": "active" if status in {"ready", "active"} else "stopped",
+            "source": str(path),
+            "session_status": status,
+            "reviewer_id": reviewer_id,
+            "agent_id": str(session.get("agent_id") or ""),
+        }
+    return {
+        "status": "not_active",
+        "source": "missing_reviewer_session",
+        "reviewer_id": reviewer_id,
+        "agent_id": "",
+    }
+
+
+def _infra_failure_reason(activity: dict[str, Any]) -> str:
+    status = str(activity.get("status") or "unknown")
+    if status == "active":
+        return "semantic reviewer infrastructure failed; reviewer agent is active"
+    return "semantic reviewer infrastructure failed; reviewer agent not active"
+
+
+def _next_action(activity: dict[str, Any]) -> str:
+    return (
+        "rerun_semantic_review" if activity.get("status") == "active" else "resume_reviewer_agent"
+    )
+
+
+def _resume_command(root: Path, task_id: str, reviewer_id: str) -> str:
+    harness = shlex.quote(str(_harness_path(root)))
+    reviewer = shlex.quote(reviewer_id)
+    return (
+        f"HARNESS_ROLE=integrator {harness} spawn {task_id} --role reviewer "
+        f"--reviewer-id {reviewer} --agent codex --comm"
+    )
+
+
+def _rerun_command(root: Path, task_id: str, reviewer_id: str) -> str:
+    harness = shlex.quote(str(_harness_path(root)))
+    reviewer = shlex.quote(reviewer_id)
+    return f"HARNESS_ROLE=reviewer {harness} review {task_id} --run {reviewer}"
+
+
+def _harness_path(root: Path) -> Path:
+    candidate = root / "harness"
+    if candidate.is_file():
+        return candidate
+    return Path(__file__).resolve().parents[3] / "harness"
+
+
+def _safe_component(value: str) -> str:
+    cleaned = "".join(ch if ch.isalnum() or ch in "._-" else "-" for ch in value)
+    return cleaned.strip(".-") or "agent"
 
 
 def _json_from_stdout(stdout: str) -> dict[str, Any]:

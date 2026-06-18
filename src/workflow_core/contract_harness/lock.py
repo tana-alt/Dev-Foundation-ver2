@@ -12,7 +12,9 @@ from workflow_core.contract_harness.runtime_paths import locks_dir
 
 
 class LockBlocked(RuntimeError):
-    pass
+    def __init__(self, reason: str, diagnostics: dict[str, str] | None = None) -> None:
+        super().__init__(reason)
+        self.diagnostics = diagnostics or {}
 
 
 @contextmanager
@@ -40,7 +42,7 @@ def local_lock(
     try:
         os.link(tmp, path)
     except FileExistsError as exc:
-        raise LockBlocked("blocked_by_lock") from exc
+        raise LockBlocked("blocked_by_lock", _lock_diagnostics(path)) from exc
     finally:
         tmp.unlink(missing_ok=True)
     try:
@@ -62,6 +64,21 @@ def _remove_stale(path: Path, timeout_s: int) -> None:
     age = (datetime.now(UTC) - created).total_seconds()
     if age > timeout_s:
         path.unlink(missing_ok=True)
+
+
+def _lock_diagnostics(path: Path) -> dict[str, str]:
+    diagnostics = {"path": str(path)}
+    try:
+        payload = read_json(path)
+    except OSError as exc:
+        return {**diagnostics, "read_status": "unreadable", "error": str(exc)}
+    except ValueError as exc:
+        return {**diagnostics, "read_status": "invalid_json", "error": str(exc)}
+    diagnostics["read_status"] = "readable"
+    for key in ("task_id", "target_branch", "pid", "created_at", "base_sha"):
+        if key in payload:
+            diagnostics[key] = str(payload[key])
+    return diagnostics
 
 
 def _lock_path(root: Path, name: str, target_branch: str) -> Path:

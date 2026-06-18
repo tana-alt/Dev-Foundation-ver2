@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.completion import CheckOutcome, run_completion_gate, write_evidence
+from workflow_core.contract_harness.command_runner import env_timeout_s, run_command
 from workflow_core.contract_harness.config import control_root, review_settings
 from workflow_core.contract_harness.contract import (
     load_contract,
@@ -17,7 +17,12 @@ from workflow_core.contract_harness.evidence import machine_artifact_hashes
 from workflow_core.contract_harness.gitutil import head_sha
 from workflow_core.contract_harness.hashing import file_hash
 from workflow_core.contract_harness.jsonio import read_json, write_json
-from workflow_core.contract_harness.review import collect, run_profile, stale_or_missing
+from workflow_core.contract_harness.review import collect
+from workflow_core.contract_harness.review_runner import (
+    ReviewRunnerError,
+    run_missing_reviewers,
+    run_reviewer_in_process,
+)
 from workflow_core.contract_harness.runtime_paths import task_dir
 from workflow_core.contract_harness.snapshot import changed_repo_paths, snapshot_diff
 from workflow_core.contract_harness.verifier import all_passed, run_verifiers
@@ -34,7 +39,19 @@ def gate_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         base = _with_completion(root, task_id, base, workspace)
     if base["reason"] == "ok":
         before_review = head_sha(workspace)
-        _auto_review(root, task_id)
+        try:
+            _auto_review(root, task_id)
+        except ReviewRunnerError as exc:
+            base["review"] = {
+                "failed_reviewer": exc.reviewer_id,
+                "run_result": exc.result,
+            }
+            base["reason"] = f"reviewer_failed:{exc.reviewer_id}"
+            base["metrics"] = _metrics(root, task_id)
+            base = _apply_metrics_policy(root, base)
+            base["mergeable"] = False
+            write_json(task_dir(root, task_id) / "gate-result.json", base)
+            return base, 1
         after_review = head_sha(workspace)
         if before_review != after_review:
             base["reason"] = "reviewer_head_changed"
@@ -173,15 +190,17 @@ def _completion_artifact_dir(root: Path, task_id: str) -> Path:
 
 def _run_make(root: Path) -> dict[str, object]:
     tier = os.environ.get("FOUNDATION_GATE_TIER", "check-required")
-    timeout = int(os.environ.get("FOUNDATION_GATE_TIMEOUT_S", "900"))
-    completed = subprocess.run(
+    completed = run_command(
         ["make", tier],
         cwd=root,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
+        timeout_s=env_timeout_s("FOUNDATION_GATE_TIMEOUT_S", 900),
     )
-    return {"command": f"make {tier}", "exit_code": completed.returncode}
+    return {
+        "command": f"make {tier}",
+        "exit_code": int(completed["exit_code"]),
+        "duration_ms": completed["duration_ms"],
+        "timed_out": completed["timed_out"],
+    }
 
 
 def _run_completion_check(root: Path, task_id: str) -> dict[str, object]:
@@ -196,11 +215,11 @@ def _run_completion_check(root: Path, task_id: str) -> dict[str, object]:
 
 
 def _auto_review(root: Path, task_id: str) -> None:
-    settings = review_settings(root)
-    if not settings["background_auto_run"]:
-        return
-    for reviewer_id in stale_or_missing(root, task_id):
-        run_profile(root, task_id, reviewer_id)
+    run_missing_reviewers(
+        root,
+        task_id,
+        lambda reviewer_id: run_reviewer_in_process(root, task_id, reviewer_id),
+    )
 
 
 def _review_reason(summary: dict[str, Any]) -> str:
