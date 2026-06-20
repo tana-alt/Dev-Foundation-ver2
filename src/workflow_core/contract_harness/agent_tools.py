@@ -154,6 +154,21 @@ _WRITER_TOOL_SPECS = (
         "Read artifact-backed task status without changing workflow state.",
     ),
     (
+        "comm-send",
+        "coordination",
+        (
+            "{harness} comm-send {task_id} --to-agent <agent-id> --to-role writer "
+            "--kind clarification --subject <subject> --body <message>"
+        ),
+        "Send a non-authoritative task-scoped message to another agent.",
+    ),
+    (
+        "comm-inbox",
+        "coordination",
+        "{harness} comm-inbox {task_id}",
+        "Read the current agent inbox from task-scoped runtime state.",
+    ),
+    (
         "spawn-writer",
         "coordination",
         "{harness} spawn {task_id} --role writer --agent codex",

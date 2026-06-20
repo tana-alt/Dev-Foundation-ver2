@@ -6,11 +6,16 @@ from pathlib import Path
 from typing import Any
 
 from workflow_core.contract_harness.agent_tools import role_agent_skills, role_agent_tools
+from workflow_core.contract_harness.application.services import (
+    candidate_id_from_patch_sha256,
+    record_authority_artifact,
+)
 from workflow_core.contract_harness.command_runner import (
     command_result_artifact,
     env_timeout_s,
     run_command,
 )
+from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.evidence import artifact_hashes
 from workflow_core.contract_harness.hashing import file_hash
 from workflow_core.contract_harness.jsonio import read_json, write_json, write_json_atomic
@@ -33,6 +38,19 @@ def submit_task(
 ) -> tuple[dict[str, Any], int]:
     submission = build_submission(root, task_id)
     write_json_atomic(task_dir(root, task_id) / "submission.json", submission)
+    record_authority_artifact(
+        root,
+        task_id,
+        "submission.json",
+        event_type="SUBMIT",
+        to_phase=WorkflowPhase.SUBMITTED,
+        payload={
+            "candidate_diff_sha256": submission["candidate_diff_sha256"],
+            "machine_evidence_sha256": submission["machine_evidence_sha256"],
+            "base_sha": submission.get("base_sha"),
+        },
+        candidate_id=str(submission["candidate_id"]),
+    )
     if wait:
         return wait_for_dispatch(root, task_id, harness_bin=harness_bin)
     return submission, 0
@@ -64,8 +82,11 @@ def build_submission(root: Path, task_id: str) -> dict[str, Any]:
         raise ValueError("scope map evidence mismatch")
     mutation_result = run_handoff_mutation(root, task_id, verify_result)
     submission = {
+        "schema_version": 1,
         "task_id": task_id,
+        "candidate_id": candidate_id_from_patch_sha256(str(verify_result["candidate_diff_sha256"])),
         "status": "submitted",
+        "base_sha": verify_result.get("base_sha"),
         "candidate_diff_sha256": verify_result["candidate_diff_sha256"],
         "machine_evidence_sha256": verify_result["machine_evidence_sha256"],
         "contract_semantic_sha256": verify_result["contract_semantic_sha256"],

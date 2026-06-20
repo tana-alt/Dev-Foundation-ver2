@@ -4,6 +4,12 @@ from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.contract_harness.affected import classify_affected_set
+from workflow_core.contract_harness.application.pr_service import validate_local_pr_checked
+from workflow_core.contract_harness.application.services import (
+    candidate_id_from_patch_sha256,
+    record_authority_artifact,
+)
+from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.jsonio import read_json, write_json
 from workflow_core.contract_harness.land_core import (
     apply_candidate_diff,
@@ -18,7 +24,7 @@ from workflow_core.contract_harness.worktree import create_worktree
 
 
 def land_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
-    validate_submission(root, task_id)
+    submission = validate_submission(root, task_id)
     policy = load_policy(root)
     _remote, branch, _branch_policy = integration_target(policy)
     affected = classify_affected_set(root, task_id)
@@ -26,6 +32,7 @@ def land_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     if not gate_result_path.is_file():
         result = _result(root, task_id, affected, status="blocked", reason="gate_result_missing")
         write_json(task_dir(root, task_id) / "land-result.json", result)
+        _record_land(root, task_id, result)
         return result, 1
     gate_result = read_json(gate_result_path)
     if gate_result.get("mergeable") is not True:
@@ -38,6 +45,21 @@ def land_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
             gate_result=gate_result,
         )
         write_json(task_dir(root, task_id) / "land-result.json", result)
+        _record_land(root, task_id, result)
+        return result, 1
+    pr_check = validate_local_pr_checked(root, task_id, str(submission["candidate_diff_sha256"]))
+    if pr_check.get("status") == "blocked":
+        result = _result(
+            root,
+            task_id,
+            affected,
+            status="blocked",
+            reason=str(pr_check["reason"]),
+            gate_result=gate_result,
+            pr_check=pr_check,
+        )
+        write_json(task_dir(root, task_id) / "land-result.json", result)
+        _record_land(root, task_id, result)
         return result, 1
     timeout_s = _lock_timeout(policy)
     try:
@@ -55,6 +77,7 @@ def land_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         result["lock"] = exc.diagnostics
         code = 1
     write_json(task_dir(root, task_id) / "land-result.json", result)
+    _record_land(root, task_id, result)
     return result, code
 
 
@@ -139,10 +162,15 @@ def _result(
     landed_commit: str | None = None,
     land_gate: dict[str, Any] | None = None,
     gate_result: dict[str, Any] | None = None,
+    pr_check: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     verify_result = read_json(task_dir(root, task_id) / "verify-result.json")
     return {
+        "schema_version": 1,
         "task_id": task_id,
+        "candidate_id": candidate_id_from_patch_sha256(
+            str(verify_result.get("candidate_diff_sha256") or "")
+        ),
         "status": status,
         "reason": reason,
         "classification": affected.get("classification"),
@@ -155,7 +183,27 @@ def _result(
         "landed_commit": landed_commit,
         "land_gate": land_gate or {"status": "not_run"},
         "gate_result": gate_result,
+        "pr_check": pr_check or {"status": "not_required"},
     }
+
+
+def _record_land(root: Path, task_id: str, result: dict[str, Any]) -> None:
+    candidate_sha = str(result.get("candidate_diff_sha256") or "")
+    phase = WorkflowPhase.LANDED if result.get("status") == "landed" else WorkflowPhase.BLOCKED
+    record_authority_artifact(
+        root,
+        task_id,
+        "land-result.json",
+        event_type="LAND",
+        to_phase=phase,
+        payload={
+            "candidate_diff_sha256": candidate_sha,
+            "machine_evidence_sha256": result.get("machine_evidence_sha256"),
+            "status": result.get("status"),
+            "landed_commit": result.get("landed_commit"),
+        },
+        candidate_id=candidate_id_from_patch_sha256(candidate_sha) if candidate_sha else None,
+    )
 
 
 def _lock_timeout(policy: dict[str, Any]) -> int:

@@ -60,7 +60,7 @@ def head_sha(root: Path) -> str:
 
 
 def status_paths(root: Path) -> list[str]:
-    raw = git_bytes(root, ["status", "--porcelain=v1", "-z"])
+    raw = git_bytes(root, ["status", "--porcelain=v1", "--untracked-files=all", "-z"])
     parts = [part for part in raw.split(b"\0") if part]
     paths: list[str] = []
     index = 0

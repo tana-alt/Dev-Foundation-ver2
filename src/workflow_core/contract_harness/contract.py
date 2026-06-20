@@ -10,6 +10,7 @@ from workflow_core.contract_harness.agent_tools import (
     write_agent_skills,
     write_agent_tools,
 )
+from workflow_core.contract_harness.application.services import record_authority_artifact
 from workflow_core.contract_harness.config import (
     CONFIG_FILES,
     ConfigError,
@@ -19,6 +20,7 @@ from workflow_core.contract_harness.config import (
     scope_paths,
     verifier_plan,
 )
+from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.gitutil import head_sha
 from workflow_core.contract_harness.hashing import directory_hash, file_hash, hash_json
 from workflow_core.contract_harness.jsonio import read_json, write_json
@@ -46,6 +48,17 @@ def prepare(root: Path, task_id: str) -> dict[str, Any]:
     write_agent_tools(root, task_id)
     write_agent_skills(root, task_id)
     write_forward_scope_map(root, task_id)
+    record_authority_artifact(
+        root,
+        task_id,
+        "contract.lock.json",
+        event_type="PREPARE",
+        to_phase=WorkflowPhase.PREPARED,
+        payload={
+            "contract_semantic_sha256": compiled["contract"]["contract_semantic_sha256"],
+            "prepared_base_sha": compiled["contract"]["prepared_base_sha"],
+        },
+    )
     return cast(dict[str, Any], compiled["contract"])
 
 

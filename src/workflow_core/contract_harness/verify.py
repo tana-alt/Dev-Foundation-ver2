@@ -3,11 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from workflow_core.contract_harness.application.services import (
+    candidate_id_from_patch_sha256,
+    record_authority_artifact,
+)
 from workflow_core.contract_harness.contract import (
     ensure_prepared,
     load_verifier_plan,
     semantic_reproducible,
 )
+from workflow_core.contract_harness.domain.models import ImpactResult, WorkflowPhase
 from workflow_core.contract_harness.evidence import machine_artifact_hashes
 from workflow_core.contract_harness.hashing import file_hash
 from workflow_core.contract_harness.jsonio import write_json
@@ -21,6 +26,7 @@ from workflow_core.contract_harness.scope_map import write_reverse_scope_map
 from workflow_core.contract_harness.snapshot import (
     candidate_diff_hash,
     changed_repo_paths,
+    scope_impact,
     scope_violations,
     snapshot_diff,
 )
@@ -35,6 +41,7 @@ def verify_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     out_dir = task_dir(root, task_id)
     (out_dir / "candidate.diff").write_text(diff_text, encoding="utf-8")
     write_reverse_scope_map(root, task_id, diff_text=diff_text)
+    impact = scope_impact(paths, lock)
     violations = scope_violations(paths, lock)
     semantic_ok = _semantic_ok(root, task_id, lock)
     quality, tool_candidates = write_quality_artifacts(root, task_id, paths, plan)
@@ -43,8 +50,45 @@ def verify_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         [quality_gate_verifier(quality), tool_candidate_gate_verifier(tool_candidates)]
     )
     status = "pass" if _passed(violations, semantic_ok, verifiers) else "fail"
-    result = _result(root, task_id, lock, diff_text, violations, semantic_ok, verifiers, status)
+    result = _result(
+        root,
+        task_id,
+        lock,
+        diff_text,
+        impact,
+        violations,
+        semantic_ok,
+        verifiers,
+        status,
+    )
     write_json(out_dir / "verify-result.json", result)
+    record_authority_artifact(
+        root,
+        task_id,
+        "candidate.diff",
+        event_type="CANDIDATE_SNAPSHOT",
+        to_phase=WorkflowPhase.WRITER_ACTIVE,
+        payload={
+            "candidate_diff_sha256": result["candidate_diff_sha256"],
+            "base_sha": result["base_sha"],
+        },
+        candidate_id=result["candidate_id"],
+        media_type="text/x-diff",
+    )
+    record_authority_artifact(
+        root,
+        task_id,
+        "verify-result.json",
+        event_type="VERIFY",
+        to_phase=WorkflowPhase.VERIFIED if status == "pass" else WorkflowPhase.BLOCKED,
+        payload={
+            "candidate_diff_sha256": result["candidate_diff_sha256"],
+            "machine_evidence_sha256": result["machine_evidence_sha256"],
+            "status": status,
+            "base_sha": result["base_sha"],
+        },
+        candidate_id=result["candidate_id"],
+    )
     return result, 0 if status == "pass" else 1
 
 
@@ -78,6 +122,7 @@ def _result(
     task_id: str,
     lock: dict[str, Any],
     diff_text: str,
+    impact: ImpactResult,
     violations: list[dict[str, str]],
     semantic_ok: bool,
     verifiers: list[dict[str, Any]],
@@ -85,13 +130,22 @@ def _result(
 ) -> dict[str, Any]:
     candidate_sha = candidate_diff_hash(diff_text)
     result = {
+        "schema_version": 1,
         "task_id": task_id,
+        "candidate_id": candidate_id_from_patch_sha256(candidate_sha),
         "status": status,
         "base_sha": lock["prepared_base_sha"],
         "candidate_diff_sha256": candidate_sha,
         "contract_lock_sha256": file_hash(task_dir(root, task_id) / "contract.lock.json"),
         "contract_semantic_sha256": lock["contract_semantic_sha256"],
-        "scope": {"violation_count": len(violations), "violations": violations},
+        "scope": {
+            "violation_count": len(violations),
+            "violations": violations,
+            "warning_count": len(
+                [finding for finding in impact.findings if finding.severity == "warning"]
+            ),
+        },
+        "impact_result": impact.model_dump(mode="json"),
         "contract": {"semantic_reproducible": semantic_ok, "unapproved_change": not semantic_ok},
         "verifiers": verifiers,
         **machine_artifact_hashes(root, task_id),

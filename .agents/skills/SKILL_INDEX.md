@@ -11,7 +11,6 @@ matter in `SKILL.md`.
 - `frontend-implementation`
 - `backend-implementation`
 - `security-check`
-- `release-check`
 
 ## Conditional skills
 
@@ -74,29 +73,33 @@ boundaries.
 ## Governance skills
 
 - `skill-authoring-governance`
-- `goal-completion-governance`
-- `subagent-workflow-governance`
 - `scope-routing-governance`
 - `spec-authority-governance`
-- `merge-integrity-governance`
-- `hook-validation-governance`
 
 ## Archived heavy-contract routes
 
 These exist only for reading or migrating old records. Do not use them as
 default workflow routes:
 
-- `traceability-gate-governance`
-- `residual-risk-carryover`
 - `review-fix-convergence-governance`
 
 ## Routing notes
 
+- `AGENTS.md` carries baseline coding principles. Skill bodies should add only
+  trigger-specific constraints, stop conditions, and routing boundaries.
 - Treat skills as a discovery layer plus a compact execution contract.
 - Convert best practices into success conditions and constraints.
 - Keep framework-specific details outside skills unless repeatedly needed.
+- Use `tdd-scope` for clear, narrow behavior that should be pinned with
+  example-first proof, especially bugfixes, regressions, API behavior, domain
+  rules, and reusable logic.
+- Do not add a separate `specification-by-example` skill unless routing
+  evidence shows existing domain skills, `tdd-scope`, and
+  `implementation-slice-verification` cannot carry the behavior.
 - Use `implementation-slice-verification` only as a fallback for substantial
-  cross-layer work when no narrower domain skill owns the implementation.
+  cross-layer work when no narrower domain skill owns the implementation and
+  the main need is runnable-slice control, real-path proof, and failure-layer
+  triage.
 - Use doc-lookup for current official docs instead of embedding bulky stack
   guidance.
 - Agent context and tool-output safety is folded into security-check, not a

@@ -6,6 +6,10 @@ from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.completion import CheckOutcome, run_completion_gate, write_evidence
+from workflow_core.contract_harness.application.services import (
+    candidate_id_from_patch_sha256,
+    record_authority_artifact,
+)
 from workflow_core.contract_harness.command_runner import env_timeout_s, run_command
 from workflow_core.contract_harness.config import control_root, review_settings
 from workflow_core.contract_harness.contract import (
@@ -13,6 +17,7 @@ from workflow_core.contract_harness.contract import (
     load_verifier_plan,
     semantic_reproducible,
 )
+from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.evidence import machine_artifact_hashes
 from workflow_core.contract_harness.gitutil import head_sha
 from workflow_core.contract_harness.hashing import file_hash
@@ -51,6 +56,7 @@ def gate_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
             base = _apply_metrics_policy(root, base)
             base["mergeable"] = False
             write_json(task_dir(root, task_id) / "gate-result.json", base)
+            _record_gate(root, task_id, base)
             return base, 1
         after_review = head_sha(workspace)
         if before_review != after_review:
@@ -62,6 +68,7 @@ def gate_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     base = _apply_metrics_policy(root, base)
     base["mergeable"] = base["reason"] == "ok"
     write_json(task_dir(root, task_id) / "gate-result.json", base)
+    _record_gate(root, task_id, base)
     return base, 0 if base["mergeable"] else 1
 
 
@@ -90,7 +97,11 @@ def _base_result(root: Path, task_id: str) -> dict[str, Any]:
         Path(str(workspace["path"])), task_id, verify_result, lock, candidate_sha
     )
     return {
+        "schema_version": 1,
         "task_id": task_id,
+        "candidate_id": candidate_id_from_patch_sha256(
+            str(verify_result.get("candidate_diff_sha256") or "")
+        ),
         "mergeable": False,
         "reason": reason,
         "candidate_diff_sha256": verify_result.get("candidate_diff_sha256"),
@@ -99,6 +110,24 @@ def _base_result(root: Path, task_id: str) -> dict[str, Any]:
         "review": {},
         "completion": {"status": "not_run"},
     }
+
+
+def _record_gate(root: Path, task_id: str, result: dict[str, Any]) -> None:
+    candidate_sha = str(result.get("candidate_diff_sha256") or "")
+    record_authority_artifact(
+        root,
+        task_id,
+        "gate-result.json",
+        event_type="GATE",
+        to_phase=WorkflowPhase.GATED if result.get("mergeable") is True else WorkflowPhase.BLOCKED,
+        payload={
+            "candidate_diff_sha256": candidate_sha,
+            "machine_evidence_sha256": result.get("machine_evidence_sha256"),
+            "mergeable": result.get("mergeable"),
+            "reason": result.get("reason"),
+        },
+        candidate_id=candidate_id_from_patch_sha256(candidate_sha) if candidate_sha else None,
+    )
 
 
 def _candidate_workspace(

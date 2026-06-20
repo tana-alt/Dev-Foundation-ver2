@@ -1,6 +1,0 @@
-project_id: worktree-workflow-main-sync
-plans:
-  - plan_id: Plan_N0001
-    status: active
-    plan_ref: Plan/worktree-workflow-main-sync/plans/Plan_N0001.md
-    log_ref: Plan/worktree-workflow-main-sync/logs/Plan_N0001.log.md

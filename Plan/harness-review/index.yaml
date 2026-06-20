@@ -1,8 +1,0 @@
-project_id: harness-review
-status: active
-created_at: "2026-06-16"
-plans:
-  - plan_id: Plan_N0001
-    status: draft
-    plan_ref: Plan/harness-review/plans/Plan_N0001.md
-    log_ref: Plan/harness-review/logs/Plan_N0001.log.md

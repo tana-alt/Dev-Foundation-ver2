@@ -469,6 +469,8 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "explain",
         "context-audit",
         "status",
+        "comm-send",
+        "comm-inbox",
         "spawn-writer",
         "verify",
         "submit",
@@ -701,6 +703,90 @@ def test_spawn_writes_rebind_packet_without_transcript(tmp_path: Path) -> None:
     assert rebind["transcript_included"] is False
     assert "transcript_path" not in rebind
     assert "body_markdown" not in rebind
+
+
+def test_spawned_writers_can_exchange_freeform_messages_through_comm_cli(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    first = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "writer",
+        "--agent",
+        "codex",
+        "--agent-command",
+        "codex --yolo",
+        "--comm",
+    )
+    second = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "writer",
+        "--agent",
+        "claude",
+        "--agent-command",
+        "claude",
+        "--comm",
+    )
+    assert first.returncode == 0, first.stdout + first.stderr
+    assert second.returncode == 0, second.stdout + second.stderr
+    first_session = json.loads(first.stdout)
+    second_session = json.loads(second.stdout)
+
+    sent = subprocess.run(
+        [
+            str(HARNESS),
+            "comm-send",
+            TASK_ID,
+            "--to-agent",
+            second_session["agent_id"],
+            "--to-role",
+            "writer",
+            "--kind",
+            "clarification",
+            "--subject",
+            "fixture boundary",
+            "--body",
+            "Can you inspect the fixture boundary without claiming completion?",
+        ],
+        cwd=Path(first_session["cwd"]),
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={**os.environ, **first_session["env"]},
+    )
+    assert sent.returncode == 0, sent.stdout + sent.stderr
+    message = json.loads(sent.stdout)
+    assert message["from"]["agent_id"] == first_session["agent_id"]
+    assert message["from"]["role"] == "writer"
+    assert message["to"]["agent_id"] == second_session["agent_id"]
+    assert message["kind"] == "clarification"
+    assert "authority" not in message
+
+    inbox = subprocess.run(
+        [str(HARNESS), "comm-inbox", TASK_ID],
+        cwd=Path(second_session["cwd"]),
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={**os.environ, **second_session["env"]},
+    )
+
+    assert inbox.returncode == 0, inbox.stdout + inbox.stderr
+    listing = json.loads(inbox.stdout)
+    assert listing["agent_id"] == second_session["agent_id"]
+    assert listing["message_count"] == 1
+    assert listing["messages"][0]["message_sha256"] == message["message_sha256"]
+    assert listing["messages"][0]["body_markdown"] == (
+        "Can you inspect the fixture boundary without claiming completion?"
+    )
+    assert (runtime_task_dir(repo) / "comm" / "inbox" / second_session["agent_id"]).is_dir()
+    assert not (runtime_task_dir(repo) / "comm" / "transcripts").exists()
 
 
 def test_rebind_packet_excludes_transcript(tmp_path: Path) -> None:

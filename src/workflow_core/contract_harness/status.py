@@ -3,7 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from workflow_core.contract_harness.application.services import latest_event_payload, state_summary
 from workflow_core.contract_harness.config import harness_dir
+from workflow_core.contract_harness.gitutil import git
 from workflow_core.contract_harness.health import config_health
 from workflow_core.contract_harness.jsonio import read_json
 from workflow_core.contract_harness.runtime_paths import task_dir
@@ -29,11 +31,13 @@ def task_status(root: Path, task_id: str) -> dict[str, Any]:
     present = [name for name in _ARTIFACTS if (runtime / name).is_file()]
     missing = [name for name in _ARTIFACTS if name not in present]
     phase = _phase(root, task_id, runtime, present)
-    authority = _authority(runtime)
+    state_store = state_summary(root, task_id)
+    authority = _authority(root, task_id, runtime, state_store)
     return {
         "schema_version": 1,
         "task_id": task_id,
         "phase": phase,
+        "state_store": state_store,
         "authority": authority,
         "artifacts": {
             "present": present,
@@ -92,13 +96,39 @@ def _pre_gate_phase(present: list[str]) -> str | None:
     return None
 
 
-def _authority(runtime: Path) -> dict[str, Any]:
+def _authority(
+    root: Path,
+    task_id: str,
+    runtime: Path,
+    state_store: dict[str, Any],
+) -> dict[str, Any]:
+    if state_store.get("integrity") == "pass" and state_store.get("current_phase") == "complete":
+        complete_payload = latest_event_payload(root, task_id, "COMPLETE")
+        if complete_payload is not None and _complete_git_state_present(root, complete_payload):
+            return {
+                "complete": True,
+                "source": "StateStore COMPLETE event + local merge commit",
+            }
     push_result = runtime / "push-result.json"
     if push_result.is_file():
         data = read_json(push_result)
         status = str(data.get("status") or "unknown")
         if status == "pushed":
-            return {"complete": True, "source": "push-result.json status=pushed"}
+            complete_payload = latest_event_payload(root, task_id, "COMPLETE")
+            if (
+                state_store.get("integrity") == "pass"
+                and state_store.get("current_phase") == "complete"
+                and complete_payload is not None
+                and _complete_git_state_present(root, complete_payload)
+            ):
+                return {
+                    "complete": True,
+                    "source": "StateStore COMPLETE event + push-result.json status=pushed",
+                }
+            return {
+                "complete": False,
+                "source": "push-result.json status=pushed without StateStore COMPLETE event",
+            }
         reason = str(data.get("reason") or "unknown")
         return {"complete": False, "source": f"push-result.json status={status} reason={reason}"}
     for name in ("gate-result.json", "land-result.json", "push-result.json"):
@@ -121,3 +151,16 @@ def _summary(
 
 def _json_status(runtime: Path, name: str) -> str:
     return str(read_json(runtime / name).get("status") or "")
+
+
+def _complete_git_state_present(root: Path, payload: dict[str, Any]) -> bool:
+    landed = payload.get("landed_commit")
+    remote_after = payload.get("remote_sha_after")
+    shas = [str(item) for item in (landed, remote_after) if isinstance(item, str) and item]
+    return bool(shas) and all(_commit_exists(root, sha) for sha in shas)
+
+
+def _commit_exists(root: Path, sha: str) -> bool:
+    if set(sha) == {"0"}:
+        return False
+    return git(root, ["cat-file", "-e", f"{sha}^{{commit}}"], check=False).returncode == 0

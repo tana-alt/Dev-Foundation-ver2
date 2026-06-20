@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from workflow_core.contract_harness.hashing import file_hash, hash_json
-from workflow_core.contract_harness.jsonio import write_json
+from workflow_core.contract_harness.jsonio import read_json, write_json
 from workflow_core.contract_harness.runtime_paths import runtime_root, task_dir
 from workflow_core.contract_harness.status import task_status
 
@@ -130,6 +130,27 @@ def build_status_response(
         basis_refs=[{"type": "harness_status", "value": status}],
         auto_basis_refs=True,
     )
+
+
+def list_inbox(root: Path, task_id: str, *, agent_id: str) -> dict[str, Any]:
+    inbox = task_dir(root, task_id) / "comm" / "inbox" / agent_id
+    messages: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    for path in sorted(inbox.glob("*.json")) if inbox.is_dir() else []:
+        try:
+            messages.append(read_json(path))
+        except (OSError, ValueError) as exc:
+            warnings.append(f"message_read_failed:{path.name}: {exc}")
+    return {
+        "schema_version": 1,
+        "task_id": task_id,
+        "agent_id": agent_id,
+        "inbox_path": str(inbox),
+        "message_count": len(messages),
+        "messages": messages,
+        "warnings": warnings,
+        "written_by": "agent-comm-switchboard",
+    }
 
 
 def _validate_kind(kind: str) -> None:

@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from workflow_core.contract_harness.application.services import (
+    candidate_id_from_patch_sha256,
+    record_authority_artifact,
+    state_store,
+)
+from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.gitutil import GitError, git
 from workflow_core.contract_harness.hashing import file_hash
 from workflow_core.contract_harness.jsonio import read_json, write_json
@@ -25,20 +32,17 @@ def push_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     land_result_path = task_dir(root, task_id) / "land-result.json"
     if not land_result_path.is_file():
         result = _precondition_blocked(task_id, {}, "land_result_missing")
-        write_json(task_dir(root, task_id) / "push-result.json", result)
-        return result, 1
+        return _write_result(root, task_id, result, 1)
     land_result = read_json(land_result_path)
     if land_result.get("status") != "landed":
         result = _precondition_blocked(task_id, land_result, "land_not_landed")
-        write_json(task_dir(root, task_id) / "push-result.json", result)
-        return result, 1
+        return _write_result(root, task_id, result, 1)
     remote, branch, landed_commit = _push_context(land_result)
     policy = load_policy(root)
     decision = _push_decision(policy, remote, branch)
     if decision.get("ok") is not True:
         result = _blocked(task_id, land_result, decision)
-        write_json(task_dir(root, task_id) / "push-result.json", result)
-        return result, 1
+        return _write_result(root, task_id, result, 1)
     lock_ref = f"refs/harness/locks/{remote}/{branch}"
     rescue_ref = _rescue_ref(branch, task_id)
     git(root, ["fetch", remote, branch])
@@ -59,16 +63,14 @@ def push_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
                 max_retries=retries,
             )
         result = _failure(task_id, land_result, "remote_changed", remote_sha=remote_sha)
-        write_json(task_dir(root, task_id) / "push-result.json", result)
-        return result, 1
+        return _write_result(root, task_id, result, 1)
     if _remote_ref_exists(root, remote, lock_ref):
         result = _failure(task_id, land_result, "blocked_by_lock", remote_sha=remote_sha)
         result["status"] = "blocked"
         result["lock_ref"] = lock_ref
         result["lock_acquire"] = _existing_remote_lock(root, remote, lock_ref)
         result["lock_release"] = _not_attempted_lock(lock_ref, "remote_lock_not_acquired")
-        write_json(task_dir(root, task_id) / "push-result.json", result)
-        return result, 1
+        return _write_result(root, task_id, result, 1)
     return _push_with_remote_lock(
         root,
         task_id,
@@ -301,7 +303,44 @@ def _write_result(
     code: int,
 ) -> tuple[dict[str, Any], int]:
     write_json(task_dir(root, task_id) / "push-result.json", result)
+    _record_push(root, task_id, result)
     return result, code
+
+
+def _record_push(root: Path, task_id: str, result: dict[str, Any]) -> None:
+    candidate_sha = str(result.get("candidate_diff_sha256") or "")
+    status = str(result.get("status") or "")
+    phase = WorkflowPhase.PUSHED if status == "pushed" else WorkflowPhase.BLOCKED
+    event = record_authority_artifact(
+        root,
+        task_id,
+        "push-result.json",
+        event_type="PUSH",
+        to_phase=phase,
+        payload={
+            "candidate_diff_sha256": candidate_sha,
+            "machine_evidence_sha256": result.get("machine_evidence_sha256"),
+            "status": status,
+            "remote_sha_after": result.get("remote_sha_after"),
+            "landed_commit": result.get("landed_commit"),
+        },
+        candidate_id=candidate_id_from_patch_sha256(candidate_sha) if candidate_sha else None,
+    )
+    if status == "pushed":
+        state_store(root).append_event(
+            task_id=task_id,
+            candidate_id=candidate_id_from_patch_sha256(candidate_sha) if candidate_sha else None,
+            event_type="COMPLETE",
+            from_phase=WorkflowPhase.PUSHED,
+            to_phase=WorkflowPhase.COMPLETE,
+            payload={
+                "push_event_sha256": event.event_sha256,
+                "candidate_diff_sha256": candidate_sha,
+                "remote_sha_after": result.get("remote_sha_after"),
+                "landed_commit": result.get("landed_commit"),
+            },
+            actor=os.environ.get("HARNESS_ACTOR") or "harness",
+        )
 
 
 def _push_context(land_result: dict[str, Any]) -> tuple[str, str, str]:

@@ -1,11 +1,5 @@
 # Repo Boundary And Storage Contract
 
-## Active Surface
-
-This repo is routed by `AGENTS.md`. Active contracts in `docs/` keep work
-goal-first, bounded, and verifiable. Detailed guidance lives in
-`docs/reference/` and should be opened only when needed.
-
 ## Repo Truth
 
 Repo truth is the tracked product, docs, tooling, templates, tests, plans,

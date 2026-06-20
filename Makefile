@@ -1,7 +1,7 @@
 UV ?= uv
 
 
-.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-workflow-state check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-hygiene check-secrets check-cd check-frozen gate eval measure issues nfr-summary bench-summary check-fast check-push check-required check-ci check-foundation
+.PHONY: help sync doctor lint format format-check typecheck test test-fast check-toolchain check-contracts check-doc-consistency check-hooks check-shell check-lanes check-workflow-state check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard check-agent-operational check-harness-architecture check-harness-state check-harness-strict check-harness-arch-all check-hygiene check-secrets check-cd check-frozen gate eval measure issues nfr-summary bench-summary check-fast check-push check-required check-ci check-foundation
 
 help:
 	@printf '%s\n' \
@@ -30,6 +30,10 @@ help:
 		'  make check-audit-provenance Validate audit and source snapshot records' \
 		'  make check-operational-scorecard Validate operational scorecard records' \
 		'  make check-agent-operational Run legacy operational record checks' \
+		'  make check-harness-architecture Run harness architecture refactor tests' \
+		'  make check-harness-state Run harness StateStore tests' \
+		'  make check-harness-strict Run harness local-strict daemon tests' \
+		'  make check-harness-arch-all Run all harness architecture checks' \
 		'  make check-legacy-contracts Run archived heavy-contract compatibility checks' \
 		'  make check-hygiene         Run repo hygiene guardrails' \
 		'  make check-secrets         Run Gitleaks with redacted output' \
@@ -125,6 +129,17 @@ check-operational-scorecard:
 	$(UV) run python scripts/check-operational-scorecard.py
 
 check-agent-operational: check-skill-routes check-context-scope check-result-envelope check-residual-risk-carryover check-review-convergence check-audit-provenance check-operational-scorecard
+
+check-harness-architecture:
+	$(UV) run pytest -q tests/workflow_core/contract_harness
+
+check-harness-state:
+	$(UV) run pytest -q tests/workflow_core/contract_harness/test_state_store.py
+
+check-harness-strict:
+	$(UV) run pytest -q tests/workflow_core/contract_harness -k strict
+
+check-harness-arch-all: check-harness-architecture check-harness-state check-harness-strict
 
 check-legacy-contracts: check-lanes check-agent-operational check-contracts
 

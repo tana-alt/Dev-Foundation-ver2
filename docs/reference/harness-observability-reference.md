@@ -14,8 +14,9 @@ agent session into a recorded run:
 - `PostToolUse` -> `scripts/hook_post_tool_use.py` appends one normalized
   `TrajectoryEvent` per tool call to
   `artifact/<project>/trajectory/<session>.jsonl`.
-- `Stop` -> `scripts/hook_stop.py` re-runs the completion gate for plan-gated
-  work and blocks the stop on failure.
+- `Stop` -> `scripts/hook_stop.py` observes submitted work and delegates
+  `./harness dispatch <task_id>` with `HARNESS_ROLE=integrator`. It is
+  fail-open: dispatch failures are reported, but they do not block stop.
 
 Gating is plan-based: a project loops when `Plan/<project>/plans/` holds an
 active `Plan_N000X.md` record (status from `index.yaml`; see
@@ -24,15 +25,14 @@ gates as a fallback (`scripts/hook_stop.py`). `FOUNDATION_SPEC_PRESENT=1`
 forces gating; unplanned work stays single-pass.
 
 Hook robustness contract: hooks run under plain `python3` (no venv). The
-PostToolUse recorder and the gating decision are stdlib-only
+PostToolUse recorder and the Stop hook decision are stdlib-only
 (`workflow_core.hook_events.event_dict_from_post_tool_use`,
 `workflow_core.plans`; the package `__init__` resolves exports lazily so
-those imports never pull pydantic). The Stop hook's verdict path needs
-pydantic; when it is missing, or `make` exceeds `FOUNDATION_GATE_TIMEOUT_S`
-(default 900), the hook fails open -- stderr note, exit 0 -- so an
-environment problem never traps the session. Numeric `FOUNDATION_*` knobs
-parse via `workflow_core.env` and fall back to their defaults (with a stderr
-warning) on malformed values.
+those imports never pull pydantic). The Stop hook's dispatch path also fails
+open when the harness is missing, the runtime root cannot be discovered, or the
+dispatch exceeds `FOUNDATION_GATE_TIMEOUT_S` (default 900); it prints a stderr
+or JSON diagnostic and exits 0 so an environment problem never traps the
+session.
 
 ## Measurement And Retention (make measure)
 
