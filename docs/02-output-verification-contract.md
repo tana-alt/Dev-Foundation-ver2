@@ -27,8 +27,8 @@ Use commands backed by current repo files such as `Makefile`, `pyproject.toml`,
 For user-visible deliverables, prefer the closest runnable path over build-only
 proof; change observation layer before retrying failures.
 
-For proof vehicle examples and fail-before/passed-after guidance, see
-`AGENTS.md` Coding Principles.
+For proof vehicle examples and fail-before/passed-after guidance, use the
+current task packet, selected skill instructions, and nearest repo tests.
 
 If a check cannot run, report the check name, reason, result state, and what
 would be needed to run it.

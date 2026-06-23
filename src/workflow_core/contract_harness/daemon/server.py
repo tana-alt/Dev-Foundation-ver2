@@ -420,7 +420,12 @@ class DaemonServer:
         result: dict[str, Any] = {"task_id": task_id}
         for key, name in (("contract", "contract.lock.json"), ("capsule", "capsule.json")):
             path = runtime / name
-            result[key] = read_json(path) if path.is_file() else None
+            payload = read_json(path) if path.is_file() else None
+            result[key] = _context_payload(payload) if key == "capsule" else payload
+        contract = result.get("contract")
+        result["scope_contract"] = None
+        if isinstance(contract, dict):
+            result["scope_contract"] = contract.get("scope_contract")
         return result
 
     def _task_status(self, task_id: str) -> dict[str, Any]:
@@ -561,6 +566,14 @@ def _print_json_error(code: str, message: str) -> None:
 def _with_exit_code(pair: tuple[dict[str, Any], int]) -> dict[str, Any]:
     result, code = pair
     return {**result, "exit_code": code}
+
+
+def _context_payload(payload: Any) -> Any:
+    if not isinstance(payload, dict):
+        return payload
+    sanitized = dict(payload)
+    sanitized.pop("agent_skills", None)
+    return sanitized
 
 
 def _candidate_id(root: Path, task_id: str) -> str | None:

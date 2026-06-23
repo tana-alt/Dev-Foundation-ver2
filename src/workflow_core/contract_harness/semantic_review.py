@@ -5,7 +5,7 @@ import shlex
 from pathlib import Path
 from typing import Any, cast
 
-from workflow_core.contract_harness.agent_tools import role_agent_skills, role_agent_tools
+from workflow_core.contract_harness.agent_tools import role_agent_tools
 from workflow_core.contract_harness.command_runner import (
     command_result_artifact,
     env_timeout_s,
@@ -126,12 +126,13 @@ def _packet(
     candidate_path = runtime / "candidate.diff"
     candidate_diff = candidate_path.read_text(encoding="utf-8")
     candidate_diff_inline, omitted_required, requires_artifact_read = _bounded_diff(candidate_diff)
+    contract = read_json(runtime / "contract.lock.json")
     return {
         "task_id": task_id,
-        "capsule": read_json(runtime / "capsule.json"),
-        "contract": read_json(runtime / "contract.lock.json"),
+        "capsule": _context_payload(read_json(runtime / "capsule.json")),
+        "contract": contract,
+        "scope_contract": contract["scope_contract"],
         "agent_tools": role_agent_tools(root, task_id, "reviewer"),
-        "agent_skills": role_agent_skills(root, "reviewer"),
         "writer_handoff": _writer_handoff(runtime),
         "review_workspace": workspace,
         "scope_map": {"reverse": reverse_scope_map},
@@ -220,7 +221,13 @@ def _writer_handoff(runtime: Path) -> dict[str, Any]:
         return {}
     data = read_json(path)
     handoff = data.get("writer_handoff")
-    return handoff if isinstance(handoff, dict) else {}
+    return _context_payload(handoff) if isinstance(handoff, dict) else {}
+
+
+def _context_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    sanitized = dict(payload)
+    sanitized.pop("agent_skills", None)
+    return sanitized
 
 
 def _reviewer_policy() -> dict[str, str]:

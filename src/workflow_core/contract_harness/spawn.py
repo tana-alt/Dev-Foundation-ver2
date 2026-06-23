@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import shlex
 from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
 from workflow_core.contract_harness.agent_tools import (
-    role_agent_skills,
     role_agent_tools,
     role_optional_tools,
 )
 from workflow_core.contract_harness.context_audit import audit_context
-from workflow_core.contract_harness.contract import ensure_prepared
+from workflow_core.contract_harness.contract import ensure_prepared, load_contract
 from workflow_core.contract_harness.gitutil import common_dir
 from workflow_core.contract_harness.jsonio import write_json
 from workflow_core.contract_harness.launch import writer_session
@@ -32,6 +32,7 @@ def spawn_session(
     reviewer_id: str | None = None,
     profile: str = "default",
     comm: bool = False,
+    brief: str = "",
 ) -> dict[str, Any]:
     _validate_target_role(current_role(), target_role)
     if target_role == "reviewer" and not reviewer_id:
@@ -64,6 +65,7 @@ def spawn_session(
         agent=agent,
         reviewer_id=reviewer_id,
         profile=profile,
+        brief=brief,
     )
     _write_session(canonical, task_id, session, role=target_role, reviewer_id=reviewer_id)
     _write_rebind(canonical, task_id, session)
@@ -123,8 +125,15 @@ def _with_agent_metadata(
     agent: str,
     reviewer_id: str | None,
     profile: str,
+    brief: str,
 ) -> dict[str, Any]:
-    agent_id = _agent_id(task_id, role=role, agent=agent, reviewer_id=reviewer_id)
+    agent_id = _agent_id(
+        task_id,
+        role=role,
+        agent=agent,
+        reviewer_id=reviewer_id,
+        brief=brief,
+    )
     env = _role_env(root, task_id, role=role, agent_id=agent_id, reviewer_id=reviewer_id)
     cwd = Path(str(session["cwd"]))
     enriched = {
@@ -132,6 +141,8 @@ def _with_agent_metadata(
         "agent": agent,
         "agent_id": agent_id,
         "profile": profile,
+        "brief": brief,
+        "delegation_hash_id": _delegation_hash_id(brief) if brief else "",
         "env": env,
         "command": _shell_command(
             cwd,
@@ -175,11 +186,60 @@ def _initial_context(
         if profile == "default"
         else role_optional_tools(root, task_id, role, profile)
     )
+    contract = load_contract(root, task_id)
     return {
         "task_id": task_id,
+        "role": role,
+        "task_goal": contract.get("goal"),
+        "scope_contract": contract["scope_contract"],
+        "verifier_ids": [str(item.get("id", "")) for item in contract["verifier_plan"]],
+        "acceptance": _acceptance_summary(contract.get("acceptance")),
+        "policy": _policy_summary(contract.get("policy")),
+        "artifact_refs": _artifact_refs(),
+        "next_action": _next_action(role),
         "agent_tools": tools,
-        "agent_skills": role_agent_skills(root, role),
     }
+
+
+def _acceptance_summary(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    summary: dict[str, Any] = {}
+    for key in ("mode", "source"):
+        if key in value:
+            summary[key] = value[key]
+    audit = value.get("audit")
+    if isinstance(audit, dict) and "status" in audit:
+        summary["audit_status"] = audit["status"]
+    return summary
+
+
+def _policy_summary(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    summary: dict[str, Any] = {}
+    if "id" in value:
+        summary["policy_id"] = value["id"]
+    for key in ("policy_id", "human_gates", "external_writes"):
+        if key in value:
+            summary[key] = value[key]
+    return summary
+
+
+def _artifact_refs() -> dict[str, str]:
+    return {
+        "contract": "contract.lock.json",
+        "capsule": "capsule.json",
+        "verifier_plan": "verifier-plan.json",
+    }
+
+
+def _next_action(role: str) -> str:
+    if role == "writer":
+        return "implement verified candidate, then run harness verify and submit"
+    if role == "reviewer":
+        return "review submitted evidence and write a reviewer verdict"
+    return "collect reviews, run gate, then land or return rework"
 
 
 def _write_session(
@@ -205,6 +265,8 @@ def _write_rebind(root: Path, task_id: str, session: dict[str, Any]) -> None:
         "task_id": task_id,
         "agent_id": agent_id,
         "role": session["role"],
+        "brief": session.get("brief", ""),
+        "delegation_hash_id": session.get("delegation_hash_id", ""),
         "cwd": session["cwd"],
         "env": session["env"],
         "handoff": session["handoff"],
@@ -222,6 +284,8 @@ def _write_comm_session(root: Path, task_id: str, session: dict[str, Any]) -> No
         "agent_id": agent_id,
         "role": session["role"],
         "agent": session["agent"],
+        "brief": session.get("brief", ""),
+        "delegation_hash_id": session.get("delegation_hash_id", ""),
         "cwd": session["cwd"],
         "status": "ready",
         "created_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -271,9 +335,23 @@ def _shell_command(path: Path, env: dict[str, str], agent_command: str) -> str:
     return f"cd {shlex.quote(str(path))} && {env_prefix} {agent_command}"
 
 
-def _agent_id(task_id: str, *, role: str, agent: str, reviewer_id: str | None) -> str:
+def _agent_id(
+    task_id: str,
+    *,
+    role: str,
+    agent: str,
+    reviewer_id: str | None,
+    brief: str = "",
+) -> str:
     suffix = reviewer_id if reviewer_id else task_id
-    return ".".join((_safe_component(role), _safe_component(agent), _safe_component(suffix)))
+    parts = [_safe_component(role), _safe_component(agent), _safe_component(suffix)]
+    if role == "writer" and brief:
+        parts.append(_safe_component(_delegation_hash_id(brief).split(":", 1)[1][:10]))
+    return ".".join(parts)
+
+
+def _delegation_hash_id(brief: str) -> str:
+    return f"sha256:{sha256(brief.encode('utf-8')).hexdigest()}"
 
 
 def _safe_component(value: str) -> str:

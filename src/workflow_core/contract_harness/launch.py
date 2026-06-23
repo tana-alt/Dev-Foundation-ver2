@@ -4,7 +4,7 @@ import shlex
 from pathlib import Path
 from typing import Any
 
-from workflow_core.contract_harness.agent_tools import role_agent_skills, role_agent_tools
+from workflow_core.contract_harness.agent_tools import role_agent_tools
 from workflow_core.contract_harness.context_audit import audit_context
 from workflow_core.contract_harness.contract import ensure_prepared, load_contract
 from workflow_core.contract_harness.gitutil import common_dir, git
@@ -123,8 +123,46 @@ def _initial_context(root: Path, task_id: str) -> dict[str, Any]:
     contract = load_contract(root, task_id)
     return {
         "task_id": task_id,
+        "role": "writer",
+        "task_goal": contract.get("goal"),
         "scope_contract": contract["scope_contract"],
         "verifier_ids": [str(item.get("id", "")) for item in contract["verifier_plan"]],
+        "acceptance": _acceptance_summary(contract.get("acceptance")),
+        "policy": _policy_summary(contract.get("policy")),
+        "artifact_refs": _artifact_refs(),
+        "next_action": "implement verified candidate, then run harness verify and submit",
         "agent_tools": role_agent_tools(root, task_id, "writer"),
-        "agent_skills": role_agent_skills(root, "writer"),
+    }
+
+
+def _acceptance_summary(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    summary: dict[str, Any] = {}
+    for key in ("mode", "source"):
+        if key in value:
+            summary[key] = value[key]
+    audit = value.get("audit")
+    if isinstance(audit, dict) and "status" in audit:
+        summary["audit_status"] = audit["status"]
+    return summary
+
+
+def _policy_summary(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    summary: dict[str, Any] = {}
+    if "id" in value:
+        summary["policy_id"] = value["id"]
+    for key in ("policy_id", "human_gates", "external_writes"):
+        if key in value:
+            summary[key] = value[key]
+    return summary
+
+
+def _artifact_refs() -> dict[str, str]:
+    return {
+        "contract": "contract.lock.json",
+        "capsule": "capsule.json",
+        "verifier_plan": "verifier-plan.json",
     }

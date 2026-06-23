@@ -12,7 +12,9 @@ from workflow_core.contract_harness.runtime_paths import task_dir
 
 _ARTIFACTS = (
     "contract.lock.json",
+    "acceptance-proposal.json",
     "capsule.json",
+    "resume-capsule.json",
     "verifier-plan.json",
     "writer-worktree.json",
     "verify-result.json",
@@ -23,6 +25,7 @@ _ARTIFACTS = (
     "oracle-result.json",
     "push-result.json",
     "rework-request.json",
+    "bottleneck-events.json",
 )
 
 

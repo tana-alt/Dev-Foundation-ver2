@@ -5,10 +5,6 @@
 Repo truth is the tracked product, docs, tooling, templates, tests, plans,
 artifacts, source roots, hooks, plugins, `.agents/`, and `.github/`.
 
-`archive/`, `.serena/`, caches, broad logs, local runtime state, browser
-sessions, credentials, tokens, cookies, and secret-bearing files are not repo
-truth.
-
 ## Placement
 
 - Use `Plan/<project_id>/` for lightweight plans and logs.
@@ -21,9 +17,6 @@ Optional durable lane-map records may live under
 `Plan/<project_id>/lane-maps/` for real parallel write work. They are not a
 runtime scheduler, queue, lock ledger, heartbeat, dashboard, or completion
 claim.
-
-Do not introduce runtime queues, lock ledgers, dashboards, broad operational
-logs, or unowned project storage.
 
 ## Storage Rules
 

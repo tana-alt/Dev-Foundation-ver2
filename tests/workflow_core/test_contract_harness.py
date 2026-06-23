@@ -462,13 +462,13 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
     assert prepared.returncode == 0, prepared.stdout + prepared.stderr
     capsule = load_runtime_json(repo, "capsule.json")
     names = tool_names(capsule["agent_tools"])
-    skills = skill_names(capsule["agent_skills"])
 
     assert names == {
         "scope-map-forward",
         "explain",
         "context-audit",
         "status",
+        "comm-peers",
         "comm-send",
         "comm-inbox",
         "spawn-writer",
@@ -488,11 +488,7 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "surface-issues",
         "context-scope-check",
     }.isdisjoint(names)
-    assert {
-        "tdd-scope",
-        "implementation-slice-verification",
-        "scope-routing-governance",
-    }.issubset(skills)
+    assert "agent_skills" not in capsule
     assert all(not str(tool["command"]).startswith("./harness") for tool in capsule["agent_tools"])
     assert all("nfr_metric.py" not in tool["command"] for tool in capsule["agent_tools"])
     scope_tool = tool_by_name(capsule["agent_tools"], "scope-map-forward")
@@ -504,8 +500,8 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
     assert "affected" in tool_names(groups["integrator"])
     assert "review-collect" in tool_names(groups["integrator"])
     skill_groups = load_runtime_json(repo, "agent-skills.json")
-    assert "release-check" in skill_names(skill_groups["reviewer"])
-    assert "merge-integrity-governance" in skill_names(skill_groups["integrator"])
+    assert "security-check" in skill_names(skill_groups["reviewer"])
+    assert "implementation-slice-verification" in skill_names(skill_groups["integrator"])
 
     optional = run_harness(repo, "tools", TASK_ID, "--role", "writer", "--profile", "measurement")
     assert optional.returncode == 0, optional.stdout + optional.stderr
@@ -643,7 +639,9 @@ def test_launch_writer_prepares_worktree_and_returns_interactive_command(
         tool["name"] for tool in session["initial_context"]["agent_tools"]
     }
     assert "context-audit" in {tool["name"] for tool in session["initial_context"]["agent_tools"]}
-    assert "tdd-scope" in {skill["name"] for skill in session["initial_context"]["agent_skills"]}
+    assert session["initial_context"]["scope_contract"]["allowed_paths"] == ["src/**", "tests/**"]
+    assert "unit" in session["initial_context"]["verifier_ids"]
+    assert "agent_skills" not in session["initial_context"]
     assert load_runtime_json(repo, "writer-session.json")["command"] == session["command"]
     assert session["context_audit"]["roles"]["writer"]["status"] in {"pass", "fail"}
 
@@ -673,6 +671,10 @@ def test_spawn_writer_assigns_role_without_running_verify(tmp_path: Path) -> Non
     assert session["env"]["HARNESS_ROLE"] == "writer"
     assert session["env"]["FOUNDATION_AGENT_ID"] == session["agent_id"]
     assert writer_path.is_dir()
+    assert session["initial_context"]["role"] == "writer"
+    assert session["initial_context"]["scope_contract"]["allowed_paths"] == ["src/**", "tests/**"]
+    assert "unit" in session["initial_context"]["verifier_ids"]
+    assert "agent_skills" not in session["initial_context"]
     assert not (runtime_task_dir(repo) / "verify-result.json").exists()
     assert not (runtime_task_dir(repo) / "transcripts").exists()
     assert (runtime_task_dir(repo) / "comm" / "sessions" / f"{session['agent_id']}.json").is_file()
@@ -888,14 +890,21 @@ def test_spawn_target_role_validation_blocks_writer_spawning_integrator(
     assert "role writer cannot spawn integrator" in spawned.stdout
 
 
-def test_task_yaml_acceptance_mode_must_be_generated(tmp_path: Path) -> None:
+def test_task_yaml_acceptance_mode_must_be_generated_or_agent_generated(
+    tmp_path: Path,
+) -> None:
     repo = init_repo(tmp_path)
     task_file = repo / ".harness" / "tasks" / TASK_ID / "task.yaml"
+    task_file.write_text(task_yaml("agent_generated"), encoding="utf-8")
+
+    from workflow_core.contract_harness.config import load_task
+
+    assert load_task(repo, TASK_ID)["acceptance"]["mode"] == "agent_generated"
     task_file.write_text(task_yaml("manual"), encoding="utf-8")
 
-    from workflow_core.contract_harness.config import ConfigError, load_task
+    from workflow_core.contract_harness.config import ConfigError
 
-    with pytest.raises(ConfigError, match="acceptance.mode must be generated"):
+    with pytest.raises(ConfigError, match="acceptance.mode must be generated or agent_generated"):
         load_task(repo, TASK_ID)
 
 
@@ -2646,7 +2655,7 @@ def test_large_diff_is_not_inlined_in_semantic_reviewer_packet(tmp_path: Path) -
     assert semantic["labels"] == ["artifact_diff_reviewed"]
 
 
-def test_e2e_semantic_reviewer_receives_writer_handoff_diff_index_tools_and_skills(
+def test_e2e_semantic_reviewer_receives_writer_handoff_diff_index_tools_and_scope(
     tmp_path: Path,
 ) -> None:
     repo = init_repo(tmp_path)
@@ -2658,11 +2667,14 @@ def test_e2e_semantic_reviewer_receives_writer_handoff_diff_index_tools_and_skil
         "writer = packet['writer_handoff']\n"
         "assert writer['verification']['status'] == 'pass'\n"
         "assert 'verify' in {tool['name'] for tool in writer['agent_tools']}\n"
-        "assert 'tdd-scope' in {skill['name'] for skill in writer['agent_skills']}\n"
+        "assert 'agent_skills' not in writer\n"
+        "assert 'agent_skills' not in packet['capsule']\n"
+        "assert writer['scope_contract']['allowed_paths'] == ['src/**', 'tests/**']\n"
         "assert packet['candidate_diff_index']['changed_files'] == ['src/app.txt']\n"
         "assert packet['candidate_diff_path'].endswith('candidate.diff')\n"
         "assert 'scope-map-reverse' in {tool['name'] for tool in packet['agent_tools']}\n"
-        "assert 'release-check' in {skill['name'] for skill in packet['agent_skills']}\n"
+        "assert 'agent_skills' not in packet\n"
+        "assert packet['scope_contract']['allowed_paths'] == ['src/**', 'tests/**']\n"
         "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
         "  'verdict': 'approve',\n"
         "  'labels': ['ideal_packet_reviewed'],\n"
@@ -2678,6 +2690,10 @@ def test_e2e_semantic_reviewer_receives_writer_handoff_diff_index_tools_and_skil
     git(repo, "commit", "-m", "enable ideal semantic reviewer")
     git(repo, "push", "origin", "main")
     assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    capsule_path = runtime_task_dir(repo) / "capsule.json"
+    capsule = json.loads(capsule_path.read_text(encoding="utf-8"))
+    capsule["agent_skills"] = [{"name": "stale-skill"}]
+    capsule_path.write_text(json.dumps(capsule), encoding="utf-8")
     writer = json.loads(
         run_harness(repo, "worktree", TASK_ID, "--writer", role="integrator").stdout
     )
@@ -2729,12 +2745,7 @@ def test_semantic_reviewer_runs_in_sealed_writer_worktree(tmp_path: Path) -> Non
     assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
     assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
     submission = load_runtime_json(repo, "submission.json")
-    writer_skill_paths = [
-        skill.get("path")
-        for skill in submission["writer_handoff"]["agent_skills"]
-        if skill.get("path") is not None
-    ]
-    assert all(str(path).startswith(str(writer_path)) for path in writer_skill_paths)
+    assert "agent_skills" not in submission["writer_handoff"]
     assert submission["candidate_workspace"]["path"] == str(writer_path)
     assert submission["candidate_workspace"]["state"] == "sealed_for_review"
     marker = json.loads((writer_path / ".harness-worktree.json").read_text(encoding="utf-8"))
@@ -3677,7 +3688,7 @@ def test_prepare_generated_acceptance_and_proposals_do_not_affect_semantics(tmp_
     )
     rejected = run_harness(repo, "prepare", TASK_ID)
     assert rejected.returncode != 0
-    assert "acceptance.mode must be generated" in rejected.stdout
+    assert "acceptance.mode must be generated or agent_generated" in rejected.stdout
 
 
 def test_verify_writes_candidate_and_machine_evidence_without_mutating_index(

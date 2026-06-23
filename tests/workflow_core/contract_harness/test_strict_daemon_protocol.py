@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import socket
 from pathlib import Path
+from typing import Any
 
 from workflow_core.contract_harness.daemon.protocol import DaemonRequest, DaemonResponse
 
@@ -44,7 +45,7 @@ def test_strict_malformed_json_does_not_crash_daemon(harness_repo: Path) -> None
         daemon.stop()
 
 
-def _raw_request(repo: Path, data: dict[str, object]) -> dict[str, object]:
+def _raw_request(repo: Path, data: dict[str, object]) -> dict[str, Any]:
     socket_path = _socket_path(repo)
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.connect(str(socket_path))
