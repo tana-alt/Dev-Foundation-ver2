@@ -439,10 +439,162 @@ class SQLiteStateStore:
             db.close()
 
 
+class SQLiteStateReader:
+    def __init__(self, path: Path, *, evidence_store: EvidenceStore | None = None) -> None:
+        self.path = path
+        self.evidence_store = evidence_store
+
+    def current_phase(self, task_id: str) -> WorkflowPhase | None:
+        with self._connect() as db:
+            row = db.execute(
+                "SELECT current_phase FROM tasks WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return WorkflowPhase(str(row["current_phase"]))
+
+    def current_event_sha256(self, task_id: str) -> str | None:
+        with self._connect() as db:
+            row = db.execute(
+                "SELECT current_event_sha256 FROM tasks WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+        return None if row is None else str(row["current_event_sha256"])
+
+    def latest_event(
+        self,
+        task_id: str,
+        *,
+        event_type: str | None = None,
+        candidate_id: str | None = None,
+    ) -> StateEvent | None:
+        where = ["task_id = ?"]
+        params: list[str] = [task_id]
+        if event_type is not None:
+            where.append("event_type = ?")
+            params.append(event_type)
+        if candidate_id is not None:
+            where.append("candidate_id = ?")
+            params.append(candidate_id)
+        with self._connect() as db:
+            row = db.execute(
+                f"""
+                SELECT * FROM events
+                WHERE {" AND ".join(where)}
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                params,
+            ).fetchone()
+        return None if row is None else _event_from_row(row)
+
+    def verify_integrity(self) -> dict[str, Any]:
+        with self._connect() as db:
+            events = db.execute("SELECT * FROM events ORDER BY id").fetchall()
+            previous: str | None = None
+            for row in events:
+                if row["previous_event_sha256"] != previous:
+                    raise IntegrityError("event hash chain mismatch")
+                payload_json = str(row["payload_json"])
+                if sha256_text(payload_json) != row["payload_sha256"]:
+                    raise IntegrityError("payload hash mismatch")
+                expected_event = hash_json(
+                    {
+                        "task_id": row["task_id"],
+                        "candidate_id": row["candidate_id"],
+                        "event_type": row["event_type"],
+                        "from_phase": row["from_phase"],
+                        "to_phase": row["to_phase"],
+                        "payload_sha256": row["payload_sha256"],
+                        "previous_event_sha256": row["previous_event_sha256"],
+                        "actor": row["actor"],
+                        "created_at": row["created_at"],
+                    }
+                )
+                if expected_event != row["event_sha256"]:
+                    raise IntegrityError("event hash mismatch")
+                _verify_event_artifact_reference(db, payload_json)
+                previous = str(row["event_sha256"])
+            _verify_task_projection(db)
+            artifact_count = self._verify_artifacts(db)
+        return {
+            "status": "pass",
+            "event_count": len(events),
+            "artifact_count": artifact_count,
+        }
+
+    def _verify_artifacts(self, db: sqlite3.Connection) -> int:
+        rows = db.execute("SELECT * FROM artifacts ORDER BY sha256").fetchall()
+        for row in rows:
+            sha256 = str(row["sha256"])
+            if self.evidence_store is not None and not self.evidence_store.exists(sha256):
+                raise IntegrityError(f"missing evidence object: {sha256}")
+            if self.evidence_store is not None:
+                data = self.evidence_store.get_bytes(sha256)
+                if sha256_bytes(data) != sha256:
+                    raise IntegrityError(f"evidence hash mismatch: {sha256}")
+                if len(data) != int(row["size_bytes"]):
+                    raise IntegrityError(f"evidence size mismatch: {sha256}")
+        return len(rows)
+
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
+        uri = f"file:{self.path}?mode=ro"
+        db = sqlite3.connect(uri, timeout=30, uri=True)
+        db.row_factory = sqlite3.Row
+        try:
+            db.execute("PRAGMA query_only = ON")
+            yield db
+        finally:
+            db.close()
+
+
 def _phase_value(value: WorkflowPhase | str | None) -> str | None:
     if value is None:
         return None
     return value.value if isinstance(value, WorkflowPhase) else str(value)
+
+
+def _verify_task_projection(db: sqlite3.Connection) -> None:
+    tasks = db.execute("SELECT * FROM tasks ORDER BY task_id").fetchall()
+    for task in tasks:
+        latest = db.execute(
+            """
+            SELECT * FROM events
+            WHERE task_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (task["task_id"],),
+        ).fetchone()
+        if latest is None:
+            raise IntegrityError("task projection without event")
+        if task["current_event_sha256"] != latest["event_sha256"]:
+            raise IntegrityError("task current event mismatch")
+        if task["current_phase"] != latest["to_phase"]:
+            raise IntegrityError("task current phase mismatch")
+
+
+def _verify_event_artifact_reference(
+    db: sqlite3.Connection,
+    payload_json: str,
+) -> None:
+    try:
+        payload = json.loads(payload_json)
+    except json.JSONDecodeError as exc:
+        raise IntegrityError("event payload is not valid JSON") from exc
+    if not isinstance(payload, dict):
+        raise IntegrityError("event payload is not a JSON object")
+    artifact_sha = payload.get("artifact_sha256")
+    if artifact_sha is None:
+        return
+    row = db.execute(
+        "SELECT sha256 FROM artifacts WHERE sha256 = ?",
+        (str(artifact_sha),),
+    ).fetchone()
+    if row is None:
+        raise IntegrityError(f"missing artifact row: {artifact_sha}")
 
 
 def _latest_event_sha(db: sqlite3.Connection) -> str | None:

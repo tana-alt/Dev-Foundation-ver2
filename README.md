@@ -71,13 +71,30 @@ HARNESS_ROLE=integrator ./harness land <task_id>
 HARNESS_ROLE=integrator ./harness push <task_id>
 ```
 
+Use `./harness status <task_id>` for the current phase, role/mode, land status,
+and next command. Use `./harness passport <task_id>` for a read-only proof
+summary across contract, candidate diff, verifier evidence, reviewer verdicts,
+gate/integration state, and the StateStore hash-chain head.
+
 Architecture:
 
 - `.harness/` is the control plane: task YAML, verifier config, review config,
-  semantic reviewer wrapper, and policy.
+  semantic reviewer wrapper, and policy. Policy YAML carries repo-wide
+  invariants and scope semantics; task YAML carries task-specific goal,
+  architecture, acceptance, adversarial checks, and review requests.
 - `./harness` is the CLI entrypoint. Role checks happen at this CLI
   orchestration boundary; they are not a security boundary against a malicious
   local worker.
+- Local orchestration mode runs reversible local commands directly with
+  `HARNESS_ROLE`. Local-strict daemon mode uses `./harness daemon run
+  --foreground`, `./harness --strict ...`, sessions, and capability tokens for
+  protected actions. `HARNESS_ROLE` is still only an orchestration signal.
+- `allowed_paths` is expected impact scope for planning and review, not a hard
+  gate. `forbidden_paths` is blocking unless an explicit policy-exception task
+  authorizes the change.
+- `docs/reference/` is supplemental for deeper rationale. Completion-critical
+  harness requirements belong in `.harness/policy.yaml`, task YAML, AGENTS.md,
+  or generated packets.
 - Harness runtime state is stored under the Git common directory at
   `harness-runtime/`, not in tracked `.harness/state`.
 - Writer, reviewer, and integrator worktrees are task-owned under
@@ -86,16 +103,25 @@ Architecture:
   `harness-runtime/state/tasks/<task_id>/`: `contract.lock.json`,
   `verify-result.json`, `candidate.diff`, `submission.json`, reviewer packets,
   verdicts, and `integration-result.json`.
+- Semantic reviewers read `reviews/<reviewer>.review-packet.json` plus the
+  sealed candidate workspace and write `reviews/<reviewer>.json`. After review,
+  the integrator handoff is `review --collect`, `dispatch` or `integrate`, then
+  `land`, then policy-controlled `push`.
+- Task-scoped agent communication uses `comm-peers`, `comm-send`, and
+  `comm-inbox` in local mode. The strict daemon exposes the same channel through
+  `acp send`, `acp list`, and `acp request-action`; `acp list` is the candidate
+  inbox list for the given task and agent id.
 - Reviewer freshness is evidence-hash based. If diff, verifier output, quality
   evidence, scope map, metrics, mutation output, or reviewer-consumed artifacts
   change, stale reviewer lanes must be rerun instead of reusing old verdicts.
 - Policy controls external writes. Land and push use integrator authority and
   write rescue, lock, sync, and result evidence where configured.
 
-The normal stop condition is an `integrated` or `landed` result with fresh
-review evidence and passing machine checks. Rework is a normal workflow result:
-the writer should receive the evidence and continue unless the task is
-irreversible, policy-violating, or looping without progress.
+An `integrated` result means gated and ready to land; it does not mean merged
+into the target branch. A `landed` result means the local land step completed.
+Rework is a normal workflow result: the writer should receive the evidence and
+continue unless the task is irreversible, policy-violating, or looping without
+progress.
 
 ## Restore Agent Environment
 

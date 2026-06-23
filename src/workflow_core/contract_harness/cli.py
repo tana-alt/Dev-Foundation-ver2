@@ -43,6 +43,7 @@ from workflow_core.contract_harness.integration import dispatch_task, integrate_
 from workflow_core.contract_harness.land import land_task
 from workflow_core.contract_harness.manual_resolution import check_manual_resolution
 from workflow_core.contract_harness.merge_oracle import run_single_candidate_oracle
+from workflow_core.contract_harness.passport import proof_passport, proof_passport_markdown
 from workflow_core.contract_harness.push import push_task
 from workflow_core.contract_harness.report import write_report
 from workflow_core.contract_harness.roles import RoleError, current_role, require_allowed
@@ -79,6 +80,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         return _review(root, args)
     if command == "pr":
         return _pr(root, args)
+    if command == "acp":
+        return _acp(root, args)
     require_allowed(command)
     return _command_handlers(root, args).get(command, _deferred)()
 
@@ -108,6 +111,7 @@ def _command_handlers(root: Path, args: argparse.Namespace) -> dict[str, Callabl
         "scope-map": lambda: _json(_scope_map(root, args), 0),
         "tools": lambda: _json(_tools(root, args), 0),
         "context-audit": lambda: _context_audit(root, args.task_id),
+        "passport": lambda: _passport(root, args),
         "launch-writer": lambda: _launch_writer(root, args),
         "spawn": lambda: _spawn(root, args),
         "comm-send": lambda: _json(_comm_send(root, args), 0),
@@ -171,6 +175,18 @@ def _daemon_command(root: Path, args: argparse.Namespace) -> int:
         if getattr(args, "dev_open_session_create", False):
             argv.append("--dev-open-session-create")
         return daemon_main(argv)
+    if action == "start":
+        print(
+            json.dumps(
+                {
+                    "ok": False,
+                    "reason": "daemon_start_not_supported",
+                    "next_command": "./harness daemon run --foreground",
+                },
+                sort_keys=True,
+            )
+        )
+        return 1
     method = {
         "ping": "daemon.ping",
         "status": "daemon.status",
@@ -362,6 +378,39 @@ def _pr(root: Path, args: argparse.Namespace) -> int:
     return _json_pair(check_local_pr(root, args.task_id))
 
 
+def _acp(root: Path, args: argparse.Namespace) -> int:
+    action = str(args.acp_action)
+    require_allowed("acp", action=action)
+    if action == "list":
+        return _json(list_inbox(root, args.task_id, agent_id=args.agent_id), 0)
+    if action == "request-action":
+        body = str(args.body or "")
+        proposed = "candidate.verify" if "verify" in body.lower() else "task.status"
+        return _json(
+            {
+                "message_id": args.message_id,
+                "proposed_action": proposed,
+                "executed": False,
+            },
+            0,
+        )
+    from_agent = str(os.environ.get("FOUNDATION_AGENT_ID") or "local-cli")
+    return _json(
+        send_message(
+            root,
+            args.task_id,
+            from_agent_id=from_agent,
+            from_role=current_role(),
+            to_agent_id=args.to_agent,
+            to_role=args.to_role,
+            kind=args.kind,
+            subject=args.subject,
+            body_markdown=args.body,
+        ),
+        0,
+    )
+
+
 def _explain(root: Path, task_id: str) -> int:
     contract = load_contract(root, task_id)
     runtime = task_dir(root, task_id)
@@ -378,6 +427,14 @@ def _explain(root: Path, task_id: str) -> int:
         print(f"{role} skills: {', '.join(item['name'] for item in items)}")
     print(f"runtime: {runtime}")
     return 0
+
+
+def _passport(root: Path, args: argparse.Namespace) -> int:
+    passport = proof_passport(root, args.task_id)
+    if args.format == "markdown":
+        print(proof_passport_markdown(passport))
+        return 0
+    return _json(passport, 0)
 
 
 def _scope_map(root: Path, args: argparse.Namespace) -> dict[str, Any]:
@@ -550,6 +607,7 @@ def _parser() -> argparse.ArgumentParser:
     _scope_map_command(sub)
     _tools_command(sub)
     _task_command(sub, "context-audit")
+    _passport_command(sub)
     _launch_writer_command(sub)
     _spawn_command(sub)
     _comm_send_command(sub)
@@ -598,6 +656,12 @@ def _submit_command(sub: argparse._SubParsersAction[Any]) -> None:
 def _task_command(sub: argparse._SubParsersAction[Any], name: str) -> None:
     parser = sub.add_parser(name)
     parser.add_argument("task_id")
+
+
+def _passport_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("passport")
+    parser.add_argument("task_id")
+    parser.add_argument("--format", choices=["json", "markdown"], default="json")
 
 
 def _merge_command(sub: argparse._SubParsersAction[Any]) -> None:

@@ -154,16 +154,22 @@ _WRITER_TOOL_SPECS = (
         "Read artifact-backed task status without changing workflow state.",
     ),
     (
+        "passport",
+        "coordination",
+        "{harness} passport {task_id}",
+        "Read the task proof passport without rerunning checks or changing workflow state.",
+    ),
+    (
         "comm-peers",
         "coordination",
         "{harness} comm-peers {task_id}",
-        "List task-scoped peer agent ids, roles, and briefs from runtime session projection.",
+        "List task-scoped peer agent ids, roles, and briefs for local ACP-style handoff.",
     ),
     (
         "comm-send",
         "coordination",
         ("{harness} comm-send {task_id} --to <agent-id> --subject <subject> --body <message>"),
-        "Send a non-authoritative task-scoped message to another agent.",
+        "Send a non-authoritative task-scoped ACP-style message to another agent.",
     ),
     (
         "comm-inbox",
@@ -233,6 +239,12 @@ _INTEGRATOR_TOOL_SPECS = (
         "coordination",
         "{harness} status {task_id}",
         "Read artifact-backed task status without changing workflow state.",
+    ),
+    (
+        "passport",
+        "coordination",
+        "{harness} passport {task_id}",
+        "Read the task proof passport without rerunning checks or changing workflow state.",
     ),
     (
         "spawn",
@@ -385,6 +397,13 @@ def _reviewer_harness_tools(root: Path, task_id: str) -> list[dict[str, Any]]:
             "review",
             f"{harness} status {task_id}",
             "Read artifact-backed task status without changing workflow state.",
+        ),
+        _harness_tool(
+            "reviewer",
+            "passport",
+            "review",
+            f"{harness} passport {task_id}",
+            "Read normalized proof, review, policy, and state evidence without rerunning checks.",
         ),
         _harness_tool(
             "reviewer",

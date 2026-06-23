@@ -5,7 +5,6 @@ from typing import Any
 
 from workflow_core.contract_harness.config import ConfigError, harness_dir, load_yaml
 
-_SCOPE_KEYS = {"scope", "allowed_paths", "forbidden_paths"}
 _WRITE_ACTIONS = {
     "create_rescue_ref",
     "acquire_remote_push_lock",
@@ -16,7 +15,8 @@ _WRITE_ACTIONS = {
 
 def load_policy(root: Path) -> dict[str, Any]:
     policy = load_yaml(harness_dir(root) / "policy.yaml")
-    _reject_scope_keys(policy)
+    _reject_task_scope(policy)
+    _validate_policy_contract(policy)
     _require_mapping(policy, "goal")
     _require_mapping(policy, "constraints")
     _require_mapping(policy, "bottlenecks")
@@ -139,13 +139,50 @@ def _required_target_text(target: dict[str, Any], key: str) -> str:
     return value.strip()
 
 
-def _reject_scope_keys(value: Any) -> None:
-    if isinstance(value, dict):
-        for key, child in value.items():
-            if str(key) in _SCOPE_KEYS:
-                raise ConfigError("policy.yaml must not define scope")
-            _reject_scope_keys(child)
+def _reject_task_scope(policy: dict[str, Any]) -> None:
+    if "scope" in policy:
+        raise ConfigError("policy.yaml must not define task-specific scope")
+
+
+def _validate_policy_contract(policy: dict[str, Any]) -> None:
+    authority = policy.get("authority")
+    if isinstance(authority, dict):
+        _require_rework_value(
+            authority,
+            "missing_required_yaml_information",
+            "authority.missing_required_yaml_information",
+        )
+
+    scope_policy = policy.get("scope_policy")
+    if isinstance(scope_policy, dict):
+        _require_hard_gate(scope_policy, "allowed_paths", expected=False)
+        _require_hard_gate(scope_policy, "forbidden_paths", expected=True)
+
+    task_contract = policy.get("task_contract")
+    if isinstance(task_contract, dict):
+        _require_rework_value(
+            task_contract,
+            "missing_required_information_result",
+            "task_contract.missing_required_information_result",
+        )
+
+
+def _require_hard_gate(
+    scope_policy: dict[str, Any],
+    key: str,
+    *,
+    expected: bool,
+) -> None:
+    value = scope_policy.get(key)
+    if value is None:
         return
-    if isinstance(value, list):
-        for item in value:
-            _reject_scope_keys(item)
+    if not isinstance(value, dict):
+        raise ConfigError(f"policy.yaml scope_policy.{key} must be a mapping")
+    if "hard_gate" in value and bool(value.get("hard_gate")) is not expected:
+        expected_text = "true" if expected else "false"
+        raise ConfigError(f"policy.yaml scope_policy.{key}.hard_gate must be {expected_text}")
+
+
+def _require_rework_value(data: dict[str, Any], key: str, label: str) -> None:
+    if key in data and str(data.get(key)) != "rework":
+        raise ConfigError(f"policy.yaml {label} must be rework")

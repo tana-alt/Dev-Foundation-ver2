@@ -106,6 +106,9 @@ verification, artifact, or implementation files belong under the owning
 - `.agents/skills/`: current repo-local skills.
 - `.agents/plugins/marketplace.json`: local plugin registry. It may be empty by
   default to avoid implying that optional payloads are installed.
+- `.harness/`: tracked harness control plane for policy, task contracts,
+  verifier config, review config, and reviewer wrappers. Runtime state remains
+  outside tracked `.harness/state`.
 - `plugins/`: optional local plugin bundles and downloaded plugin payloads;
   created only when plugins are installed, absent by default.
 - `Plan/`: project-scoped agent plans, logs, and optional durable lane-map

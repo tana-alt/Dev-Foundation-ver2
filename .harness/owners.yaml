@@ -1,0 +1,23 @@
+scopes:
+  policy-task-contract-refinement:
+    allowed_paths:
+      - .harness/bottleneck.yaml
+      - .harness/owners.yaml
+      - .harness/policy.yaml
+      - .harness/review.yaml
+      - .harness/semantic_ai_reviewer.py
+      - .harness/tasks/**/task.yaml
+      - .harness/verifiers.yaml
+      - src/workflow_core/contract_harness/**
+      - README.md
+      - docs/reference/**
+      - tests/**
+    forbidden_paths:
+      - harness-runtime/**
+      - .harness/state/**
+      - .serena/**
+      - "**/*secret*"
+      - "**/*credential*"
+      - "**/*token*"
+      - "**/*.pem"
+      - "**/*.key"

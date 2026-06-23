@@ -56,7 +56,17 @@ pythonpath = ["."]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["tests"]
+files = [
+    "src/workflow_core/contract_harness/domain",
+    "src/workflow_core/contract_harness/command_runner.py",
+    "src/workflow_core/contract_harness/config.py",
+    "src/workflow_core/contract_harness/hashing.py",
+    "src/workflow_core/contract_harness/passport.py",
+    "src/workflow_core/contract_harness/roles.py",
+    "src/workflow_core/contract_harness/status.py",
+    "src/workflow_core/contract_harness/verifier.py",
+    "tests",
+]
 mypy_path = "src"
 plugins = ["pydantic.mypy"]
 warn_redundant_casts = true

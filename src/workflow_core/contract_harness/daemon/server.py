@@ -230,7 +230,7 @@ class DaemonServer:
             required=required,
         )
         self._authorize_task_scope(session, request.params)
-        with _session_environment(str(session.role), session_actor(session)):
+        with _session_environment(str(session.role), session_actor(session), session.agent_id):
             return ok_response(
                 request.request_id,
                 self._dispatch_authorized(method, request.params),
@@ -486,8 +486,8 @@ class DaemonServer:
         return send_message(
             self.repo_root,
             str(params["task_id"]),
-            from_agent_id=str(params.get("from_agent_id") or "strict-cli"),
-            from_role=str(params.get("from_role") or os.environ.get("HARNESS_ROLE") or "writer"),
+            from_agent_id=str(os.environ.get("FOUNDATION_AGENT_ID") or "strict-cli"),
+            from_role=str(os.environ.get("HARNESS_ROLE") or "writer"),
             to_agent_id=str(params["to_agent_id"]),
             to_role=str(params["to_role"]),
             kind=str(params["kind"]),
@@ -610,11 +610,13 @@ def _landed_commit(params: dict[str, Any]) -> str:
 
 
 @contextmanager
-def _session_environment(role: str, actor: str) -> Iterator[None]:
+def _session_environment(role: str, actor: str, agent_id: str) -> Iterator[None]:
     previous_role = os.environ.get("HARNESS_ROLE")
     previous_actor = os.environ.get("HARNESS_ACTOR")
+    previous_agent = os.environ.get("FOUNDATION_AGENT_ID")
     os.environ["HARNESS_ROLE"] = role
     os.environ["HARNESS_ACTOR"] = actor
+    os.environ["FOUNDATION_AGENT_ID"] = agent_id
     try:
         yield
     finally:
@@ -626,6 +628,10 @@ def _session_environment(role: str, actor: str) -> Iterator[None]:
             os.environ.pop("HARNESS_ACTOR", None)
         else:
             os.environ["HARNESS_ACTOR"] = previous_actor
+        if previous_agent is None:
+            os.environ.pop("FOUNDATION_AGENT_ID", None)
+        else:
+            os.environ["FOUNDATION_AGENT_ID"] = previous_agent
 
 
 def _safe_component(value: str) -> str:

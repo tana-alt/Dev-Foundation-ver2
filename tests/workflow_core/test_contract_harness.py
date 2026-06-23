@@ -17,6 +17,7 @@ from workflow_core.contract_harness.agent_tools import (
 )
 from workflow_core.contract_harness.hashing import file_hash
 from workflow_core.contract_harness.lock import LockBlocked, _lock_path, local_lock
+from workflow_core.contract_harness.snapshot import snapshot_diff
 from workflow_core.contract_harness.verify import recompute_machine_evidence
 from workflow_core.evaluation import EvalScore
 from workflow_core.metrics_store import MetricsStore
@@ -89,7 +90,16 @@ def enable_policy_and_remote(tmp_path: Path, repo: Path) -> Path:
     git(repo, "branch", "-M", "main")
     (repo / ".harness" / "policy.yaml").write_text(policy_yaml(), encoding="utf-8")
     git(repo, "add", ".harness/policy.yaml")
-    git(repo, "commit", "-m", "enable integration policy")
+    diff = subprocess.run(
+        ["git", "diff", "--cached", "--quiet"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if diff.returncode != 0:
+        git(repo, "commit", "-m", "enable integration policy")
     remote = tmp_path / f"{repo.name}-remote.git"
     git(tmp_path, "init", "--bare", str(remote))
     git(repo, "remote", "add", "origin", str(remote))
@@ -133,6 +143,7 @@ def write_harness_config(repo: Path, verifier_command: str, reject_unexpected: b
     (base / "tasks" / TASK_ID).mkdir(parents=True)
     (base / "rfc-decisions").mkdir()
     (base / "bottleneck.yaml").write_text("version: 1\n", encoding="utf-8")
+    (base / "policy.yaml").write_text(policy_yaml(), encoding="utf-8")
     (base / "owners.yaml").write_text(
         "scopes:\n"
         "  demo:\n"
@@ -339,6 +350,19 @@ def test_script_tool_commands_use_absolute_paths_for_repo_local_scripts(tmp_path
     assert " python3 scripts/hook_post_tool_use.py" not in hook_tool["command"]
 
 
+def test_snapshot_diff_can_include_ignored_control_plane_additions(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    exclude = repo / ".git" / "info" / "exclude"
+    exclude.write_text(exclude.read_text(encoding="utf-8") + "\n.harness/\n", encoding="utf-8")
+    wrapper = repo / ".harness" / "semantic_reviewer.py"
+    wrapper.write_text("print('review')\n", encoding="utf-8")
+
+    diff = snapshot_diff(repo, git(repo, "rev-parse", "HEAD"), [".harness/semantic_reviewer.py"])
+
+    assert "diff --git a/.harness/semantic_reviewer.py" in diff
+    assert "+print('review')" in diff
+
+
 def test_active_review_config_wires_semantic_ai_to_repo_root_wrapper() -> None:
     review = yaml.safe_load((ROOT / ".harness" / "review.yaml").read_text(encoding="utf-8"))
 
@@ -468,6 +492,7 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "explain",
         "context-audit",
         "status",
+        "passport",
         "comm-peers",
         "comm-send",
         "comm-inbox",
@@ -922,6 +947,13 @@ def test_status_query_returns_partial_when_artifacts_are_missing(tmp_path: Path)
     assert result["schema_version"] == 1
     assert result["task_id"] == TASK_ID
     assert result["phase"] == "submitted"
+    assert result["mode"] == "local-orchestration"
+    assert result["role"] == {"current": "writer", "explicit": False, "source": "default"}
+    assert result["next_action"] == {
+        "command": f"HARNESS_ROLE=integrator ./harness dispatch {TASK_ID}",
+        "reason": "submitted evidence is waiting for integrator dispatch",
+        "status": "continue",
+    }
     assert result["authority"] == {
         "complete": False,
         "source": "missing gate-result.json",
@@ -962,9 +994,101 @@ def test_status_reports_rework_when_integration_result_requires_rework(
     assert status.returncode == 0, status.stdout + status.stderr
     result = json.loads(status.stdout)
     assert result["phase"] == "rework_required"
+    assert result["next_action"]["status"] == "rework"
     assert result["authority"] == {
         "complete": False,
         "source": "missing gate-result.json",
+    }
+
+
+def test_passport_summarizes_existing_proof_without_writing_runtime(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+
+    passport = run_harness(repo, "passport", TASK_ID)
+
+    assert passport.returncode == 0, passport.stdout + passport.stderr
+    result = json.loads(passport.stdout)
+    verify_result = load_runtime_json(repo, "verify-result.json")
+    assert result["schema_version"] == 1
+    assert result["task_id"] == TASK_ID
+    assert result["candidate"]["diff_sha256"] == verify_result["candidate_diff_sha256"]
+    assert result["machine_proof"]["status"] == "pass"
+    assert result["machine_proof"]["evidence_sha256"] == verify_result["machine_evidence_sha256"]
+    assert result["review_proof"]["status"] == "not_started"
+    assert result["state_proof"]["integrity"] == "pass"
+    assert result["next_action"] == {
+        "command": f"HARNESS_ROLE=writer ./harness submit {TASK_ID}",
+        "reason": "verified candidate is ready for writer submission",
+        "status": "continue",
+    }
+    assert not (runtime_task_dir(repo) / "passport.json").exists()
+
+
+def test_status_and_passport_use_read_only_state_projection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+
+    from workflow_core.contract_harness.adapters.sqlite_state_store import SQLiteStateStore
+    from workflow_core.contract_harness.passport import proof_passport
+    from workflow_core.contract_harness.status import task_status
+
+    def fail_init(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("read-only projection initialized writable StateStore")
+
+    monkeypatch.setattr(SQLiteStateStore, "__init__", fail_init)
+
+    assert task_status(repo, TASK_ID)["state_store"]["integrity"] == "pass"
+    assert proof_passport(repo, TASK_ID)["state_proof"]["integrity"] == "pass"
+
+
+def test_passport_marks_semantic_review_stale_when_semantic_evidence_changes(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    enable_semantic_reviewer(repo)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    reviewed = run_harness(repo, "review", TASK_ID, "--run", "semantic-ai", role="reviewer")
+    assert reviewed.returncode == 0, reviewed.stdout + reviewed.stderr
+
+    before = run_harness(repo, "passport", TASK_ID)
+    assert before.returncode == 0, before.stdout + before.stderr
+    before_review = json.loads(before.stdout)["review_proof"]
+    assert "semantic-ai" in before_review["fresh_reviewers"]
+
+    quality_path = runtime_task_dir(repo) / "quality-result.json"
+    quality = json.loads(quality_path.read_text(encoding="utf-8"))
+    quality["summary"] = "tampered after review"
+    quality_path.write_text(json.dumps(quality, sort_keys=True), encoding="utf-8")
+
+    after = run_harness(repo, "passport", TASK_ID)
+    assert after.returncode == 0, after.stdout + after.stderr
+    after_review = json.loads(after.stdout)["review_proof"]
+    assert "semantic-ai" not in after_review["fresh_reviewers"]
+
+
+def test_daemon_start_returns_actionable_guidance(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+
+    started = run_harness(repo, "daemon", "start")
+
+    assert started.returncode == 1
+    payload = json.loads(started.stdout)
+    assert payload == {
+        "ok": False,
+        "reason": "daemon_start_not_supported",
+        "next_command": "./harness daemon run --foreground",
     }
 
 
@@ -3711,14 +3835,14 @@ def test_verify_writes_candidate_and_machine_evidence_without_mutating_index(
     assert verify_result["machine_evidence_sha256"] == recompute_machine_evidence(verify_result)
 
 
-def test_verify_rejects_forbidden_and_contract_input_edits(tmp_path: Path) -> None:
+def test_verify_rejects_contract_input_edits_by_semantic_mismatch(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
     run_harness(repo, "prepare", TASK_ID)
     (repo / ".harness" / "owners.yaml").write_text("scopes: {}\n", encoding="utf-8")
     result = run_harness(repo, "verify", TASK_ID)
     assert result.returncode != 0
     verify_result = load_runtime_json(repo, "verify-result.json")
-    assert verify_result["scope"]["violation_count"] >= 1
+    assert verify_result["scope"]["violation_count"] == 0
     assert verify_result["contract"]["semantic_reproducible"] is False
 
 

@@ -79,6 +79,16 @@ def verify_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         status,
     )
     write_json(out_dir / "verify-result.json", result)
+    _record_verify_artifacts(root, task_id, result, status)
+    return result, 0 if status == "pass" else 1
+
+
+def _record_verify_artifacts(
+    root: Path,
+    task_id: str,
+    result: dict[str, Any],
+    status: str,
+) -> None:
     record_authority_artifact(
         root,
         task_id,
@@ -106,7 +116,6 @@ def verify_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         },
         candidate_id=result["candidate_id"],
     )
-    return result, 0 if status == "pass" else 1
 
 
 def recompute_machine_evidence(verify_result: dict[str, Any]) -> str:

@@ -31,12 +31,8 @@ from workflow_core.contract_harness.jsonio import read_json, write_json
 from workflow_core.contract_harness.runtime_paths import task_dir
 
 GLOBAL_FORBIDDEN = [
-    ".harness/bottleneck.yaml",
-    ".harness/owners.yaml",
-    ".harness/verifiers.yaml",
-    ".harness/review.yaml",
-    ".harness/rfc-decisions/**",
-    ".harness/tasks/*/task.yaml",
+    "harness-runtime/**",
+    ".harness/state/**",
     ".harness/generated/**",
 ]
 
@@ -169,7 +165,7 @@ def _contract_payload(
         "goal": task.get("goal") or task.get("intent", {}).get("summary"),
         "scope_contract": {
             "allowed_paths": allowed,
-            "forbidden_paths": [*GLOBAL_FORBIDDEN, *local_forbidden],
+            "forbidden_paths": _dedupe([*GLOBAL_FORBIDDEN, *local_forbidden]),
         },
         "verifier_plan": verifiers,
         "acceptance": acceptance,
@@ -189,6 +185,17 @@ def _input_hashes(root: Path, task_id: str) -> dict[str, str]:
     if policy_id:
         hashes[f"policies/{policy_id}.yaml"] = file_hash(base / "policies" / f"{policy_id}.yaml")
     return hashes
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
 
 
 def _capsule(root: Path, task: dict[str, Any], contract: dict[str, Any]) -> dict[str, Any]:

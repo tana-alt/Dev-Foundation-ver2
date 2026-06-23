@@ -5,6 +5,8 @@ import tomllib
 from pathlib import Path
 from typing import Any, cast
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 
 AGENT_ENTRYPOINTS = ("AGENTS.md",)
@@ -129,6 +131,7 @@ EXPECTED_TRACKED_TOP_LEVELS = {
     ".gitattributes",
     ".gitleaks.toml",
     ".github",
+    ".harness",
     ".gitignore",
     ".python-version",
     "AGENTS.md",
@@ -143,6 +146,7 @@ EXPECTED_TRACKED_TOP_LEVELS = {
     "hooks",
     "plugins",
     "pyproject.toml",
+    "refactor.md",
     "scripts",
     "src",
     "templates",
@@ -483,6 +487,8 @@ def test_lightweight_dev_defaults_are_declared() -> None:
     assert python_version == "3.12"
     assert 'requires-python = ">=3.12,<3.15"' in pyproject
     assert 'python_version = "3.12"' in pyproject
+    assert '"src/workflow_core/contract_harness/domain"' in pyproject
+    assert '"src/workflow_core/contract_harness/verifier.py"' in pyproject
     assert "root = true" in editorconfig
     assert "end_of_line = lf" in editorconfig
     assert "insert_final_newline = true" in editorconfig
@@ -496,6 +502,23 @@ def test_lightweight_dev_defaults_are_declared() -> None:
     assert "sha256sum -c" in workflow
     assert "uv sync --frozen --group dev" in workflow
     assert "make check-foundation" in workflow
+
+
+def test_tracked_harness_example_task_is_self_contained() -> None:
+    task = yaml.safe_load(read_text(".harness/tasks/example/task.yaml"))
+    required = {
+        "goal",
+        "architecture",
+        "scope",
+        "protected_invariants",
+        "acceptance",
+        "adversarial_acceptance",
+        "expected_evidence",
+        "review_request",
+    }
+
+    assert required <= set(task)
+    assert task["acceptance"]["mode"] in {"generated", "agent_generated"}
 
 
 def test_tracked_hooks_enforce_agent_policy_and_checks() -> None:
@@ -748,6 +771,44 @@ def test_repo_hygiene_behavior(tmp_path: Path) -> None:
     assert artifact_metadata_result.returncode == 0
     assert "repo hygiene: passed" in artifact_metadata_result.stdout
 
+    harness_metadata_repo = tmp_path / "harness-metadata"
+    init_hygiene_repo(harness_metadata_repo)
+    (harness_metadata_repo / ".gitignore").write_text(".harness/\n", encoding="utf-8")
+    harness_dir = harness_metadata_repo / ".harness"
+    (harness_dir / "tasks" / "example").mkdir(parents=True)
+    for relative_path in (
+        ".harness/bottleneck.yaml",
+        ".harness/owners.yaml",
+        ".harness/policy.yaml",
+        ".harness/review.yaml",
+        ".harness/verifiers.yaml",
+        ".harness/tasks/example/task.yaml",
+    ):
+        (harness_metadata_repo / relative_path).write_text("version: 1\n", encoding="utf-8")
+    (harness_dir / "semantic_ai_reviewer.py").write_text("print('review')\n", encoding="utf-8")
+    git_add(harness_metadata_repo, ".gitignore")
+    subprocess.run(
+        [
+            "git",
+            "add",
+            "-f",
+            ".harness/bottleneck.yaml",
+            ".harness/owners.yaml",
+            ".harness/policy.yaml",
+            ".harness/review.yaml",
+            ".harness/semantic_ai_reviewer.py",
+            ".harness/tasks/example/task.yaml",
+            ".harness/verifiers.yaml",
+        ],
+        cwd=harness_metadata_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    harness_metadata_result = run_hygiene_check(harness_metadata_repo)
+    assert harness_metadata_result.returncode == 0
+    assert "repo hygiene: passed" in harness_metadata_result.stdout
+
     forbidden_repo = tmp_path / "forbidden"
     init_hygiene_repo(forbidden_repo)
     forbidden_file = forbidden_repo / "runtime" / "state.txt"
@@ -971,6 +1032,7 @@ def test_pytest_collection_is_aggregate_foundation_gate() -> None:
     assert make_target_recipe(makefile, "test-fast") == [expected_test_fast]
     assert "test" in make_target_dependencies(makefile, "check-required")
     assert "check-required" in make_target_dependencies(makefile, "check-ci")
+    assert "check-harness-arch-all" in make_target_dependencies(makefile, "check-ci")
     assert "check-ci" in make_target_dependencies(makefile, "check-foundation")
     assert re.search(r"^\s*run:\s*make check-foundation\s*$", workflow, re.MULTILINE)
 

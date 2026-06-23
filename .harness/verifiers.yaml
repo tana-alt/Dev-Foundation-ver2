@@ -1,0 +1,14 @@
+default:
+  - id: policy-contract-tests
+    command: "uv run pytest -q tests/workflow_core/test_contract_harness_policy_acceptance.py"
+    applies_to:
+      - .harness/**
+      - src/workflow_core/contract_harness/policy.py
+      - tests/workflow_core/test_contract_harness_policy_acceptance.py
+    always: true
+  - id: policy-contract-ruff
+    command: "uv run ruff check src/workflow_core/contract_harness/policy.py tests/workflow_core/test_contract_harness_policy_acceptance.py"
+    applies_to:
+      - src/workflow_core/contract_harness/policy.py
+      - tests/workflow_core/test_contract_harness_policy_acceptance.py
+    always: true

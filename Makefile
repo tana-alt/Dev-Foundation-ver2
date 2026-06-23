@@ -184,6 +184,6 @@ check-push:
 
 check-required: format-check lint typecheck check-hooks check-shell check-hygiene check-secrets test
 
-check-ci: check-toolchain check-required check-cd
+check-ci: check-toolchain check-required check-harness-arch-all check-cd
 
 check-foundation: check-ci

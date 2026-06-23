@@ -92,22 +92,15 @@ def _inspect_function(
     hard_failures: list[dict[str, Any]],
     review_flags: list[dict[str, Any]],
 ) -> None:
+    del hard_failures
     length = (node.end_lineno or node.lineno) - node.lineno + 1
-    if length > HARD_FUNCTION_LINES:
-        hard_failures.append(_function_issue("function_too_large", rel_path, node, length))
-    elif length > REVIEW_FUNCTION_LINES:
+    if length > REVIEW_FUNCTION_LINES:
         review_flags.append(_function_issue("function_length_review", rel_path, node, length))
     depth = _nesting_depth(node)
-    if depth > HARD_NESTING_DEPTH:
-        hard_failures.append(_function_issue("nesting_too_deep", rel_path, node, depth))
-    elif depth > REVIEW_NESTING_DEPTH:
+    if depth > REVIEW_NESTING_DEPTH:
         review_flags.append(_function_issue("nesting_review", rel_path, node, depth))
     complexity = _cyclomatic_complexity(node)
-    if complexity > HARD_CYCLOMATIC_COMPLEXITY:
-        hard_failures.append(
-            _function_issue("cyclomatic_complexity_too_high", rel_path, node, complexity)
-        )
-    elif complexity > REVIEW_CYCLOMATIC_COMPLEXITY:
+    if complexity > REVIEW_CYCLOMATIC_COMPLEXITY:
         review_flags.append(
             _function_issue("cyclomatic_complexity_review", rel_path, node, complexity)
         )

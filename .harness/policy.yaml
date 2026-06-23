@@ -1,0 +1,171 @@
+version: 1
+schema_version: 1
+policy_id: contract-harness-policy
+policy_kind: repo_wide_policy
+goal:
+  summary: keep harness work self-contained, bounded, reviewed, and evidence-backed
+authority:
+  source: .harness/policy.yaml
+  rule: >
+    This file defines repo-wide harness policy. Task-specific requirements
+    belong in task.yaml. Operational procedures such as ACP usage, review
+    handoff commands, and agent command workflows belong in AGENTS.md.
+  missing_required_yaml_information: rework
+  format_variance: tolerated
+  interpretation: >
+    Prefer semantic completeness over rigid field spelling. If required
+    information is absent, ambiguous, contradictory, or only present in
+    optional references, request rework.
+context_model:
+  contract_sources:
+    global_policy: .harness/policy.yaml
+    task_contract: .harness/tasks/<task_id>/task.yaml
+    operational_protocols: AGENTS.md
+    optional_references: docs/reference/**
+  rule: >
+    Normal writer, reviewer, and integrator work should be possible from
+    AGENTS.md, policy.yaml, task.yaml, and generated packets. Reference docs
+    may explain details but must not be the only source of completion-critical
+    requirements.
+  completion_critical_information_must_be_inline:
+    - task_goal
+    - task_architecture
+    - expected_scope
+    - forbidden_scope
+    - protected_invariants
+    - acceptance_criteria
+    - adversarial_inputs_or_attack_tests
+    - expected_evidence
+    - review_request
+architecture:
+  summary: >
+    Contract Harness coordinates agent work through task contracts, bounded
+    scope, evidence, staged review, gate decisions, and integration decisions.
+    The tracked control plane defines policy and tasks; runtime state and
+    operational queues stay outside tracked repository state.
+  boundaries:
+    tracked_control_plane:
+      - .harness/policy.yaml
+      - .harness/tasks/**/task.yaml
+      - .harness/review.yaml
+      - AGENTS.md
+      - README.md
+      - docs/reference/**
+    runtime_state:
+      - harness-runtime/**
+      - .harness/state/**
+  repo_wide_invariants:
+    - id: ARCH-CONTROL-PLANE-TRACKED
+      statement: .harness policy/task files are tracked control-plane configuration.
+    - id: ARCH-RUNTIME-NOT-TRACKED
+      statement: Runtime queues, locks, sessions, credentials, and generated operational state must not be tracked.
+    - id: ARCH-TASK-CONTRACT-SELF-CONTAINED
+      statement: task.yaml must contain enough task-specific contract information for normal execution and review.
+    - id: ARCH-REFERENCE-NOT-CONTRACT
+      statement: docs/reference may explain the contract but must not be the only source of required task behavior.
+    - id: ARCH-AGENTS-FOR-OPERATIONS
+      statement: ACP procedures, review handoff commands, and agent operation rules belong in AGENTS.md.
+    - id: ARCH-INTEGRATED-NOT-LANDED
+      statement: Integrated means integration evidence exists; it does not imply landed or pushed.
+    - id: ARCH-ROLE-NOT-SECURITY
+      statement: HARNESS_ROLE is an orchestration boundary, not a security boundary.
+scope_policy:
+  allowed_paths:
+    semantics: expected_impact_area
+    hard_gate: false
+    rule: >
+      allowed_paths describes expected impact for planning and review. A change
+      outside allowed_paths is not automatically blocked, but it must be
+      explained, impact-estimated, and reviewed.
+  forbidden_paths:
+    semantics: blocked_area
+    hard_gate: true
+    rule: >
+      Candidate changes touching forbidden_paths are blocked unless the task is
+      explicitly an approved policy exception task.
+  impact_estimation:
+    rule: >
+      When path impact is unclear or a change escapes allowed_paths, include
+      path-impact estimation output or a clear manual impact analysis.
+task_contract:
+  required_information:
+    - task_id
+    - goal
+    - architecture
+    - scope
+    - protected_invariants
+    - acceptance
+    - adversarial_acceptance
+    - expected_evidence
+    - review_request
+  missing_required_information_result: rework
+  format_policy:
+    strict_schema_required: false
+    rule: >
+      Field names and structure may vary if meaning is clear. Missing required
+      information, contradictions, or reference-only completion criteria require
+      rework.
+  task_must_not:
+    - redefine_repo_wide_policy
+    - make_optional_reference_docs_required_by_accident
+    - place_ACP_or_review_handoff_operational_protocols_in_task_yaml
+    - treat_allowed_paths_as_a_hard_gate
+    - weaken_forbidden_paths_without_explicit_policy_task
+review:
+  default_posture: adversarial_counterexample_search
+  rule: >
+    Review should search for the cheapest counterexample that invalidates the
+    architecture, task contract, implementation, test evidence, or scope claim.
+  stages:
+    architecture_review:
+      timing: before_or_early_implementation
+      purpose: Evaluate design, invariants, scope model, acceptance, and adversarial tests.
+    code_review:
+      timing: after_implementation
+      purpose: Evaluate actual code, tests, evidence, and robustness.
+  verdicts:
+    - pass
+    - rework
+    - block
+  blocking_labels:
+    - forbidden_path
+    - missing_required_yaml_information
+    - architecture_gap
+    - invariant_gap
+    - acceptance_gap
+    - adversarial_test_gap
+    - missing_repro
+    - stale_evidence
+    - scope_risk
+    - policy_weakening
+    - gate_gaming
+    - operation_protocol_leak
+references:
+  default: optional
+  rule: >
+    Reference docs are supplemental. Broken optional references should not block
+    normal work when the inline contract is complete.
+constraints:
+  runtime_state:
+    must_use_git_common_dir: true
+  integration_target:
+    remote: origin
+    branch: main
+  external_writes:
+    default_mode: dry_run
+    allowed_roles:
+      - integrator
+    remotes:
+      origin:
+        branches:
+          main:
+            mode: dry_run
+            require_rescue_ref: true
+            require_push_lock: true
+            require_local_sync_after_remote_update: true
+bottlenecks:
+  integration:
+    max_active_integrators_per_branch: 1
+    lock_timeout_s: 900
+    max_remote_changed_retries: 2
+    oracle_timeout_s: 900

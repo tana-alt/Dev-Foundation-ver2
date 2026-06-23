@@ -1,4 +1,4 @@
-# Plan-N0001 execution log
+# Plan_N0001 execution log
 
 Date: 2026-06-20
 
@@ -37,7 +37,7 @@ Date: 2026-06-20
 
 ## Remaining risk
 
-- Full Plan-N0001 is intentionally large. This execution shipped the runnable v0.2 foundation slice and compatibility hooks, not a destructive complete rewrite of every existing harness module into services.
+- Full Plan_N0001 is intentionally large. This execution shipped the runnable v0.2 foundation slice and compatibility hooks, not a destructive complete rewrite of every existing harness module into services.
 - Existing unrelated dirty worktree deletions still block the full legacy harness acceptance suite.
 
 ## Subagent review follow-up

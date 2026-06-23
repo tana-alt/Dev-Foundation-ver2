@@ -8,6 +8,7 @@ from workflow_core.contract_harness.config import harness_dir
 from workflow_core.contract_harness.gitutil import git
 from workflow_core.contract_harness.health import config_health
 from workflow_core.contract_harness.jsonio import read_json
+from workflow_core.contract_harness.roles import role_context
 from workflow_core.contract_harness.runtime_paths import task_dir
 
 _ARTIFACTS = (
@@ -28,6 +29,69 @@ _ARTIFACTS = (
     "bottleneck-events.json",
 )
 
+_NEXT_ACTIONS: dict[str, tuple[str, str | None, str]] = {
+    "unknown": (
+        "continue",
+        "./harness prepare {task_id}",
+        "task definition is ready for contract preparation",
+    ),
+    "defined": (
+        "continue",
+        "./harness prepare {task_id}",
+        "task definition is ready for contract preparation",
+    ),
+    "prepared": (
+        "continue",
+        "HARNESS_ROLE=writer ./harness verify {task_id}",
+        "candidate evidence has not been verified yet",
+    ),
+    "writer_active": (
+        "continue",
+        "HARNESS_ROLE=writer ./harness verify {task_id}",
+        "candidate evidence has not been verified yet",
+    ),
+    "verified": (
+        "continue",
+        "HARNESS_ROLE=writer ./harness submit {task_id}",
+        "verified candidate is ready for writer submission",
+    ),
+    "submitted": (
+        "continue",
+        "HARNESS_ROLE=integrator ./harness dispatch {task_id}",
+        "submitted evidence is waiting for integrator dispatch",
+    ),
+    "integrated": (
+        "continue",
+        "HARNESS_ROLE=integrator ./harness land {task_id}",
+        "candidate is gated but not landed",
+    ),
+    "landed": (
+        "continue",
+        "HARNESS_ROLE=integrator ./harness push {task_id}",
+        "local land evidence exists and remote push is next if policy allows",
+    ),
+    "rework_required": (
+        "rework",
+        "HARNESS_ROLE=writer ./harness status {task_id}",
+        "review, gate, or integration evidence requires writer rework",
+    ),
+    "oracle_retry": (
+        "continue",
+        "HARNESS_ROLE=integrator ./harness oracle {task_id} --target-head <sha>",
+        "oracle retry evidence is required before integration can continue",
+    ),
+    "push_attempted": (
+        "blocked",
+        "HARNESS_ROLE=integrator ./harness push {task_id}",
+        "previous push did not complete; inspect push-result.json first",
+    ),
+    "pushed": (
+        "blocked",
+        None,
+        "push-result exists but authority is not complete",
+    ),
+}
+
 
 def task_status(root: Path, task_id: str) -> dict[str, Any]:
     runtime = task_dir(root, task_id)
@@ -40,6 +104,10 @@ def task_status(root: Path, task_id: str) -> dict[str, Any]:
         "schema_version": 1,
         "task_id": task_id,
         "phase": phase,
+        "mode": "local-orchestration",
+        "role": role_context(),
+        "land_status": _land_status(phase, present),
+        "next_action": next_action(task_id, phase, authority),
         "state_store": state_store,
         "authority": authority,
         "artifacts": {
@@ -49,6 +117,24 @@ def task_status(root: Path, task_id: str) -> dict[str, Any]:
         "health": config_health(root, task_id),
         "summary": _summary(phase, authority, present, missing),
         "written_by": "harness",
+    }
+
+
+def next_action(task_id: str, phase: str, authority: dict[str, Any]) -> dict[str, str | None]:
+    if authority.get("complete") is True:
+        return {"status": "complete", "command": None, "reason": "task is complete"}
+    template = _NEXT_ACTIONS.get(phase)
+    if template is not None:
+        status, command, reason = template
+        return {
+            "status": status,
+            "command": None if command is None else command.format(task_id=task_id),
+            "reason": reason,
+        }
+    return {
+        "status": "blocked",
+        "command": None,
+        "reason": f"no next action is defined for phase={phase}",
     }
 
 
@@ -97,6 +183,16 @@ def _pre_gate_phase(present: list[str]) -> str | None:
     if "writer-worktree.json" in present:
         return "writer_active"
     return None
+
+
+def _land_status(phase: str, present: list[str]) -> str:
+    if phase in {"pushed", "landed"}:
+        return phase
+    if phase == "integrated":
+        return "not_landed"
+    if "land-result.json" in present:
+        return "land_attempted"
+    return "not_ready"
 
 
 def _authority(
