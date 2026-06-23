@@ -22,6 +22,7 @@ _ALLOWED = {
         "launch-writer",
         "comm-send",
         "comm-inbox",
+        "comm-peers",
     },
     "reviewer": {
         "certify",
@@ -34,6 +35,7 @@ _ALLOWED = {
         "context-audit",
         "comm-send",
         "comm-inbox",
+        "comm-peers",
     },
     "integrator": {
         "review:collect",
@@ -58,6 +60,7 @@ _ALLOWED = {
         "push",
         "comm-send",
         "comm-inbox",
+        "comm-peers",
     },
 }
 

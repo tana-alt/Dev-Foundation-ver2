@@ -33,7 +33,8 @@ def create_local_pr(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         check=False,
     )
     if committed.returncode != 0:
-        result = _result(
+        return _write_pr_result(
+            root,
             task_id,
             candidate_id=candidate_id,
             status="failed",
@@ -44,9 +45,7 @@ def create_local_pr(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
             candidate_diff_sha256=candidate_sha,
             diff_sha256=None,
             worktree_path=path,
-        )
-        write_json(task_dir(root, task_id) / "pr-result.json", result)
-        return result, 1
+        ), 1
     head_sha = git(path, ["rev-parse", "HEAD"]).stdout.strip()
     ref = _pr_ref(task_id, candidate_id)
     git(root, ["update-ref", ref, head_sha])
@@ -67,35 +66,14 @@ def create_local_pr(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     )
     write_json(task_dir(root, task_id) / "pr-result.json", result)
     if status == "created":
-        record_authority_artifact(
-            root,
-            task_id,
-            "pr-result.json",
-            event_type="PR_CREATED",
-            to_phase=WorkflowPhase.PR_CREATED,
-            payload={
-                "candidate_diff_sha256": candidate_sha,
-                "pr_head_sha": head_sha,
-                "base_sha": verify_result["base_sha"],
-                "ref": ref,
-            },
-            candidate_id=candidate_id,
-        )
+        _record_pr_created(root, task_id, candidate_id, candidate_sha, head_sha, verify_result, ref)
     return result, 0 if status == "created" else 1
 
 
 def check_local_pr(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     created = latest_event_payload(root, task_id, "PR_CREATED")
     if created is None:
-        result = {
-            "task_id": task_id,
-            "status": "blocked",
-            "reason": "pr_not_created",
-            "ref": None,
-            "written_by": "harness",
-        }
-        write_json(task_dir(root, task_id) / "pr-check-result.json", result)
-        return result, 1
+        return _write_pr_check_missing(root, task_id), 1
     ref = str(created["ref"])
     base_sha = str(created["base_sha"])
     candidate_sha = str(created["candidate_diff_sha256"])
@@ -103,7 +81,8 @@ def check_local_pr(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     current_head = _ref_head(root, ref)
     diff_sha = _diff_hash(root, base_sha, current_head) if current_head is not None else None
     if current_head is None or diff_sha != candidate_sha:
-        result = _check_result(
+        return _write_pr_check_result(
+            root,
             task_id,
             candidate_id=candidate_id,
             status="blocked",
@@ -114,9 +93,7 @@ def check_local_pr(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
             candidate_diff_sha256=candidate_sha,
             diff_sha256=diff_sha,
             verifiers=[],
-        )
-        write_json(task_dir(root, task_id) / "pr-check-result.json", result)
-        return result, 1
+        ), 1
     path = _pr_check_worktree(root, task_id, candidate_id, current_head)
     verifiers = run_verifiers(path, load_verifier_plan(path, task_id))
     passed = all_passed(verifiers)
@@ -134,20 +111,7 @@ def check_local_pr(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     )
     write_json(task_dir(root, task_id) / "pr-check-result.json", result)
     if passed:
-        record_authority_artifact(
-            root,
-            task_id,
-            "pr-check-result.json",
-            event_type="PR_CHECKED",
-            to_phase=WorkflowPhase.PR_CHECKED,
-            payload={
-                "candidate_diff_sha256": candidate_sha,
-                "pr_head_sha": current_head,
-                "base_sha": base_sha,
-                "ref": ref,
-            },
-            candidate_id=candidate_id,
-        )
+        _record_pr_checked(root, task_id, candidate_id, candidate_sha, current_head, base_sha, ref)
     return result, 0 if passed else 1
 
 
@@ -218,6 +182,80 @@ def _result(
         "worktree_path": str(worktree_path),
         "written_by": "harness",
     }
+
+
+def _write_pr_result(root: Path, task_id: str, **kwargs: Any) -> dict[str, Any]:
+    result = _result(task_id, **kwargs)
+    write_json(task_dir(root, task_id) / "pr-result.json", result)
+    return result
+
+
+def _write_pr_check_missing(root: Path, task_id: str) -> dict[str, Any]:
+    result = {
+        "task_id": task_id,
+        "status": "blocked",
+        "reason": "pr_not_created",
+        "ref": None,
+        "written_by": "harness",
+    }
+    write_json(task_dir(root, task_id) / "pr-check-result.json", result)
+    return result
+
+
+def _write_pr_check_result(root: Path, task_id: str, **kwargs: Any) -> dict[str, Any]:
+    result = _check_result(task_id, **kwargs)
+    write_json(task_dir(root, task_id) / "pr-check-result.json", result)
+    return result
+
+
+def _record_pr_created(
+    root: Path,
+    task_id: str,
+    candidate_id: str,
+    candidate_sha: str,
+    head_sha: str,
+    verify_result: dict[str, Any],
+    ref: str,
+) -> None:
+    record_authority_artifact(
+        root,
+        task_id,
+        "pr-result.json",
+        event_type="PR_CREATED",
+        to_phase=WorkflowPhase.PR_CREATED,
+        payload={
+            "candidate_diff_sha256": candidate_sha,
+            "pr_head_sha": head_sha,
+            "base_sha": verify_result["base_sha"],
+            "ref": ref,
+        },
+        candidate_id=candidate_id,
+    )
+
+
+def _record_pr_checked(
+    root: Path,
+    task_id: str,
+    candidate_id: str,
+    candidate_sha: str,
+    current_head: str,
+    base_sha: str,
+    ref: str,
+) -> None:
+    record_authority_artifact(
+        root,
+        task_id,
+        "pr-check-result.json",
+        event_type="PR_CHECKED",
+        to_phase=WorkflowPhase.PR_CHECKED,
+        payload={
+            "candidate_diff_sha256": candidate_sha,
+            "pr_head_sha": current_head,
+            "base_sha": base_sha,
+            "ref": ref,
+        },
+        candidate_id=candidate_id,
+    )
 
 
 def _pr_ref(task_id: str, candidate_id: str) -> str:

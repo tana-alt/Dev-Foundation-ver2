@@ -57,7 +57,7 @@ class CapabilityService:
         session = Session(
             session_id=session_id,
             task_id=task_id,
-            role=role,  # type: ignore[arg-type]
+            role=role,
             agent_id=agent_id,
             capabilities=[Capability(item) for item in capabilities],
             token_hash=hash_token(token),
@@ -117,11 +117,11 @@ def _session_from_row(row: dict[str, Any]) -> Session:
     return Session(
         session_id=str(row["session_id"]),
         task_id=str(row["task_id"]) if row.get("task_id") is not None else None,
-        role=str(row["role"]),  # type: ignore[arg-type]
+        role=str(row["role"]),
         agent_id=str(row["agent_id"]),
         capabilities=[Capability(str(item)) for item in row.get("capabilities", [])],
         token_hash=str(row["token_hash"]),
-        status=str(row["status"]),  # type: ignore[arg-type]
+        status=str(row["status"]),
         created_at=str(row["created_at"]),
         expires_at=str(row["expires_at"]) if row.get("expires_at") is not None else None,
     )

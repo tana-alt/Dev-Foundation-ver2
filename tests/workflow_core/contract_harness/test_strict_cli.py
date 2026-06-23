@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
+
+import pytest
 
 from .conftest import TASK_ID, create_session, start_daemon, strict_cli, strict_env
 
@@ -20,7 +23,7 @@ def test_strict_cli_fails_when_daemon_unavailable(harness_repo: Path) -> None:
 
 def test_strict_cli_does_not_construct_state_or_evidence_store(
     harness_repo: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     daemon = start_daemon(harness_repo)
     try:
@@ -35,7 +38,7 @@ def test_strict_cli_does_not_construct_state_or_evidence_store(
         from workflow_core.contract_harness.adapters.sqlite_state_store import SQLiteStateStore
         from workflow_core.contract_harness.cli import main
 
-        def fail_init(*_args, **_kwargs):
+        def fail_init(*_args: Any, **_kwargs: Any) -> None:
             raise AssertionError("strict CLI constructed local storage")
 
         monkeypatch.setattr(SQLiteStateStore, "__init__", fail_init)

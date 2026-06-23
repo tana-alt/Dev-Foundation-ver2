@@ -1,0 +1,24 @@
+default:
+  quorum: 3
+  reviewers:
+    - reader-correctness
+    - reader-scope
+    - semantic-ai
+  background_auto_run: true
+  blocking_labels:
+    - scope_risk
+    - missing_repro
+    - acceptance_gap
+    - machine_failed
+    - protected_contract_edit
+    - semantic_gap
+profiles:
+  semantic-ai:
+    kind: command
+    command:
+      - python3
+      - "{repo_root}/.harness/semantic_ai_reviewer.py"
+      - "{review_packet}"
+      - "{review_output}"
+metrics:
+  reject_unexpected_actions: false
