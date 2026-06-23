@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from workflow_core.contract_harness.architecture_gate import canonical_architecture_gate
 from workflow_core.contract_harness.command_runner import run_command
 from workflow_core.contract_harness.hashing import hash_json
 
@@ -25,12 +26,14 @@ def machine_evidence_hash(
     contract_semantic_sha256: str,
     scope_violation_count: int,
     verifiers: list[dict[str, Any]],
+    architecture_gate: dict[str, Any] | None = None,
 ) -> str:
     evidence = {
         "task_id": task_id,
         "candidate_diff_sha256": candidate_diff_sha256,
         "contract_semantic_sha256": contract_semantic_sha256,
         "scope_violation_count": scope_violation_count,
+        "architecture_gate": canonical_architecture_gate(architecture_gate),
         "verifiers": [
             {"id": str(item["id"]), "status": str(item["status"])}
             for item in sorted(verifiers, key=lambda row: str(row["id"]))

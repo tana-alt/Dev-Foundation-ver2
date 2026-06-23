@@ -10,6 +10,10 @@ from workflow_core.contract_harness.application.services import (
     candidate_id_from_patch_sha256,
     record_authority_artifact,
 )
+from workflow_core.contract_harness.architecture_gate import (
+    canonical_architecture_gate,
+    evaluate_architecture_gate,
+)
 from workflow_core.contract_harness.command_runner import env_timeout_s, run_command
 from workflow_core.contract_harness.config import control_root, review_settings
 from workflow_core.contract_harness.contract import (
@@ -22,6 +26,7 @@ from workflow_core.contract_harness.evidence import machine_artifact_hashes
 from workflow_core.contract_harness.gitutil import head_sha
 from workflow_core.contract_harness.hashing import file_hash
 from workflow_core.contract_harness.jsonio import read_json, write_json
+from workflow_core.contract_harness.oracle_requirements import oracle_requirements_satisfied
 from workflow_core.contract_harness.review import collect
 from workflow_core.contract_harness.review_runner import (
     ReviewRunnerError,
@@ -161,11 +166,38 @@ def _preflight_reason(
         return "contract_semantic_mismatch"
     if verify_result.get("status") != "pass":
         return "machine_gate_failed"
+    if not _architecture_gate_matches_current_diff(root, task_id, verify_result, lock):
+        return "architecture_gate_mismatch"
+    architecture_gate = canonical_architecture_gate(verify_result.get("architecture_gate"))
+    if architecture_gate.get("status") == "block":
+        return "architecture_gate_block"
+    requirements_ok, _unmet = oracle_requirements_satisfied(root, task_id, verify_result)
+    if not requirements_ok:
+        return "oracle_requirement_unmet"
     if not _matches_machine_artifact_hashes(root, task_id, verify_result):
         return "evidence_hash_mismatch"
     if _current_diff_hash(root, lock) != verify_result.get("candidate_diff_sha256"):
         return "candidate_hash_mismatch"
     return "ok"
+
+
+def _architecture_gate_matches_current_diff(
+    root: Path,
+    task_id: str,
+    verify_result: dict[str, Any],
+    lock: dict[str, Any],
+) -> bool:
+    paths = changed_repo_paths(root, task_id=task_id)
+    diff_text = snapshot_diff(root, str(lock["prepared_base_sha"]), paths)
+    recomputed = evaluate_architecture_gate(
+        root,
+        base_sha=str(lock["prepared_base_sha"]),
+        diff_text=diff_text,
+        changed_paths=paths,
+    )
+    return canonical_architecture_gate(recomputed) == canonical_architecture_gate(
+        verify_result.get("architecture_gate")
+    )
 
 
 def _matches_machine_artifact_hashes(
