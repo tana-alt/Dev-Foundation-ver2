@@ -16,10 +16,18 @@ report_block() {
 
 tracked_ignored="$(
   git -C "$ROOT" ls-files -ci --exclude-standard | awk '
-    $0 != "artifact/.gitkeep" &&
-      $0 != "artifact/README.md" &&
-      $0 != ".harness/review.yaml" &&
-      $0 != ".harness/semantic_ai_reviewer.py" { print $0 }
+    function allowed_tracked_ignored(path) {
+      return path == "artifact/.gitkeep" ||
+        path == "artifact/README.md" ||
+        path == ".harness/bottleneck.yaml" ||
+        path == ".harness/owners.yaml" ||
+        path == ".harness/policy.yaml" ||
+        path == ".harness/review.yaml" ||
+        path == ".harness/semantic_ai_reviewer.py" ||
+        path == ".harness/verifiers.yaml" ||
+        path ~ /^\.harness\/tasks\/[^\/]+\/task\.yaml$/
+    }
+    !allowed_tracked_ignored($0) { print $0 }
   '
 )"
 report_block "tracked ignored files:" "$tracked_ignored"

@@ -161,6 +161,6 @@ def _impact_finding(
 def _stage_path(root: Path, env: dict[str, str], path: str) -> None:
     target = root / path
     if target.exists() or target.is_symlink():
-        git(root, ["add", "--", path], env=env)
+        git(root, ["add", "-f", "--", path], env=env)
         return
     git(root, ["rm", "-q", "--ignore-unmatch", "--", path], env=env)

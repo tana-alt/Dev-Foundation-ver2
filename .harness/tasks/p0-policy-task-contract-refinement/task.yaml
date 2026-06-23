@@ -1,0 +1,174 @@
+schema_version: 1
+id: p0-policy-task-contract-refinement
+task_id: p0-policy-task-contract-refinement
+task_kind: control_plane_refinement
+scope: policy-task-contract-refinement
+base: main
+goal:
+  summary: >
+    Refine harness policy and task contracts so normal harness work is
+    self-contained, architecture-aware, adversarially reviewable, and not
+    dependent on docs/reference for completion-critical information.
+  done_when:
+    - policy.yaml defines repo-wide policy, architecture invariants, scope semantics, and staged review posture.
+    - task.yaml defines task-specific architecture, invariants, acceptance criteria, adversarial acceptance, evidence, and review request.
+    - AGENTS.md remains the operational source for ACP and review handoff details.
+    - allowed_paths is treated as expected impact scope, not a hard gate.
+    - forbidden_paths is treated as blocking.
+    - Missing required YAML information results in rework.
+    - Format variance is tolerated when semantic information is complete.
+intent:
+  kind: implementation
+  summary: Implement the policy/task contract refinement described in Plan_N0008.
+non_goals:
+  - Do not make YAML structure fully machine-verification-first.
+  - Do not move ACP commands or detailed review handoff procedures into policy.yaml or task.yaml.
+  - Do not treat allowed_paths as a blocking gate.
+  - Do not make docs/reference required for normal task execution.
+  - Do not duplicate repo-wide policy inside individual task files.
+policy_contract:
+  source: .harness/policy.yaml
+  applicable_policy_ids:
+    - ARCH-CONTROL-PLANE-TRACKED
+    - ARCH-RUNTIME-NOT-TRACKED
+    - ARCH-TASK-CONTRACT-SELF-CONTAINED
+    - ARCH-REFERENCE-NOT-CONTRACT
+    - ARCH-AGENTS-FOR-OPERATIONS
+    - ARCH-INTEGRATED-NOT-LANDED
+architecture:
+  summary: >
+    Split the harness contract into three layers: policy.yaml for repo-wide
+    policy, task.yaml for task-specific contracts, and AGENTS.md for operational
+    agent procedures. Review is staged into architecture review before or
+    during design and code review after implementation.
+  components:
+    - id: GLOBAL-POLICY
+      responsibility: Holds repo-wide architecture invariants, scope semantics, review posture, and required task information rules.
+      primary_paths:
+        - .harness/policy.yaml
+    - id: TASK-CONTRACT
+      responsibility: Holds task-specific goal, architecture, expected impact, forbidden paths, protected invariants, acceptance criteria, adversarial acceptance, and review request.
+      primary_paths:
+        - .harness/tasks/**/task.yaml
+    - id: OPERATIONAL-PROTOCOLS
+      responsibility: Holds ACP usage, review handoff procedures, command-level workflow, and agent operation rules.
+      primary_paths:
+        - AGENTS.md
+    - id: OPTIONAL-REFERENCE
+      responsibility: Provides deeper explanation for unusual, high-risk, or harness-internal work. It is not the primary contract for normal tasks.
+      primary_paths:
+        - docs/reference/**
+    - id: REVIEW-FLOW
+      responsibility: Separates architecture review from implementation/code review.
+      stages:
+        - architecture_review
+        - code_review
+scope_contract:
+  allowed_paths:
+    - .harness/bottleneck.yaml
+    - .harness/owners.yaml
+    - .harness/policy.yaml
+    - .harness/review.yaml
+    - .harness/semantic_ai_reviewer.py
+    - .harness/tasks/**/task.yaml
+    - .harness/verifiers.yaml
+    - src/workflow_core/contract_harness/**
+    - README.md
+    - docs/reference/**
+    - tests/**
+  allowed_paths_semantics:
+    hard_gate: false
+    meaning: expected impact area, not a blocking gate
+  forbidden_paths:
+    - harness-runtime/**
+    - .harness/state/**
+    - .serena/**
+    - "**/*secret*"
+    - "**/*credential*"
+    - "**/*token*"
+    - "**/*.pem"
+    - "**/*.key"
+  forbidden_paths_semantics:
+    hard_gate: true
+    meaning: blocked area
+  impact_estimation:
+    required_when:
+      - candidate changes paths outside allowed_paths
+      - candidate changes review, gate, verifier, or policy behavior
+      - candidate changes task packet generation
+      - reviewer cannot determine the architectural blast radius
+protected_invariants:
+  - id: INV-POLICY-IS-GLOBAL
+    statement: Repo-wide constraints are defined in policy.yaml, not duplicated in task.yaml.
+  - id: INV-TASK-IS-SPECIFIC
+    statement: Task-specific architecture, invariants, acceptance, adversarial inputs, and review request are defined in task.yaml.
+  - id: INV-AGENTS-OWNS-HANDOFF-AND-ACP
+    statement: ACP and review handoff operational procedures are maintained in AGENTS.md.
+  - id: INV-REFERENCE-NOT-REQUIRED-COMMON-PATH
+    statement: docs/reference is not required for normal writer/reviewer/integrator work.
+  - id: INV-REQUIRED-MISSING-MEANS-REWORK
+    statement: If required YAML information is missing, the result is rework.
+  - id: INV-FORMAT-VARIANCE-TOLERATED
+    statement: Equivalent field shapes are acceptable if the required meaning is present.
+  - id: INV-ALLOWED-PATHS-NOT-HARD-GATE
+    statement: allowed_paths is a planning/review signal, not a hard gate.
+  - id: INV-FORBIDDEN-PATHS-BLOCK
+    statement: forbidden_paths is blocking.
+  - id: INV-REVIEW-TWO-STAGE
+    statement: Reviewer request distinguishes architecture review from code review.
+acceptance:
+  mode: generated
+  criteria:
+    - id: ACCEPT-POLICY-HAS-REPO-WIDE-CONTRACT
+      claim: policy.yaml contains repo-wide architecture invariants, scope semantics, review posture, and missing-information behavior.
+    - id: ACCEPT-TASK-HAS-TASK-SPECIFIC-ARCHITECTURE
+      claim: task.yaml contains enough architecture information for a reviewer to evaluate the design without opening docs/reference.
+    - id: ACCEPT-INVARIANTS-AND-ADVERSARIAL-INPUTS
+      claim: Acceptance criteria include protected invariants and adversarial inputs, not only happy-path checks.
+    - id: ACCEPT-SCOPE-SEMANTICS
+      claim: allowed_paths is advisory expected impact scope; forbidden_paths is blocking.
+    - id: ACCEPT-AGENTS-OWNS-ACP-AND-HANDOFF
+      claim: ACP and review handoff operational procedures remain in AGENTS.md while YAML references that operational source.
+    - id: ACCEPT-TWO-STAGE-REVIEW
+      claim: Reviewer instructions distinguish architecture review from code review.
+adversarial_acceptance:
+  - input: Move repo-wide invariant only into task.yaml.
+    expected: "rework: misplaced global policy"
+  - input: Architecture section contains only a docs/reference link.
+    expected: "rework: architecture_gap"
+  - input: Missing required task field.
+    expected: rework
+  - input: Malformed YAML shape but all required meaning is present.
+    expected: accepted or reviewer note, not automatic failure
+  - input: Candidate modifies path outside allowed_paths with explanation and impact estimate.
+    expected: review required; not automatically blocked
+  - input: Candidate modifies forbidden path.
+    expected: "block: forbidden_path"
+  - input: Candidate deletes failing adversarial tests.
+    expected: "block: gate_gaming"
+expected_evidence:
+  required:
+    - id: EVIDENCE-DIFF-SUMMARY
+      description: Summarize changed policy/task/review/test files.
+    - id: EVIDENCE-ARCHITECTURE-REVIEW
+      description: Explain architecture fit, invariants, and test adequacy.
+    - id: EVIDENCE-SCOPE
+      description: List changed paths and explain any change outside allowed_paths.
+    - id: EVIDENCE-TESTS
+      description: Include commands proving acceptance and adversarial checks.
+review_request:
+  architecture_review:
+    ask: >
+      Evaluate whether the architecture, contract split, task invariants,
+      acceptance criteria, adversarial inputs, and scope semantics are adequate.
+  code_review:
+    ask: >
+      Evaluate the actual diff, tests, evidence, and behavior under adversarial
+      inputs. Block gate gaming, policy weakening, stale evidence, and
+      forbidden path changes.
+allowed_outputs:
+  - source_diff
+references:
+  optional:
+    - path: docs/reference/**
+      use_when: Use only for deeper rationale, unusual failures, or harness-internal details.

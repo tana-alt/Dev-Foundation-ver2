@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from workflow_core.contract_harness.agent_tools import role_agent_skills, role_agent_tools
+from workflow_core.contract_harness.agent_tools import role_agent_tools
 from workflow_core.contract_harness.application.services import (
     candidate_id_from_patch_sha256,
     record_authority_artifact,
@@ -15,6 +15,7 @@ from workflow_core.contract_harness.command_runner import (
     env_timeout_s,
     run_command,
 )
+from workflow_core.contract_harness.contract import load_contract
 from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.evidence import artifact_hashes
 from workflow_core.contract_harness.hashing import file_hash
@@ -141,13 +142,12 @@ def wait_for_dispatch(
 
 def _writer_handoff(root: Path, task_id: str, verify_result: dict[str, Any]) -> dict[str, Any]:
     verifiers = [item for item in verify_result.get("verifiers", []) if isinstance(item, dict)]
+    contract = load_contract(root, task_id)
     return {
         "task_id": task_id,
-        "acceptance": {
-            "mode": "generated",
-            "required_verifiers_passed": verify_result.get("status") == "pass",
-            "verifier_ids": [str(item.get("id")) for item in verifiers],
-        },
+        "task_goal": contract.get("goal"),
+        "scope_contract": contract["scope_contract"],
+        "acceptance": _handoff_acceptance(contract.get("acceptance"), verify_result, verifiers),
         "verification": {
             "status": verify_result.get("status"),
             "candidate_diff_sha256": verify_result.get("candidate_diff_sha256"),
@@ -160,8 +160,27 @@ def _writer_handoff(root: Path, task_id: str, verify_result: dict[str, Any]) -> 
             ],
         },
         "agent_tools": role_agent_tools(root, task_id, "writer"),
-        "agent_skills": role_agent_skills(root, "writer"),
     }
+
+
+def _handoff_acceptance(
+    locked_acceptance: Any,
+    verify_result: dict[str, Any],
+    verifiers: list[dict[str, Any]],
+) -> dict[str, Any]:
+    locked = locked_acceptance if isinstance(locked_acceptance, dict) else {}
+    payload: dict[str, Any] = {
+        "mode": locked.get("mode", "generated"),
+        "required_verifiers_passed": verify_result.get("status") == "pass",
+        "verifier_ids": [str(item.get("id")) for item in verifiers],
+    }
+    audit = locked.get("audit")
+    if isinstance(audit, dict) and "status" in audit:
+        payload["audit_status"] = audit["status"]
+    criteria = locked.get("criteria")
+    if isinstance(criteria, list):
+        payload["criteria_count"] = len(criteria)
+    return payload
 
 
 def _dispatch_workspace(root: Path, task_id: str) -> tuple[Path, dict[str, Any]]:

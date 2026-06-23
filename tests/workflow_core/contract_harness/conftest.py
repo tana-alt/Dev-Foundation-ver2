@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass
 from hashlib import sha256
@@ -87,7 +88,7 @@ def strict_env(repo: Path) -> dict[str, str]:
     socket_path = common / "harness-runtime" / "daemon" / "foundation.sock"
     if len(str(socket_path)) > 96:
         digest = sha256(str(repo).encode("utf-8")).hexdigest()[:16]
-        short_tmp = Path(os.environ.get("RUNNER_TEMP", "/tmp"))
+        short_tmp = Path(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir())
         env["HARNESS_RUNTIME_ROOT"] = str(short_tmp / f"harness-strict-{digest}")
     return env
 

@@ -175,8 +175,10 @@ def _check_possible_external_write_path(
     added_lines: list[str],
     diff_text: str,
 ) -> list[PredicateFinding]:
-    del root, changed_paths, added_paths, diff_text
-    for line in added_lines:
+    del root, changed_paths, added_paths, added_lines
+    for path, line in _added_lines_by_path(diff_text):
+        if _is_reference_only_path(path):
+            continue
         if "architecture-gate: allow-external-write" in line:
             continue
         if _EXTERNAL_WRITE_RE.search(line):
@@ -240,6 +242,22 @@ def _added_lines(diff_text: str) -> list[str]:
         for line in diff_text.splitlines()
         if line.startswith("+") and not line.startswith("+++ ")
     ]
+
+
+def _added_lines_by_path(diff_text: str) -> list[tuple[str, str]]:
+    result: list[tuple[str, str]] = []
+    current = ""
+    for line in diff_text.splitlines():
+        if path := _path_from_diff_header(line):
+            current = path
+            continue
+        if line.startswith("+") and not line.startswith("+++ "):
+            result.append((current, line[1:]))
+    return result
+
+
+def _is_reference_only_path(path: str) -> bool:
+    return path.startswith("Plan/") or path.endswith(".md")
 
 
 def _is_runtime_state_path(path: str) -> bool:

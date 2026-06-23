@@ -83,7 +83,12 @@ def verify_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     return result, 0 if status == "pass" else 1
 
 
-def _record_verify_artifacts(root: Path, task_id: str, result: dict[str, Any], status: str) -> None:
+def _record_verify_artifacts(
+    root: Path,
+    task_id: str,
+    result: dict[str, Any],
+    status: str,
+) -> None:
     record_authority_artifact(
         root,
         task_id,

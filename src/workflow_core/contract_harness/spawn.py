@@ -7,12 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from workflow_core.contract_harness.agent_tools import (
-    role_agent_skills,
     role_agent_tools,
     role_optional_tools,
 )
 from workflow_core.contract_harness.context_audit import audit_context
-from workflow_core.contract_harness.contract import ensure_prepared
+from workflow_core.contract_harness.contract import ensure_prepared, load_contract
 from workflow_core.contract_harness.gitutil import common_dir
 from workflow_core.contract_harness.jsonio import write_json
 from workflow_core.contract_harness.launch import writer_session
@@ -187,11 +186,60 @@ def _initial_context(
         if profile == "default"
         else role_optional_tools(root, task_id, role, profile)
     )
+    contract = load_contract(root, task_id)
     return {
         "task_id": task_id,
+        "role": role,
+        "task_goal": contract.get("goal"),
+        "scope_contract": contract["scope_contract"],
+        "verifier_ids": [str(item.get("id", "")) for item in contract["verifier_plan"]],
+        "acceptance": _acceptance_summary(contract.get("acceptance")),
+        "policy": _policy_summary(contract.get("policy")),
+        "artifact_refs": _artifact_refs(),
+        "next_action": _next_action(role),
         "agent_tools": tools,
-        "agent_skills": role_agent_skills(root, role),
     }
+
+
+def _acceptance_summary(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    summary: dict[str, Any] = {}
+    for key in ("mode", "source"):
+        if key in value:
+            summary[key] = value[key]
+    audit = value.get("audit")
+    if isinstance(audit, dict) and "status" in audit:
+        summary["audit_status"] = audit["status"]
+    return summary
+
+
+def _policy_summary(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    summary: dict[str, Any] = {}
+    if "id" in value:
+        summary["policy_id"] = value["id"]
+    for key in ("policy_id", "human_gates", "external_writes"):
+        if key in value:
+            summary[key] = value[key]
+    return summary
+
+
+def _artifact_refs() -> dict[str, str]:
+    return {
+        "contract": "contract.lock.json",
+        "capsule": "capsule.json",
+        "verifier_plan": "verifier-plan.json",
+    }
+
+
+def _next_action(role: str) -> str:
+    if role == "writer":
+        return "implement verified candidate, then run harness verify and submit"
+    if role == "reviewer":
+        return "review submitted evidence and write a reviewer verdict"
+    return "collect reviews, run gate, then land or return rework"
 
 
 def _write_session(

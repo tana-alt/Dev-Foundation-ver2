@@ -249,10 +249,10 @@ Classification: excessive/obsolete stop.
 
 Evidence:
 
-- Current `.harness` task/config can point to paths or verifier commands that
-  are absent in the current worktree.
-- `refactor-instructions.md` D1 records current stale task evidence for
-  `multicollinearity-feature-independence-20260616`.
+- Historical `.harness` task/config pointed to paths or verifier commands that
+  were absent in the current worktree.
+- `Plan/Harness-refactor/plans/Plan_N0008.md` replaces the stale
+  feature-independence scope with a policy/task contract refinement scope.
 
 Impact:
 
@@ -264,8 +264,8 @@ Recommended action:
 Strengthen `status` or add preflight/config-health so stale task paths and
 verifier commands are visible before writer launch.
 
-Implementation status: implement diagnostics; do not delete task/config without
-approval.
+Implementation status: tracked control-plane config refreshed; keep diagnostics
+for future stale task/config regressions.
 
 ### HIR-008. Completion Authority Conflicts With Dry-Run Operation
 

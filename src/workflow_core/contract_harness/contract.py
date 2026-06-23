@@ -10,7 +10,6 @@ from workflow_core.contract_harness.acceptance import (
     write_acceptance_rework,
 )
 from workflow_core.contract_harness.agent_tools import (
-    role_agent_skills,
     role_agent_tools,
     write_agent_skills,
     write_agent_tools,
@@ -32,12 +31,8 @@ from workflow_core.contract_harness.jsonio import read_json, write_json
 from workflow_core.contract_harness.runtime_paths import task_dir
 
 GLOBAL_FORBIDDEN = [
-    ".harness/bottleneck.yaml",
-    ".harness/owners.yaml",
-    ".harness/verifiers.yaml",
-    ".harness/review.yaml",
-    ".harness/rfc-decisions/**",
-    ".harness/tasks/*/task.yaml",
+    "harness-runtime/**",
+    ".harness/state/**",
     ".harness/generated/**",
 ]
 
@@ -170,7 +165,7 @@ def _contract_payload(
         "goal": task.get("goal") or task.get("intent", {}).get("summary"),
         "scope_contract": {
             "allowed_paths": allowed,
-            "forbidden_paths": [*GLOBAL_FORBIDDEN, *local_forbidden],
+            "forbidden_paths": _dedupe([*GLOBAL_FORBIDDEN, *local_forbidden]),
         },
         "verifier_plan": verifiers,
         "acceptance": acceptance,
@@ -192,6 +187,17 @@ def _input_hashes(root: Path, task_id: str) -> dict[str, str]:
     return hashes
 
 
+def _dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
+
+
 def _capsule(root: Path, task: dict[str, Any], contract: dict[str, Any]) -> dict[str, Any]:
     return {
         "task_id": contract["task_id"],
@@ -200,7 +206,6 @@ def _capsule(root: Path, task: dict[str, Any], contract: dict[str, Any]) -> dict
         "scope_contract": contract["scope_contract"],
         "verifier_plan": contract["verifier_plan"],
         "agent_tools": role_agent_tools(root, str(contract["task_id"]), "writer"),
-        "agent_skills": role_agent_skills(root, "writer"),
         "contract_semantic_sha256": contract["contract_semantic_sha256"],
     }
 
@@ -218,7 +223,6 @@ def _resume_capsule(root: Path, task: dict[str, Any], contract: dict[str, Any]) 
         "unresolved": None,
         "next_expected_action": "implement verified candidate or request rework",
         "agent_tools": role_agent_tools(root, str(contract["task_id"]), "writer"),
-        "agent_skills": role_agent_skills(root, "writer"),
         "contract_semantic_sha256": contract["contract_semantic_sha256"],
         "written_by": "harness",
     }

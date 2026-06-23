@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from workflow_core.contract_harness.runtime_paths import task_dir
+
 from .conftest import TASK_ID, create_session, root_token_for, start_daemon, strict_cli
 
 
@@ -39,6 +41,41 @@ def test_strict_writer_cannot_gate(harness_repo: Path) -> None:
         assert completed.returncode == 1
         response = json.loads(completed.stdout)
         assert response["error"]["code"] == "forbidden"
+    finally:
+        daemon.stop()
+
+
+def test_strict_task_context_exposes_scope_contract_without_agent_skills(
+    harness_repo: Path,
+) -> None:
+    daemon = start_daemon(harness_repo)
+    try:
+        writer = create_session(harness_repo, "writer", agent_id="writer.codex.T-0001")
+
+        unprepared = strict_cli(harness_repo, "context", TASK_ID, session=writer)
+        assert unprepared.returncode == 0, unprepared.stdout + unprepared.stderr
+        assert json.loads(unprepared.stdout)["result"]["scope_contract"] is None
+
+        prepared = strict_cli(harness_repo, "prepare", TASK_ID, session=writer)
+        assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+        runtime = Path(
+            daemon.env.get(
+                "HARNESS_RUNTIME_ROOT",
+                str(task_dir(harness_repo, TASK_ID).parents[2]),
+            )
+        )
+        capsule_path = runtime / "state" / "tasks" / TASK_ID / "capsule.json"
+        capsule = json.loads(capsule_path.read_text(encoding="utf-8"))
+        capsule["agent_skills"] = [{"name": "stale-skill"}]
+        capsule_path.write_text(json.dumps(capsule), encoding="utf-8")
+
+        completed = strict_cli(harness_repo, "context", TASK_ID, session=writer)
+
+        assert completed.returncode == 0, completed.stdout + completed.stderr
+        response = json.loads(completed.stdout)
+        result = response["result"]
+        assert result["scope_contract"]["allowed_paths"] == ["src/**"]
+        assert "agent_skills" not in result["capsule"]
     finally:
         daemon.stop()
 

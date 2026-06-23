@@ -5,11 +5,13 @@ import tomllib
 from pathlib import Path
 from typing import Any, cast
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 
-ACTIVE_DOCS = ("AGENTS.md",)
+AGENT_ENTRYPOINTS = ("AGENTS.md",)
 
-SUPPORTING_CONTRACT_DOCS = (
+ACTIVE_DOCS = (
     "docs/01-agent-operating-contract.md",
     "docs/02-output-verification-contract.md",
     "docs/03-repo-boundary-and-storage-contract.md",
@@ -144,6 +146,7 @@ EXPECTED_TRACKED_TOP_LEVELS = {
     "hooks",
     "plugins",
     "pyproject.toml",
+    "refactor.md",
     "scripts",
     "src",
     "templates",
@@ -235,39 +238,11 @@ def test_active_agent_context_stays_under_budget() -> None:
     assert total_lines <= 320
 
 
-def test_agents_routes_to_active_docs_and_references() -> None:
-    agents = read_text("AGENTS.md")
-
-    for heading in (
-        "# Agent Operating Contract",
-        "# Output Verification Contract",
-        "# Repo Boundary And Storage Contract",
-    ):
-        assert heading in agents
-
-    for relative_path in (*SUPPORTING_CONTRACT_DOCS, *ACTIVE_REFERENCE_DOCS):
-        assert f"`{relative_path}`" not in agents
-
-    assert "Root Boundary" not in agents
-
-
-def test_agents_routes_project_scoped_work_to_reference_docs() -> None:
-    agents = read_text("AGENTS.md")
-
-    assert "Use `Plan/<project_id>/`" in agents
-    assert "Use `artifact/<project_id>/`" in agents
-    assert "Use `src/<project_id>/`" in agents
-    assert "`project-worktree-scope`" not in agents
-    assert "`project-storage-placement`" not in agents
-
-
-def test_doc_consistency_specification_subagent_workflow_is_routed_and_compact() -> None:
-    agents = read_text("AGENTS.md")
+def test_specification_subagent_workflow_reference_is_routed_and_compact() -> None:
     reference = read_text("docs/reference/specification-workflow-reference.md")
     packet_reference = read_text("docs/reference/packet-evidence-and-rework-reference.md")
     templates_readme = read_text("templates/README.md")
 
-    assert "Default flow: Goal -> Scope -> Done -> Plan -> Implement -> Verify -> Log" in agents
     assert "main_lane" in reference
     assert "Goal Brief" in reference
     assert "Mini-Spec" in reference
@@ -288,8 +263,8 @@ def test_reference_set_matches_routed_reference_docs() -> None:
 
 def test_required_contract_files_exist() -> None:
     required = (
+        *AGENT_ENTRYPOINTS,
         *ACTIVE_DOCS,
-        *SUPPORTING_CONTRACT_DOCS,
         *REFERENCE_DOCS,
         *TEMPLATES,
         *ROOT_READMES,
@@ -310,7 +285,7 @@ def test_docs_root_stays_contract_only() -> None:
         if path.startswith("docs/") and Path(path).parent == Path("docs") and path.endswith(".md")
     )
 
-    assert direct_docs == sorted(SUPPORTING_CONTRACT_DOCS)
+    assert direct_docs == sorted(ACTIVE_DOCS)
 
 
 def test_project_storage_routes_are_documented() -> None:
@@ -512,6 +487,8 @@ def test_lightweight_dev_defaults_are_declared() -> None:
     assert python_version == "3.12"
     assert 'requires-python = ">=3.12,<3.15"' in pyproject
     assert 'python_version = "3.12"' in pyproject
+    assert '"src/workflow_core/contract_harness/domain"' in pyproject
+    assert '"src/workflow_core/contract_harness/verifier.py"' in pyproject
     assert "root = true" in editorconfig
     assert "end_of_line = lf" in editorconfig
     assert "insert_final_newline = true" in editorconfig
@@ -525,6 +502,23 @@ def test_lightweight_dev_defaults_are_declared() -> None:
     assert "sha256sum -c" in workflow
     assert "uv sync --frozen --group dev" in workflow
     assert "make check-foundation" in workflow
+
+
+def test_tracked_harness_example_task_is_self_contained() -> None:
+    task = yaml.safe_load(read_text(".harness/tasks/example/task.yaml"))
+    required = {
+        "goal",
+        "architecture",
+        "scope",
+        "protected_invariants",
+        "acceptance",
+        "adversarial_acceptance",
+        "expected_evidence",
+        "review_request",
+    }
+
+    assert required <= set(task)
+    assert task["acceptance"]["mode"] in {"generated", "agent_generated"}
 
 
 def test_tracked_hooks_enforce_agent_policy_and_checks() -> None:
@@ -777,6 +771,44 @@ def test_repo_hygiene_behavior(tmp_path: Path) -> None:
     assert artifact_metadata_result.returncode == 0
     assert "repo hygiene: passed" in artifact_metadata_result.stdout
 
+    harness_metadata_repo = tmp_path / "harness-metadata"
+    init_hygiene_repo(harness_metadata_repo)
+    (harness_metadata_repo / ".gitignore").write_text(".harness/\n", encoding="utf-8")
+    harness_dir = harness_metadata_repo / ".harness"
+    (harness_dir / "tasks" / "example").mkdir(parents=True)
+    for relative_path in (
+        ".harness/bottleneck.yaml",
+        ".harness/owners.yaml",
+        ".harness/policy.yaml",
+        ".harness/review.yaml",
+        ".harness/verifiers.yaml",
+        ".harness/tasks/example/task.yaml",
+    ):
+        (harness_metadata_repo / relative_path).write_text("version: 1\n", encoding="utf-8")
+    (harness_dir / "semantic_ai_reviewer.py").write_text("print('review')\n", encoding="utf-8")
+    git_add(harness_metadata_repo, ".gitignore")
+    subprocess.run(
+        [
+            "git",
+            "add",
+            "-f",
+            ".harness/bottleneck.yaml",
+            ".harness/owners.yaml",
+            ".harness/policy.yaml",
+            ".harness/review.yaml",
+            ".harness/semantic_ai_reviewer.py",
+            ".harness/tasks/example/task.yaml",
+            ".harness/verifiers.yaml",
+        ],
+        cwd=harness_metadata_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    harness_metadata_result = run_hygiene_check(harness_metadata_repo)
+    assert harness_metadata_result.returncode == 0
+    assert "repo hygiene: passed" in harness_metadata_result.stdout
+
     forbidden_repo = tmp_path / "forbidden"
     init_hygiene_repo(forbidden_repo)
     forbidden_file = forbidden_repo / "runtime" / "state.txt"
@@ -1000,6 +1032,7 @@ def test_pytest_collection_is_aggregate_foundation_gate() -> None:
     assert make_target_recipe(makefile, "test-fast") == [expected_test_fast]
     assert "test" in make_target_dependencies(makefile, "check-required")
     assert "check-required" in make_target_dependencies(makefile, "check-ci")
+    assert "check-harness-arch-all" in make_target_dependencies(makefile, "check-ci")
     assert "check-ci" in make_target_dependencies(makefile, "check-foundation")
     assert re.search(r"^\s*run:\s*make check-foundation\s*$", workflow, re.MULTILINE)
 

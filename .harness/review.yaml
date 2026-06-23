@@ -6,12 +6,19 @@ default:
     - semantic-ai
   background_auto_run: true
   blocking_labels:
+    - forbidden_path
     - scope_risk
     - missing_repro
     - acceptance_gap
+    - architecture_gap
+    - adversarial_test_gap
     - machine_failed
     - protected_contract_edit
     - semantic_gap
+    - stale_evidence
+    - policy_weakening
+    - gate_gaming
+    - operation_protocol_leak
 profiles:
   semantic-ai:
     kind: command

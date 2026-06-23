@@ -11,7 +11,13 @@ class ConfigError(RuntimeError):
     pass
 
 
-CONFIG_FILES = ("bottleneck.yaml", "owners.yaml", "verifiers.yaml", "review.yaml")
+CONFIG_FILES = (
+    "bottleneck.yaml",
+    "owners.yaml",
+    "policy.yaml",
+    "verifiers.yaml",
+    "review.yaml",
+)
 
 
 def harness_dir(root: Path) -> Path:
@@ -154,15 +160,33 @@ def _list_of_maps(value: object) -> list[dict[str, Any]]:
 def _normalize_verifier(item: dict[str, Any]) -> dict[str, Any]:
     if not item.get("id") or not item.get("command"):
         raise ConfigError("verifier entries require id and command")
-    normalized = {
+    command = _normalize_command(item["command"], "verifier.command")
+    normalized: dict[str, Any] = {
         "id": str(item["id"]),
-        "command": str(item["command"]),
+        "command": command,
         "applies_to": list(item.get("applies_to") or ["**/*"]),
         "always": bool(item.get("always", True)),
+        "shell": _normalize_shell(item.get("shell"), command),
     }
     if "timeout_s" in item:
         normalized["timeout_s"] = _positive_int(item["timeout_s"], "verifier.timeout_s")
     return normalized
+
+
+def _normalize_command(value: object, field: str) -> str | list[str]:
+    if isinstance(value, str):
+        if not value.strip():
+            raise ConfigError(f"{field} must be a non-empty string or list")
+        return value
+    if isinstance(value, list) and value and all(isinstance(item, str) for item in value):
+        return [str(item) for item in value]
+    raise ConfigError(f"{field} must be a non-empty string or list")
+
+
+def _normalize_shell(value: object, command: str | list[str]) -> bool:
+    if value is not None:
+        return bool(value)
+    return isinstance(command, str)
 
 
 def _positive_int(value: object, field: str) -> int:

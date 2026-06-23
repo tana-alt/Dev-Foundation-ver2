@@ -8,7 +8,10 @@ from typing import Any
 from workflow_core.contract_harness.adapters.filesystem_evidence_store import (
     FilesystemEvidenceStore,
 )
-from workflow_core.contract_harness.adapters.sqlite_state_store import SQLiteStateStore
+from workflow_core.contract_harness.adapters.sqlite_state_store import (
+    SQLiteStateReader,
+    SQLiteStateStore,
+)
 from workflow_core.contract_harness.domain.authority import artifact_type_for
 from workflow_core.contract_harness.domain.errors import IntegrityError
 from workflow_core.contract_harness.domain.models import StateEvent, WorkflowPhase
@@ -32,6 +35,11 @@ def evidence_store(root: Path) -> FilesystemEvidenceStore:
 def state_store(root: Path) -> SQLiteStateStore:
     evidence = evidence_store(root)
     return SQLiteStateStore(state_db_path(root), evidence_store=evidence)
+
+
+def state_reader(root: Path) -> SQLiteStateReader:
+    evidence = evidence_store(root)
+    return SQLiteStateReader(state_db_path(root), evidence_store=evidence)
 
 
 def candidate_id_from_patch_sha256(patch_sha256: str) -> str:
@@ -93,7 +101,7 @@ def state_summary(root: Path, task_id: str) -> dict[str, Any]:
     db_path = state_db_path(root)
     if not db_path.is_file():
         return {"integrity": "absent", "current_phase": None, "current_event_sha256": None}
-    store = state_store(root)
+    store = state_reader(root)
     try:
         integrity = store.verify_integrity()
         integrity_status = str(integrity["status"])
@@ -121,7 +129,7 @@ def latest_event_payload(
     db_path = state_db_path(root)
     if not db_path.is_file():
         return None
-    event = state_store(root).latest_event(
+    event = state_reader(root).latest_event(
         task_id,
         event_type=event_type,
         candidate_id=candidate_id,

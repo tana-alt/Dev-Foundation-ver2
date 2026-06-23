@@ -107,6 +107,28 @@ def test_architecture_gate_blocks_external_write_heuristic(tmp_path: Path) -> No
     assert gate.check_kinds["POSSIBLE_EXTERNAL_WRITE_PATH"] == "conservative_heuristic"
 
 
+def test_architecture_gate_ignores_reference_only_external_write_examples(
+    tmp_path: Path,
+) -> None:
+    prefix = "+subprocess.run(["
+    argv = '"git", "push"'
+    external_write_example = prefix + argv + "])\n"
+    gate = evaluate_architecture_gate(
+        tmp_path,
+        base_sha="base",
+        changed_paths=["Plan/Harness-refactor/plans/Plan_N0008.md"],
+        diff_text=(
+            "diff --git a/Plan/Harness-refactor/plans/Plan_N0008.md "
+            "b/Plan/Harness-refactor/plans/Plan_N0008.md\n"
+            "+++ b/Plan/Harness-refactor/plans/Plan_N0008.md\n"
+            f"{external_write_example}"
+        ),
+    )
+
+    assert gate.status == "pass"
+    assert gate.reason_codes == ()
+
+
 def test_architecture_gate_advisory_maps_to_oracle_requirement(
     tmp_path: Path,
 ) -> None:

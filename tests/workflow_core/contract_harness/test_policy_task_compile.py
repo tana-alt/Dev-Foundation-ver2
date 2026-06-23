@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .conftest import TASK_ID, load_runtime_json, run_harness
+from .conftest import TASK_ID, git, load_runtime_json, run_harness
 
 
 def write_policy(repo: Path) -> None:
@@ -56,6 +56,13 @@ def test_agent_generated_acceptance_is_audited_and_locked(harness_repo: Path) ->
         "        command: python -c 'raise SystemExit(0)'\n",
         encoding="utf-8",
     )
+    git(
+        harness_repo,
+        "add",
+        ".harness/policies/bottleneck-reduction.yaml",
+        f".harness/tasks/{TASK_ID}/task.yaml",
+    )
+    git(harness_repo, "commit", "-m", "configure policy acceptance")
 
     prepared = run_harness(harness_repo, "prepare", TASK_ID)
 
@@ -69,6 +76,20 @@ def test_agent_generated_acceptance_is_audited_and_locked(harness_repo: Path) ->
     capsule = load_runtime_json(harness_repo, "resume-capsule.json")
     assert capsule["task_id"] == TASK_ID
     assert capsule["locked_acceptance"]["audit"]["status"] == "pass"
+    spawned = run_harness(harness_repo, "spawn", TASK_ID, "--role", "writer", "--agent", "codex")
+    assert spawned.returncode == 0, spawned.stdout + spawned.stderr
+    initial_context = json.loads(spawned.stdout)["initial_context"]
+    assert initial_context["policy"]["policy_id"] == "bottleneck-reduction"
+    assert initial_context["acceptance"]["audit_status"] == "pass"
+    assert initial_context["acceptance"]["mode"] == "agent_generated"
+    (harness_repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    verified = run_harness(harness_repo, "verify", TASK_ID)
+    assert verified.returncode == 0, verified.stdout + verified.stderr
+    submitted = run_harness(harness_repo, "submit", TASK_ID)
+    assert submitted.returncode == 0, submitted.stdout + submitted.stderr
+    submission = load_runtime_json(harness_repo, "submission.json")
+    assert submission["writer_handoff"]["acceptance"]["mode"] == "agent_generated"
+    assert submission["writer_handoff"]["acceptance"]["audit_status"] == "pass"
 
 
 def test_weak_agent_generated_acceptance_records_rework_bottleneck(harness_repo: Path) -> None:

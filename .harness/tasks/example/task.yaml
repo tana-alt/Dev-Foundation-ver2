@@ -1,0 +1,57 @@
+id: example
+scope: policy-task-contract-refinement
+base: main
+goal:
+  summary: Example contract harness task for clean-clone prepare smoke checks.
+  done_when:
+    - A clean clone can prepare this task without missing control-plane config.
+intent:
+  kind: implementation
+  summary: Example contract harness task for clean-clone prepare smoke checks.
+architecture:
+  summary: >
+    Minimal self-contained task contract that exercises the tracked .harness
+    control plane without requiring a real product change.
+  components:
+    - id: CONTROL-PLANE-SMOKE
+      responsibility: Proves task, owners, policy, review, and verifier config can be compiled.
+      primary_paths:
+        - .harness/**
+scope_contract:
+  allowed_paths:
+    - .harness/**
+  allowed_paths_semantics:
+    hard_gate: false
+    meaning: smoke expected impact area
+  forbidden_paths:
+    - harness-runtime/**
+    - .harness/state/**
+  forbidden_paths_semantics:
+    hard_gate: true
+    meaning: runtime state is never tracked product
+protected_invariants:
+  - id: INV-RUNTIME-NOT-TRACKED
+    statement: Harness runtime state must remain outside tracked .harness/state.
+  - id: INV-CONTROL-PLANE-COMPILES
+    statement: The tracked control plane must compile into contract artifacts.
+acceptance:
+  mode: generated
+  criteria:
+    - id: ACCEPT-PREPARE-SMOKE
+      claim: ./harness prepare example completes from a clean clone.
+adversarial_acceptance:
+  - input: Missing .harness config file.
+    expected: prepare fails with missing config
+  - input: Runtime state added under .harness/state.
+    expected: blocked by storage contract
+expected_evidence:
+  required:
+    - id: EVIDENCE-PREPARE-SMOKE
+      description: Command output from ./harness prepare example.
+review_request:
+  architecture_review:
+    ask: Confirm this remains a compact smoke task and not a broad implementation task.
+  code_review:
+    ask: Confirm control-plane paths compile without adding tracked runtime state.
+allowed_outputs:
+  - source_diff
