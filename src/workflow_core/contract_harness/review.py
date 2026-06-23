@@ -5,9 +5,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
+from workflow_core.contract_harness.application.services import (
+    candidate_id_from_patch_sha256,
+    record_authority_artifact,
+)
 from workflow_core.contract_harness.config import ConfigError, review_profile, review_settings
+from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.evidence import reviewer_evidence_seen
-from workflow_core.contract_harness.hashing import file_hash
+from workflow_core.contract_harness.hashing import file_hash, hash_json
 from workflow_core.contract_harness.jsonio import read_json, write_json_atomic
 from workflow_core.contract_harness.quality import (
     quality_result,
@@ -22,7 +27,7 @@ _REVIEWER_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
 def run_profile(root: Path, task_id: str, reviewer_id: str) -> dict[str, Any]:
-    if reviewer_id == "reader-scope":
+    if reviewer_id in {"reader-scope", "reader-impact"}:
         verdict, labels, reason = _reader_scope(root, task_id)
     elif reviewer_id == "reader-correctness":
         verdict, labels, reason = _reader_correctness(root, task_id)
@@ -56,6 +61,20 @@ def write_verdict(
         reason,
     )
     write_json_atomic(task_dir(root, task_id) / "reviews" / f"{reviewer_id}.json", data)
+    record_authority_artifact(
+        root,
+        task_id,
+        f"reviews/{reviewer_id}.json",
+        event_type="REVIEW_VERDICT",
+        to_phase=WorkflowPhase.REVIEWED,
+        payload={
+            "candidate_diff_sha256": verify_result.get("candidate_diff_sha256"),
+            "machine_evidence_sha256": verify_result.get("machine_evidence_sha256"),
+            "reviewer_id": reviewer_id,
+            "verdict": verdict,
+        },
+        candidate_id=str(data.get("candidate_id") or ""),
+    )
     return data
 
 
@@ -90,6 +109,9 @@ def _reader_scope(root: Path, task_id: str) -> tuple[str, list[str], str]:
     verify_result = _verify_result(root, task_id)
     if not _candidate_hash_ok(root, task_id, verify_result):
         return "block", ["scope_risk"], "candidate hash mismatch"
+    impact = _mapping(verify_result.get("impact_result"))
+    if impact.get("status") == "blocked":
+        return "block", ["scope_risk", "protected_contract_edit"], "forbidden path change"
     scope = _mapping(verify_result.get("scope"))
     if int(scope.get("violation_count", 0)) > 0:
         return "block", ["scope_risk", "protected_contract_edit"], "scope violation"
@@ -115,7 +137,12 @@ def _reader_correctness(root: Path, task_id: str) -> tuple[str, list[str], str]:
 def _validate_reviewer(root: Path, reviewer_id: str) -> None:
     if not _REVIEWER_ID.match(reviewer_id):
         raise ConfigError("invalid reviewer_id")
-    if reviewer_id not in set(review_settings(root)["reviewers"]):
+    configured = set(review_settings(root)["reviewers"])
+    if "reader-scope" in configured:
+        configured.add("reader-impact")
+    if "reader-impact" in configured:
+        configured.add("reader-scope")
+    if reviewer_id not in configured:
         raise ConfigError(f"reviewer is not configured: {reviewer_id}")
 
 
@@ -127,15 +154,20 @@ def _verdict_payload(
     labels: list[str],
     reason: str,
 ) -> dict[str, Any]:
+    written_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
+        "schema_version": 1,
         "task_id": task_id,
+        "candidate_id": candidate_id_from_patch_sha256(str(evidence_seen["candidate_diff_sha256"])),
         "reviewer_id": reviewer_id,
         "verdict": verdict,
         "labels": labels,
         "reason": reason,
         "evidence_seen": evidence_seen,
+        "evidence_seen_sha256": hash_json(evidence_seen),
         "written_by": "harness",
-        "written_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "written_at": written_at,
+        "created_at": written_at,
     }
 
 

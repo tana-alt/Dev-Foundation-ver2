@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from workflow_core.contract_harness.domain.models import ImpactFinding, ImpactResult
 from workflow_core.contract_harness.gitutil import git, status_paths
 from workflow_core.contract_harness.hashing import sha256_text
 from workflow_core.contract_harness.paths import PathPolicy, relative_to_repo
@@ -32,15 +33,38 @@ def changed_repo_paths(root: Path, *, task_id: str | None = None) -> list[str]:
 
 
 def scope_violations(paths: list[str], contract: dict[str, Any]) -> list[dict[str, str]]:
+    impact = scope_impact(paths, contract)
+    return [
+        {"path": finding.path, "reason": finding.reason}
+        for finding in impact.findings
+        if finding.severity == "block"
+    ]
+
+
+def scope_impact(paths: list[str], contract: dict[str, Any]) -> ImpactResult:
     scope = contract["scope_contract"]
-    allowed = PathPolicy([*scope["allowed_paths"], *PROPOSAL_PATTERNS])
-    forbidden = PathPolicy(scope["forbidden_paths"])
-    violations: list[dict[str, str]] = []
+    expected_paths = [str(item) for item in scope.get("allowed_paths") or []]
+    forbidden_paths = [str(item) for item in scope.get("forbidden_paths") or []]
+    expected = PathPolicy([*expected_paths, *PROPOSAL_PATTERNS])
+    forbidden = PathPolicy(forbidden_paths)
+    findings: list[ImpactFinding] = []
     for path in paths:
-        reason = _violation_reason(path, allowed, forbidden)
-        if reason:
-            violations.append({"path": path, "reason": reason})
-    return violations
+        finding = _impact_finding(path, expected, forbidden)
+        if finding is not None:
+            findings.append(finding)
+    if any(item.severity == "block" for item in findings):
+        status = "blocked"
+    elif any(item.severity == "warning" for item in findings):
+        status = "review_required"
+    else:
+        status = "ok"
+    return ImpactResult(
+        status=status,
+        findings=findings,
+        changed_paths=paths,
+        expected_paths=expected_paths,
+        forbidden_paths=forbidden_paths,
+    )
 
 
 def snapshot_diff(root: Path, base_sha: str, paths: list[str]) -> str:
@@ -122,12 +146,16 @@ def _diff_path(line: str) -> str:
     return ""
 
 
-def _violation_reason(path: str, allowed: PathPolicy, forbidden: PathPolicy) -> str:
+def _impact_finding(
+    path: str,
+    expected: PathPolicy,
+    forbidden: PathPolicy,
+) -> ImpactFinding | None:
     if forbidden.matches(path):
-        return "forbidden_path"
-    if allowed.matches(path):
-        return ""
-    return "outside_allowed_paths"
+        return ImpactFinding(path=path, severity="block", reason="forbidden_path")
+    if expected.matches(path):
+        return None
+    return ImpactFinding(path=path, severity="warning", reason="outside_expected_paths")
 
 
 def _stage_path(root: Path, env: dict[str, str], path: str) -> None:

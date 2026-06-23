@@ -24,7 +24,11 @@ for shared behavior, release readiness, or PR scope.
 Use commands backed by current repo files such as `Makefile`, `pyproject.toml`,
 `tests/`, scripts, or CI. Do not invent checks.
 
-For user-visible deliverables, prefer the closest runnable path over build-only proof; change observation layer before retrying failures.
+For user-visible deliverables, prefer the closest runnable path over build-only
+proof; change observation layer before retrying failures.
+
+For proof vehicle examples and fail-before/passed-after guidance, see
+`AGENTS.md` Coding Principles.
 
 If a check cannot run, report the check name, reason, result state, and what
 would be needed to run it.

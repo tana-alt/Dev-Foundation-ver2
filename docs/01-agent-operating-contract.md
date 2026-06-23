@@ -25,7 +25,8 @@ secrets, runtime state, caches, or past-source material by default.
 
 If context expands, explain why.
 
-For implementation work, prefer small runnable slices: core path, then integration, verification, and required sync.
+For coding work, apply `AGENTS.md` Coding Principles; load narrower skills or
+references only when the task needs their detail.
 
 ## Write Preconditions
 

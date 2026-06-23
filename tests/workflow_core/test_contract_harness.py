@@ -469,6 +469,9 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "explain",
         "context-audit",
         "status",
+        "comm-peers",
+        "comm-send",
+        "comm-inbox",
         "spawn-writer",
         "verify",
         "submit",
@@ -502,8 +505,8 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
     assert "affected" in tool_names(groups["integrator"])
     assert "review-collect" in tool_names(groups["integrator"])
     skill_groups = load_runtime_json(repo, "agent-skills.json")
-    assert "release-check" in skill_names(skill_groups["reviewer"])
-    assert "merge-integrity-governance" in skill_names(skill_groups["integrator"])
+    assert "security-check" in skill_names(skill_groups["reviewer"])
+    assert "implementation-slice-verification" in skill_names(skill_groups["integrator"])
 
     optional = run_harness(repo, "tools", TASK_ID, "--role", "writer", "--profile", "measurement")
     assert optional.returncode == 0, optional.stdout + optional.stderr
@@ -703,6 +706,90 @@ def test_spawn_writes_rebind_packet_without_transcript(tmp_path: Path) -> None:
     assert "body_markdown" not in rebind
 
 
+def test_spawned_writers_can_exchange_freeform_messages_through_comm_cli(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    first = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "writer",
+        "--agent",
+        "codex",
+        "--agent-command",
+        "codex --yolo",
+        "--comm",
+    )
+    second = run_harness(
+        repo,
+        "spawn",
+        TASK_ID,
+        "--role",
+        "writer",
+        "--agent",
+        "claude",
+        "--agent-command",
+        "claude",
+        "--comm",
+    )
+    assert first.returncode == 0, first.stdout + first.stderr
+    assert second.returncode == 0, second.stdout + second.stderr
+    first_session = json.loads(first.stdout)
+    second_session = json.loads(second.stdout)
+
+    sent = subprocess.run(
+        [
+            str(HARNESS),
+            "comm-send",
+            TASK_ID,
+            "--to-agent",
+            second_session["agent_id"],
+            "--to-role",
+            "writer",
+            "--kind",
+            "clarification",
+            "--subject",
+            "fixture boundary",
+            "--body",
+            "Can you inspect the fixture boundary without claiming completion?",
+        ],
+        cwd=Path(first_session["cwd"]),
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={**os.environ, **first_session["env"]},
+    )
+    assert sent.returncode == 0, sent.stdout + sent.stderr
+    message = json.loads(sent.stdout)
+    assert message["from"]["agent_id"] == first_session["agent_id"]
+    assert message["from"]["role"] == "writer"
+    assert message["to"]["agent_id"] == second_session["agent_id"]
+    assert message["kind"] == "clarification"
+    assert "authority" not in message
+
+    inbox = subprocess.run(
+        [str(HARNESS), "comm-inbox", TASK_ID],
+        cwd=Path(second_session["cwd"]),
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={**os.environ, **second_session["env"]},
+    )
+
+    assert inbox.returncode == 0, inbox.stdout + inbox.stderr
+    listing = json.loads(inbox.stdout)
+    assert listing["agent_id"] == second_session["agent_id"]
+    assert listing["message_count"] == 1
+    assert listing["messages"][0]["message_sha256"] == message["message_sha256"]
+    assert listing["messages"][0]["body_markdown"] == (
+        "Can you inspect the fixture boundary without claiming completion?"
+    )
+    assert (runtime_task_dir(repo) / "comm" / "inbox" / second_session["agent_id"]).is_dir()
+    assert not (runtime_task_dir(repo) / "comm" / "transcripts").exists()
+
+
 def test_rebind_packet_excludes_transcript(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
 
@@ -802,14 +889,21 @@ def test_spawn_target_role_validation_blocks_writer_spawning_integrator(
     assert "role writer cannot spawn integrator" in spawned.stdout
 
 
-def test_task_yaml_acceptance_mode_must_be_generated(tmp_path: Path) -> None:
+def test_task_yaml_acceptance_mode_must_be_generated_or_agent_generated(
+    tmp_path: Path,
+) -> None:
     repo = init_repo(tmp_path)
     task_file = repo / ".harness" / "tasks" / TASK_ID / "task.yaml"
+    task_file.write_text(task_yaml("agent_generated"), encoding="utf-8")
+
+    from workflow_core.contract_harness.config import load_task
+
+    assert load_task(repo, TASK_ID)["acceptance"]["mode"] == "agent_generated"
     task_file.write_text(task_yaml("manual"), encoding="utf-8")
 
-    from workflow_core.contract_harness.config import ConfigError, load_task
+    from workflow_core.contract_harness.config import ConfigError
 
-    with pytest.raises(ConfigError, match="acceptance.mode must be generated"):
+    with pytest.raises(ConfigError, match="acceptance.mode must be generated or agent_generated"):
         load_task(repo, TASK_ID)
 
 
@@ -2576,7 +2670,7 @@ def test_e2e_semantic_reviewer_receives_writer_handoff_diff_index_tools_and_skil
         "assert packet['candidate_diff_index']['changed_files'] == ['src/app.txt']\n"
         "assert packet['candidate_diff_path'].endswith('candidate.diff')\n"
         "assert 'scope-map-reverse' in {tool['name'] for tool in packet['agent_tools']}\n"
-        "assert 'release-check' in {skill['name'] for skill in packet['agent_skills']}\n"
+        "assert 'security-check' in {skill['name'] for skill in packet['agent_skills']}\n"
         "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
         "  'verdict': 'approve',\n"
         "  'labels': ['ideal_packet_reviewed'],\n"
@@ -3591,7 +3685,7 @@ def test_prepare_generated_acceptance_and_proposals_do_not_affect_semantics(tmp_
     )
     rejected = run_harness(repo, "prepare", TASK_ID)
     assert rejected.returncode != 0
-    assert "acceptance.mode must be generated" in rejected.stdout
+    assert "acceptance.mode must be generated or agent_generated" in rejected.stdout
 
 
 def test_verify_writes_candidate_and_machine_evidence_without_mutating_index(

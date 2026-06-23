@@ -1,6 +1,0 @@
-project_id: codex-operationalization-implementation
-plans:
-  - plan_id: Plan_N0001
-    status: completed
-    plan_ref: Plan/codex-operationalization-implementation/plans/Plan_N0001.md
-    log_ref: Plan/codex-operationalization-implementation/logs/Plan_N0001.log.md

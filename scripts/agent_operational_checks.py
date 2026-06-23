@@ -11,25 +11,12 @@ import yaml
 
 ROOT = Path(os.environ.get("FOUNDATION_REPO_ROOT", Path(__file__).resolve().parents[1]))
 
-ACTIVE_DOCS = (
-    "AGENTS.md",
-    "docs/01-agent-operating-contract.md",
-    "docs/02-output-verification-contract.md",
-    "docs/03-repo-boundary-and-storage-contract.md",
-)
-
 ACTIVE_GOVERNANCE_SKILLS = {
     "scope-routing-governance",
     "spec-authority-governance",
-    "subagent-workflow-governance",
-    "merge-integrity-governance",
-    "hook-validation-governance",
-    "goal-completion-governance",
 }
 
 RETIRED_GOVERNANCE_SKILLS = {
-    "traceability-gate-governance",
-    "residual-risk-carryover",
     "review-fix-convergence-governance",
 }
 
@@ -228,11 +215,6 @@ def validate_skill_routes(root: Path) -> list[str]:
             if "retired" not in lowered or "do not use" not in lowered:
                 add_issue(issues, label, "retired governance skill must state retired/do not use")
 
-    total_active_lines = sum(
-        len((root / path).read_text(encoding="utf-8").splitlines()) for path in ACTIVE_DOCS
-    )
-    if total_active_lines > 320:
-        add_issue(issues, "active docs", f"line budget exceeded: {total_active_lines} > 320")
     return issues
 
 

@@ -95,11 +95,6 @@ def role_agent_skills(root: Path, role: str) -> list[dict[str, Any]]:
         ),
         "reviewer": (
             (
-                "release-check",
-                "semantic_review",
-                "Interpret verification evidence and residual risk before approval.",
-            ),
-            (
                 "security-check",
                 "semantic_review",
                 "Escalate auth, secret, external write, or irreversible risk.",
@@ -109,15 +104,20 @@ def role_agent_skills(root: Path, role: str) -> list[dict[str, Any]]:
                 "semantic_review",
                 "Check whether the shipped slice matches the goal and evidence.",
             ),
+            (
+                "scope-routing-governance",
+                "semantic_review",
+                "Keep review context bounded to submitted evidence and named refs.",
+            ),
         ),
         "integrator": (
             (
-                "merge-integrity-governance",
+                "implementation-slice-verification",
                 "merge_boundary",
                 "Check branch, worktree, and changed-path boundaries.",
             ),
             (
-                "release-check",
+                "scope-routing-governance",
                 "merge_boundary",
                 "Choose and report the narrowest verification before handoff.",
             ),
@@ -152,6 +152,24 @@ _WRITER_TOOL_SPECS = (
         "coordination",
         "{harness} status {task_id}",
         "Read artifact-backed task status without changing workflow state.",
+    ),
+    (
+        "comm-peers",
+        "coordination",
+        "{harness} comm-peers {task_id}",
+        "List task-scoped peer agent ids, roles, and briefs from runtime session projection.",
+    ),
+    (
+        "comm-send",
+        "coordination",
+        ("{harness} comm-send {task_id} --to <agent-id> --subject <subject> --body <message>"),
+        "Send a non-authoritative task-scoped message to another agent.",
+    ),
+    (
+        "comm-inbox",
+        "coordination",
+        "{harness} comm-inbox {task_id}",
+        "Read the current agent inbox from task-scoped runtime state.",
     ),
     (
         "spawn-writer",

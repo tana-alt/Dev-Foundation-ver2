@@ -118,8 +118,8 @@ def _missing_required(
     }[role]
     required_skills = {
         "writer": {"tdd-scope", "implementation-slice-verification"},
-        "reviewer": {"release-check", "implementation-slice-verification"},
-        "integrator": {"merge-integrity-governance", "release-check"},
+        "reviewer": {"security-check", "implementation-slice-verification"},
+        "integrator": {"scope-routing-governance", "implementation-slice-verification"},
     }[role]
     missing = [f"tool:{name}" for name in sorted(required_tools - tool_names)]
     missing.extend(f"skill:{name}" for name in sorted(required_skills - skill_names))

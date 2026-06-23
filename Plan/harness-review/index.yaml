@@ -1,6 +1,4 @@
 project_id: harness-review
-status: active
-created_at: "2026-06-16"
 plans:
   - plan_id: Plan_N0001
     status: draft
