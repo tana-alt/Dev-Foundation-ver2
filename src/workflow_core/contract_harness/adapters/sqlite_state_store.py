@@ -45,92 +45,30 @@ class SQLiteStateStore:
         to_value = _phase_value(to_phase) or WorkflowPhase.UNKNOWN.value
         with self._connect(immediate=True) as db:
             previous = _latest_event_sha(db)
-            event_payload = {
-                "task_id": task_id,
-                "candidate_id": candidate_id,
-                "event_type": event_type,
-                "from_phase": from_value,
-                "to_phase": to_value,
-                "payload_sha256": payload_sha256,
-                "previous_event_sha256": previous,
-                "actor": actor,
-                "created_at": created_at,
-            }
-            event_sha256 = hash_json(event_payload)
-            cursor = db.execute(
-                """
-                INSERT INTO events (
-                    task_id, candidate_id, event_type, from_phase, to_phase,
-                    payload_json, payload_sha256, previous_event_sha256,
-                    event_sha256, actor, created_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    task_id,
-                    candidate_id,
-                    event_type,
-                    from_value,
-                    to_value,
-                    payload_json,
-                    payload_sha256,
-                    previous,
-                    event_sha256,
-                    actor,
-                    created_at,
-                ),
-            )
-            db.execute(
-                """
-                INSERT INTO tasks (
-                    task_id, current_phase, current_candidate_id, current_event_sha256
-                )
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(task_id) DO UPDATE SET
-                    current_phase = excluded.current_phase,
-                    current_candidate_id = excluded.current_candidate_id,
-                    current_event_sha256 = excluded.current_event_sha256
-                """,
-                (task_id, to_value, candidate_id, event_sha256),
-            )
-            if candidate_id is not None:
-                patch_sha = str(
-                    payload.get("candidate_diff_sha256") or payload.get("patch_sha256") or ""
-                )
-                db.execute(
-                    """
-                    INSERT INTO candidates (
-                        candidate_id, task_id, base_sha, patch_sha256, status, created_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(candidate_id) DO UPDATE SET status = excluded.status
-                    """,
-                    (
-                        candidate_id,
-                        task_id,
-                        str(payload.get("base_sha") or ""),
-                        patch_sha,
-                        to_value,
-                        created_at,
-                    ),
-                )
-            event_id = cursor.lastrowid
-            if event_id is None:
-                raise IntegrityError("event insert did not return an id")
-            return StateEvent(
-                id=event_id,
+            event_payload = _event_payload(
                 task_id=task_id,
                 candidate_id=candidate_id,
                 event_type=event_type,
-                from_phase=WorkflowPhase(from_value) if from_value else None,
-                to_phase=WorkflowPhase(to_value),
-                payload_json=payload_json,
+                from_value=from_value,
+                to_value=to_value,
                 payload_sha256=payload_sha256,
-                previous_event_sha256=previous,
-                event_sha256=event_sha256,
+                previous=previous,
                 actor=actor,
                 created_at=created_at,
             )
+            event_sha256 = hash_json(event_payload)
+            event_id = _insert_event(db, event_payload, payload_json, event_sha256)
+            _upsert_task_event(db, task_id, to_value, candidate_id, event_sha256)
+            if candidate_id is not None:
+                _upsert_candidate_event(
+                    db,
+                    task_id=task_id,
+                    candidate_id=candidate_id,
+                    payload=payload,
+                    to_value=to_value,
+                    created_at=created_at,
+                )
+            return _state_event(event_id, event_payload, payload_json, event_sha256)
 
     def record_artifact(
         self,
@@ -510,6 +448,148 @@ def _phase_value(value: WorkflowPhase | str | None) -> str | None:
 def _latest_event_sha(db: sqlite3.Connection) -> str | None:
     row = db.execute("SELECT event_sha256 FROM events ORDER BY id DESC LIMIT 1").fetchone()
     return None if row is None else str(row["event_sha256"])
+
+
+def _event_payload(
+    *,
+    task_id: str,
+    candidate_id: str | None,
+    event_type: str,
+    from_value: str | None,
+    to_value: str,
+    payload_sha256: str,
+    previous: str | None,
+    actor: str,
+    created_at: str,
+) -> dict[str, Any]:
+    return {
+        "task_id": task_id,
+        "candidate_id": candidate_id,
+        "event_type": event_type,
+        "from_phase": from_value,
+        "to_phase": to_value,
+        "payload_sha256": payload_sha256,
+        "previous_event_sha256": previous,
+        "actor": actor,
+        "created_at": created_at,
+    }
+
+
+def _insert_event(
+    db: sqlite3.Connection,
+    event_payload: dict[str, Any],
+    payload_json: str,
+    event_sha256: str,
+) -> int:
+    cursor = db.execute(
+        """
+        INSERT INTO events (
+            task_id, candidate_id, event_type, from_phase, to_phase,
+            payload_json, payload_sha256, previous_event_sha256,
+            event_sha256, actor, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            event_payload["task_id"],
+            event_payload["candidate_id"],
+            event_payload["event_type"],
+            event_payload["from_phase"],
+            event_payload["to_phase"],
+            payload_json,
+            event_payload["payload_sha256"],
+            event_payload["previous_event_sha256"],
+            event_sha256,
+            event_payload["actor"],
+            event_payload["created_at"],
+        ),
+    )
+    event_id = cursor.lastrowid
+    if event_id is None:
+        raise IntegrityError("event insert did not return an id")
+    return event_id
+
+
+def _upsert_task_event(
+    db: sqlite3.Connection,
+    task_id: str,
+    to_value: str,
+    candidate_id: str | None,
+    event_sha256: str,
+) -> None:
+    db.execute(
+        """
+        INSERT INTO tasks (
+            task_id, current_phase, current_candidate_id, current_event_sha256
+        )
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(task_id) DO UPDATE SET
+            current_phase = excluded.current_phase,
+            current_candidate_id = excluded.current_candidate_id,
+            current_event_sha256 = excluded.current_event_sha256
+        """,
+        (task_id, to_value, candidate_id, event_sha256),
+    )
+
+
+def _upsert_candidate_event(
+    db: sqlite3.Connection,
+    *,
+    task_id: str,
+    candidate_id: str,
+    payload: dict[str, Any],
+    to_value: str,
+    created_at: str,
+) -> None:
+    patch_sha = str(payload.get("candidate_diff_sha256") or payload.get("patch_sha256") or "")
+    db.execute(
+        """
+        INSERT INTO candidates (
+            candidate_id, task_id, base_sha, patch_sha256, status, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(candidate_id) DO UPDATE SET status = excluded.status
+        """,
+        (
+            candidate_id,
+            task_id,
+            str(payload.get("base_sha") or ""),
+            patch_sha,
+            to_value,
+            created_at,
+        ),
+    )
+
+
+def _state_event(
+    event_id: int,
+    event_payload: dict[str, Any],
+    payload_json: str,
+    event_sha256: str,
+) -> StateEvent:
+    from_value = event_payload["from_phase"]
+    return StateEvent(
+        id=event_id,
+        task_id=str(event_payload["task_id"]),
+        candidate_id=(
+            str(event_payload["candidate_id"])
+            if event_payload["candidate_id"] is not None
+            else None
+        ),
+        event_type=str(event_payload["event_type"]),
+        from_phase=WorkflowPhase(str(from_value)) if from_value else None,
+        to_phase=WorkflowPhase(str(event_payload["to_phase"])),
+        payload_json=payload_json,
+        payload_sha256=str(event_payload["payload_sha256"]),
+        previous_event_sha256=(
+            str(event_payload["previous_event_sha256"])
+            if event_payload["previous_event_sha256"] is not None
+            else None
+        ),
+        event_sha256=event_sha256,
+        actor=str(event_payload["actor"]),
+        created_at=str(event_payload["created_at"]),
+    )
 
 
 def _utc_now() -> str:

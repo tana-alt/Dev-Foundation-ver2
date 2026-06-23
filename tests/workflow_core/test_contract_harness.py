@@ -469,6 +469,7 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "explain",
         "context-audit",
         "status",
+        "comm-peers",
         "comm-send",
         "comm-inbox",
         "spawn-writer",
@@ -504,8 +505,8 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
     assert "affected" in tool_names(groups["integrator"])
     assert "review-collect" in tool_names(groups["integrator"])
     skill_groups = load_runtime_json(repo, "agent-skills.json")
-    assert "release-check" in skill_names(skill_groups["reviewer"])
-    assert "merge-integrity-governance" in skill_names(skill_groups["integrator"])
+    assert "security-check" in skill_names(skill_groups["reviewer"])
+    assert "implementation-slice-verification" in skill_names(skill_groups["integrator"])
 
     optional = run_harness(repo, "tools", TASK_ID, "--role", "writer", "--profile", "measurement")
     assert optional.returncode == 0, optional.stdout + optional.stderr
@@ -888,14 +889,21 @@ def test_spawn_target_role_validation_blocks_writer_spawning_integrator(
     assert "role writer cannot spawn integrator" in spawned.stdout
 
 
-def test_task_yaml_acceptance_mode_must_be_generated(tmp_path: Path) -> None:
+def test_task_yaml_acceptance_mode_must_be_generated_or_agent_generated(
+    tmp_path: Path,
+) -> None:
     repo = init_repo(tmp_path)
     task_file = repo / ".harness" / "tasks" / TASK_ID / "task.yaml"
+    task_file.write_text(task_yaml("agent_generated"), encoding="utf-8")
+
+    from workflow_core.contract_harness.config import load_task
+
+    assert load_task(repo, TASK_ID)["acceptance"]["mode"] == "agent_generated"
     task_file.write_text(task_yaml("manual"), encoding="utf-8")
 
-    from workflow_core.contract_harness.config import ConfigError, load_task
+    from workflow_core.contract_harness.config import ConfigError
 
-    with pytest.raises(ConfigError, match="acceptance.mode must be generated"):
+    with pytest.raises(ConfigError, match="acceptance.mode must be generated or agent_generated"):
         load_task(repo, TASK_ID)
 
 
@@ -2662,7 +2670,7 @@ def test_e2e_semantic_reviewer_receives_writer_handoff_diff_index_tools_and_skil
         "assert packet['candidate_diff_index']['changed_files'] == ['src/app.txt']\n"
         "assert packet['candidate_diff_path'].endswith('candidate.diff')\n"
         "assert 'scope-map-reverse' in {tool['name'] for tool in packet['agent_tools']}\n"
-        "assert 'release-check' in {skill['name'] for skill in packet['agent_skills']}\n"
+        "assert 'security-check' in {skill['name'] for skill in packet['agent_skills']}\n"
         "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
         "  'verdict': 'approve',\n"
         "  'labels': ['ideal_packet_reviewed'],\n"
@@ -3677,7 +3685,7 @@ def test_prepare_generated_acceptance_and_proposals_do_not_affect_semantics(tmp_
     )
     rejected = run_harness(repo, "prepare", TASK_ID)
     assert rejected.returncode != 0
-    assert "acceptance.mode must be generated" in rejected.stdout
+    assert "acceptance.mode must be generated or agent_generated" in rejected.stdout
 
 
 def test_verify_writes_candidate_and_machine_evidence_without_mutating_index(

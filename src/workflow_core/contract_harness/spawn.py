@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shlex
 from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,7 @@ def spawn_session(
     reviewer_id: str | None = None,
     profile: str = "default",
     comm: bool = False,
+    brief: str = "",
 ) -> dict[str, Any]:
     _validate_target_role(current_role(), target_role)
     if target_role == "reviewer" and not reviewer_id:
@@ -64,6 +66,7 @@ def spawn_session(
         agent=agent,
         reviewer_id=reviewer_id,
         profile=profile,
+        brief=brief,
     )
     _write_session(canonical, task_id, session, role=target_role, reviewer_id=reviewer_id)
     _write_rebind(canonical, task_id, session)
@@ -123,8 +126,15 @@ def _with_agent_metadata(
     agent: str,
     reviewer_id: str | None,
     profile: str,
+    brief: str,
 ) -> dict[str, Any]:
-    agent_id = _agent_id(task_id, role=role, agent=agent, reviewer_id=reviewer_id)
+    agent_id = _agent_id(
+        task_id,
+        role=role,
+        agent=agent,
+        reviewer_id=reviewer_id,
+        brief=brief,
+    )
     env = _role_env(root, task_id, role=role, agent_id=agent_id, reviewer_id=reviewer_id)
     cwd = Path(str(session["cwd"]))
     enriched = {
@@ -132,6 +142,8 @@ def _with_agent_metadata(
         "agent": agent,
         "agent_id": agent_id,
         "profile": profile,
+        "brief": brief,
+        "delegation_hash_id": _delegation_hash_id(brief) if brief else "",
         "env": env,
         "command": _shell_command(
             cwd,
@@ -205,6 +217,8 @@ def _write_rebind(root: Path, task_id: str, session: dict[str, Any]) -> None:
         "task_id": task_id,
         "agent_id": agent_id,
         "role": session["role"],
+        "brief": session.get("brief", ""),
+        "delegation_hash_id": session.get("delegation_hash_id", ""),
         "cwd": session["cwd"],
         "env": session["env"],
         "handoff": session["handoff"],
@@ -222,6 +236,8 @@ def _write_comm_session(root: Path, task_id: str, session: dict[str, Any]) -> No
         "agent_id": agent_id,
         "role": session["role"],
         "agent": session["agent"],
+        "brief": session.get("brief", ""),
+        "delegation_hash_id": session.get("delegation_hash_id", ""),
         "cwd": session["cwd"],
         "status": "ready",
         "created_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -271,9 +287,23 @@ def _shell_command(path: Path, env: dict[str, str], agent_command: str) -> str:
     return f"cd {shlex.quote(str(path))} && {env_prefix} {agent_command}"
 
 
-def _agent_id(task_id: str, *, role: str, agent: str, reviewer_id: str | None) -> str:
+def _agent_id(
+    task_id: str,
+    *,
+    role: str,
+    agent: str,
+    reviewer_id: str | None,
+    brief: str = "",
+) -> str:
     suffix = reviewer_id if reviewer_id else task_id
-    return ".".join((_safe_component(role), _safe_component(agent), _safe_component(suffix)))
+    parts = [_safe_component(role), _safe_component(agent), _safe_component(suffix)]
+    if role == "writer" and brief:
+        parts.append(_safe_component(_delegation_hash_id(brief).split(":", 1)[1][:10]))
+    return ".".join(parts)
+
+
+def _delegation_hash_id(brief: str) -> str:
+    return f"sha256:{sha256(brief.encode('utf-8')).hexdigest()}"
 
 
 def _safe_component(value: str) -> str:
