@@ -127,11 +127,11 @@ DEPLOYMENT_WORKFLOW_KEYWORDS = (
 
 EXPECTED_TRACKED_TOP_LEVELS = {
     ".agents",
+    ".harness",
     ".editorconfig",
     ".gitattributes",
     ".gitleaks.toml",
     ".github",
-    ".harness",
     ".gitignore",
     ".python-version",
     "AGENTS.md",
