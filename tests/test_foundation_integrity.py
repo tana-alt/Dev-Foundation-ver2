@@ -7,8 +7,9 @@ from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
 
-ACTIVE_DOCS = (
-    "AGENTS.md",
+ACTIVE_DOCS = ("AGENTS.md",)
+
+SUPPORTING_CONTRACT_DOCS = (
     "docs/01-agent-operating-contract.md",
     "docs/02-output-verification-contract.md",
     "docs/03-repo-boundary-and-storage-contract.md",
@@ -19,6 +20,7 @@ ACTIVE_REFERENCE_DOCS = (
     "docs/reference/exit-codes-reference.md",
     "docs/reference/git-worktree-and-branch-reference.md",
     "docs/reference/harness-observability-reference.md",
+    "docs/reference/harness-operational-issue-register.md",
     "docs/reference/migration-and-acceptance-reference.md",
     "docs/reference/packet-evidence-and-rework-reference.md",
     "docs/reference/repo-boundary-and-storage-reference.md",
@@ -137,6 +139,7 @@ EXPECTED_TRACKED_TOP_LEVELS = {
     "artifact",
     "docs",
     "harness",
+    "foundationd",
     "hooks",
     "plugins",
     "pyproject.toml",
@@ -234,8 +237,15 @@ def test_active_agent_context_stays_under_budget() -> None:
 def test_agents_routes_to_active_docs_and_references() -> None:
     agents = read_text("AGENTS.md")
 
-    for relative_path in (*ACTIVE_DOCS[1:], *ACTIVE_REFERENCE_DOCS):
-        assert f"`{relative_path}`" in agents
+    for heading in (
+        "# Agent Operating Contract",
+        "# Output Verification Contract",
+        "# Repo Boundary And Storage Contract",
+    ):
+        assert heading in agents
+
+    for relative_path in (*SUPPORTING_CONTRACT_DOCS, *ACTIVE_REFERENCE_DOCS):
+        assert f"`{relative_path}`" not in agents
 
     assert "Root Boundary" not in agents
 
@@ -243,10 +253,9 @@ def test_agents_routes_to_active_docs_and_references() -> None:
 def test_agents_routes_project_scoped_work_to_reference_docs() -> None:
     agents = read_text("AGENTS.md")
 
-    assert "project-scoped Plan/artifact/src placement" in agents
-    assert "`docs/reference/repo-boundary-and-storage-reference.md`" in agents
-    assert "project-scoped worktree setup" in agents
-    assert "`docs/reference/git-worktree-and-branch-reference.md`" in agents
+    assert "Use `Plan/<project_id>/`" in agents
+    assert "Use `artifact/<project_id>/`" in agents
+    assert "Use `src/<project_id>/`" in agents
     assert "`project-worktree-scope`" not in agents
     assert "`project-storage-placement`" not in agents
 
@@ -257,7 +266,7 @@ def test_doc_consistency_specification_subagent_workflow_is_routed_and_compact()
     packet_reference = read_text("docs/reference/packet-evidence-and-rework-reference.md")
     templates_readme = read_text("templates/README.md")
 
-    assert "`docs/reference/specification-workflow-reference.md`" in agents
+    assert "Default flow: Goal -> Scope -> Done -> Plan -> Implement -> Verify -> Log" in agents
     assert "main_lane" in reference
     assert "Goal Brief" in reference
     assert "Mini-Spec" in reference
@@ -279,6 +288,7 @@ def test_reference_set_matches_routed_reference_docs() -> None:
 def test_required_contract_files_exist() -> None:
     required = (
         *ACTIVE_DOCS,
+        *SUPPORTING_CONTRACT_DOCS,
         *REFERENCE_DOCS,
         *TEMPLATES,
         *ROOT_READMES,
@@ -299,7 +309,7 @@ def test_docs_root_stays_contract_only() -> None:
         if path.startswith("docs/") and Path(path).parent == Path("docs") and path.endswith(".md")
     )
 
-    assert direct_docs == sorted(ACTIVE_DOCS[1:])
+    assert direct_docs == sorted(SUPPORTING_CONTRACT_DOCS)
 
 
 def test_project_storage_routes_are_documented() -> None:
