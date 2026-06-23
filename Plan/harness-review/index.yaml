@@ -1,6 +1,10 @@
 project_id: harness-review
 plans:
-  - plan_id: Plan_N0003
-    status: completed
-    plan_ref: Plan/harness-review/plans/Plan_N0003.md
-    log_ref: Plan/harness-review/logs/Plan_N0003.log.md
+  - plan_id: Plan_N0001
+    status: draft
+    plan_ref: Plan/harness-review/plans/Plan_N0001.md
+    log_ref: Plan/harness-review/logs/Plan_N0001.log.md
+  - plan_id: Plan_N0002
+    status: draft
+    plan_ref: Plan/harness-review/plans/Plan_N0002.md
+    log_ref: Plan/harness-review/logs/Plan_N0002.log.md

@@ -3,6 +3,7 @@ status: reference
 owner: foundation
 source_of_truth_level: reference
 created_at: 2026-05-06
+updated_at: 2026-06-17
 ---
 
 # Git Worktree And Branch Reference
@@ -20,7 +21,9 @@ Open this reference when:
 - parallel `git_scope` must be checked for completeness, or branch/worktree
   targets must be derived from `work_id`, `lane`, and a short slug;
 - changed-path evidence, allowed-write-target checks, sibling-conflict checks,
-  or concrete PR-prep mechanics require branch/worktree facts.
+  or concrete PR-prep mechanics require branch/worktree facts;
+- contract-harness `land` or `push` behavior must handle a target branch that
+  advanced after a writer candidate was prepared.
 
 Do not open this reference when:
 
@@ -340,6 +343,91 @@ printf 'sibling conflict check: passed\n'
 If sibling refs are not provided, state that sibling conflict detection was
 unverified.
 
+## Contract Harness Branch Serialization
+
+This section applies to the task harness path, not ordinary human PR work. The
+baseline harness flow is:
+
+```text
+prepare -> writer worktree -> verify -> submit -> gate -> land -> push
+```
+
+Harness-created worktrees are task-owned under the git common-dir runtime root.
+Writer and reviewer worktrees are based on the task's prepared base. The
+integrator worktree fetches the configured target branch and uses an
+`agent/<task_id>/integrator/land` branch. Existing harness worktrees must carry
+the harness marker for the same repository, task, kind, and reviewer; clean
+legacy worktrees may be migrated, but dirty or foreign worktrees must not be
+reused destructively.
+
+Current target classification is only a pre-check:
+
+- `FAST`: target still equals the prepared base.
+- `PARTIAL`: target advanced, but changed paths do not overlap the candidate.
+- `REBASE`: target advanced and changed paths overlap the candidate.
+
+The push-time exact-CAS rule still protects the remote branch: a landed commit
+whose `target_base_sha` no longer equals the fetched remote head must not be
+pushed as-is. Do not solve `remote_changed` by force-push, by holding a remote
+lock across unrelated work, by manually editing branch refs, or by asking the
+writer to perform branch choreography when the candidate can be machine-tested
+against the current target.
+
+### Merge-Oracle Target Behavior
+
+When `push` detects `remote_changed`, the integrator should run a bounded
+merge-oracle retry instead of immediately failing the disjoint case:
+
+1. Fetch the current configured target head.
+2. Create or reset a clean integrator worktree to that head.
+3. Apply the submitted `candidate.diff` exactly as submitted and verify its
+   `candidate_diff_sha256` binding.
+4. Run the merge test plan against the merged tree `M`. Until certified tests
+   exist, use the writer verifier plan plus always-on invariants. After
+   certified tests exist, run the union of pinned certified tests plus always-on
+   invariants, using the pinned test contents rather than mutable post-merge
+   test files.
+5. If apply and tests are green, commit the merged tree and retry the exact-CAS
+   push against the head that was just tested.
+6. If apply or tests are red, return `rework_required` with the failing apply
+   step or test evidence and the blamed task.
+
+The remote lock should be acquired only for each concrete push attempt and
+released after that attempt. It should not be held while the oracle composes or
+runs tests. Retry count must be bounded by policy, for example
+`bottlenecks.integration.max_retries`; exhausted retries escalate rather than
+looping indefinitely.
+
+Path disjointness is not final merge authority. It is only a cheap signal that
+the oracle is likely to pass. The authority is the candidate diff re-applied to
+the current target and the pinned test plan passing on the merged tree. This
+keeps the branch rule strict enough to prevent clobber while allowing a safe
+disjoint candidate to recover automatically.
+
+### Concurrent Candidate Outcomes
+
+Expected outcomes for concurrent candidates:
+
+- Overlap, sequential: after one candidate lands and pushes, a second candidate
+  touching the same affected path should return rework before land.
+- Overlap, concurrent: two candidates may both land against the same old base,
+  but exact-CAS must prevent the loser from clobbering the remote. With the
+  oracle path, the loser should re-apply to the current target and return
+  rework if apply or tests fail.
+- Disjoint, concurrent: the loser should no longer fail solely because the
+  remote advanced. It should run the oracle against the new head and, if green,
+  auto-repush with both changes present.
+
+For N pending candidates, compose all candidate diffs in a clean integrator
+worktree, run the union test plan once, and on red localize the failing task by
+leave-one-out reruns before optimizing with bisection. Land the maximal green
+set and return precise rework for the blamed candidate.
+
+Machine acceptance should keep the old exact-CAS characterization visible as a
+spec shift: the disjoint concurrent case changes from `remote_changed` failure
+to oracle green and automatic repush, while overlapping cases continue to avoid
+remote clobber.
+
 ## Output Evidence
 
 For write work, report:
@@ -360,6 +448,18 @@ branch, base ref, merge target, branch/worktree ownership, and canonical primary
 freshness result. If the intended merge target advanced after the worktree or
 branch was created, report whether the review branch was checked against the
 newer target, requires rework, or carries explicit residual risk.
+
+For contract-harness `remote_changed` recovery, also report:
+
+- previous `target_base_sha`
+- current target head tested by the merge oracle
+- candidate diff hash
+- test plan source: all verifiers, certified-test union, or always-only
+  invariant set
+- oracle status: green or red
+- retry count
+- final push CAS head, if pushed
+- failing apply/test evidence and blamed task, if rework is required
 
 ## Human Gate
 
