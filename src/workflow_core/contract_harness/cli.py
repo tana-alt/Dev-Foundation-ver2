@@ -11,7 +11,13 @@ from typing import Any
 from workflow_core.cli import R6ArgumentParser
 from workflow_core.contract_harness import review
 from workflow_core.contract_harness.affected import classify_affected_set
-from workflow_core.contract_harness.agent_comm import ALLOWED_INTENTS, list_inbox, send_message
+from workflow_core.contract_harness.agent_comm import (
+    ALLOWED_INTENTS,
+    list_inbox,
+    list_peers,
+    send_message,
+    send_peer_message,
+)
 from workflow_core.contract_harness.agent_tools import (
     agent_skill_groups,
     agent_tool_groups,
@@ -74,8 +80,12 @@ def _dispatch(args: argparse.Namespace) -> int:
     if command == "pr":
         return _pr(root, args)
     require_allowed(command)
-    handlers: dict[str, Callable[[], int]] = {
-        "prepare": lambda: _json(prepare(root, args.task_id), 0),
+    return _command_handlers(root, args).get(command, _deferred)()
+
+
+def _command_handlers(root: Path, args: argparse.Namespace) -> dict[str, Callable[[], int]]:
+    return {
+        "prepare": lambda: _json_status(prepare(root, args.task_id)),
         "explain": lambda: _explain(root, args.task_id),
         "verify": lambda: _json_pair(verify_task(root, args.task_id)),
         "gate": lambda: _json_pair(gate_task(root, args.task_id)),
@@ -102,6 +112,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         "spawn": lambda: _spawn(root, args),
         "comm-send": lambda: _json(_comm_send(root, args), 0),
         "comm-inbox": lambda: _json(_comm_inbox(root, args), 0),
+        "comm-peers": lambda: _json(list_peers(root, args.task_id), 0),
         "status": lambda: _json(task_status(root, args.task_id), 0),
         "oracle": lambda: _json_pair(
             run_single_candidate_oracle(
@@ -122,7 +133,6 @@ def _dispatch(args: argparse.Namespace) -> int:
         "push": lambda: _json_pair(push_task(root, args.task_id)),
         "report": lambda: _json(write_report(root, args.task_id, args.type), 0),
     }
-    return handlers.get(command, _deferred)()
 
 
 def _strict_enabled(args: argparse.Namespace) -> bool:
@@ -380,13 +390,13 @@ def _tools(root: Path, args: argparse.Namespace) -> dict[str, Any]:
     role = str(args.role)
     profile = str(args.profile)
     if role == "all":
-        tools = (
+        grouped_tools = (
             agent_tool_groups(root, args.task_id)
             if profile == "default"
             else optional_agent_tool_groups(root, args.task_id, profile)
         )
-        return {"task_id": args.task_id, "profile": profile, "tools": tools}
-    tools = (
+        return {"task_id": args.task_id, "profile": profile, "tools": grouped_tools}
+    role_tools = (
         role_agent_tools(root, args.task_id, role)
         if profile == "default"
         else role_optional_tools(root, args.task_id, role, profile)
@@ -395,7 +405,7 @@ def _tools(root: Path, args: argparse.Namespace) -> dict[str, Any]:
         "task_id": args.task_id,
         "role": role,
         "profile": profile,
-        "tools": tools,
+        "tools": role_tools,
     }
 
 
@@ -424,6 +434,7 @@ def _spawn(root: Path, args: argparse.Namespace) -> int:
             reviewer_id=args.reviewer_id,
             profile=args.profile,
             comm=bool(args.comm),
+            brief=args.brief,
         ),
         0,
     )
@@ -433,16 +444,34 @@ def _comm_send(root: Path, args: argparse.Namespace) -> dict[str, Any]:
     from_agent = str(args.from_agent or os.environ.get("FOUNDATION_AGENT_ID") or "")
     if not from_agent:
         raise ValueError("from-agent is required when FOUNDATION_AGENT_ID is unset")
+    to_agent = str(args.to or args.to_agent or "")
+    if not to_agent:
+        raise ValueError("to is required")
+    if not args.to_role:
+        return send_peer_message(
+            root,
+            args.task_id,
+            to_agent_id=to_agent,
+            subject=args.subject,
+            body_markdown=_body_text(args),
+            from_agent_id=from_agent,
+            from_role=current_role(),
+            kind=args.kind,
+            in_reply_to=args.in_reply_to,
+            delegation_brief=args.delegation_brief,
+        )
     return send_message(
         root,
         args.task_id,
         from_agent_id=from_agent,
         from_role=current_role(),
-        to_agent_id=args.to_agent,
+        to_agent_id=to_agent,
         to_role=args.to_role,
-        kind=args.kind,
+        kind=args.kind or "clarification",
         subject=args.subject,
         body_markdown=_body_text(args),
+        in_reply_to=args.in_reply_to,
+        delegation_brief=args.delegation_brief,
         auto_basis_refs=not bool(args.no_auto_basis_refs),
     )
 
@@ -478,6 +507,11 @@ def _worktree(root: Path, args: argparse.Namespace) -> dict[str, Any]:
 def _json(data: dict[str, Any], code: int) -> int:
     print(json.dumps(data, sort_keys=True))
     return code
+
+
+def _json_status(data: dict[str, Any]) -> int:
+    print(json.dumps(data, sort_keys=True))
+    return 1 if data.get("status") in {"rework_required", "blocked", "failed"} else 0
 
 
 def _json_pair(pair: tuple[dict[str, Any], int]) -> int:
@@ -520,6 +554,7 @@ def _parser() -> argparse.ArgumentParser:
     _spawn_command(sub)
     _comm_send_command(sub)
     _comm_inbox_command(sub)
+    _comm_peers_command(sub)
     _task_command(sub, "status")
     _oracle_command(sub)
     _pr_command(sub)
@@ -615,19 +650,23 @@ def _spawn_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser.add_argument("--reviewer-id")
     parser.add_argument("--profile", choices=["default", "measurement"], default="default")
     parser.add_argument("--comm", action="store_true")
+    parser.add_argument("--brief", default="")
 
 
 def _comm_send_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser = sub.add_parser("comm-send")
     parser.add_argument("task_id")
     parser.add_argument("--from-agent")
-    parser.add_argument("--to-agent", required=True)
-    parser.add_argument("--to-role", choices=["writer", "reviewer", "integrator"], required=True)
-    parser.add_argument("--kind", choices=sorted(ALLOWED_INTENTS), required=True)
+    parser.add_argument("--to")
+    parser.add_argument("--to-agent")
+    parser.add_argument("--to-role", choices=["writer", "reviewer", "integrator"])
+    parser.add_argument("--kind", choices=sorted(ALLOWED_INTENTS))
     parser.add_argument("--subject", required=True)
     body = parser.add_mutually_exclusive_group(required=True)
     body.add_argument("--body")
     body.add_argument("--body-file")
+    parser.add_argument("--in-reply-to")
+    parser.add_argument("--delegation-brief")
     parser.add_argument("--no-auto-basis-refs", action="store_true")
 
 
@@ -635,6 +674,11 @@ def _comm_inbox_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser = sub.add_parser("comm-inbox")
     parser.add_argument("task_id")
     parser.add_argument("--agent-id")
+
+
+def _comm_peers_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("comm-peers")
+    parser.add_argument("task_id")
 
 
 def _oracle_command(sub: argparse._SubParsersAction[Any]) -> None:

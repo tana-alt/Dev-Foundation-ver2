@@ -84,6 +84,22 @@ def _review_health(
     settings = review_settings(root)
     reviewers = [str(reviewer) for reviewer in settings["reviewers"]]
     quorum = int(settings["quorum"])
+    _check_review_settings(settings, reviewers, quorum, warnings)
+    for reviewer_id in reviewers:
+        _check_reviewer_profile(root, reviewer_id, warnings, missing_paths)
+    return {
+        "background_auto_run": bool(settings["background_auto_run"]),
+        "quorum": quorum,
+        "reviewers": reviewers,
+    }
+
+
+def _check_review_settings(
+    settings: dict[str, Any],
+    reviewers: list[str],
+    quorum: int,
+    warnings: list[dict[str, str]],
+) -> None:
     if quorum > len(reviewers):
         warnings.append(
             {
@@ -98,48 +114,45 @@ def _review_health(
                 "reason": "manual reviewer runs required",
             }
         )
-    for reviewer_id in reviewers:
-        profile = review_profile(root, reviewer_id)
-        if profile is None and reviewer_id not in _BUILT_IN_REVIEWERS:
-            warnings.append(
-                {
-                    "source": f"reviewer {reviewer_id}",
-                    "reason": "unknown reviewer profile",
-                }
-            )
-            continue
-        if not isinstance(profile, dict) or profile.get("kind") != "command":
-            continue
-        command = profile.get("command")
-        if not isinstance(command, list) or not command:
-            warnings.append(
-                {
-                    "source": f"reviewer {reviewer_id} command",
-                    "reason": "missing command",
-                }
-            )
-            continue
-        rendered = [_render_review_token(root, str(part)) for part in command]
-        executable = rendered[0]
-        if "/" not in executable and shutil.which(executable) is None:
-            warnings.append(
-                {
-                    "source": f"reviewer {reviewer_id} command",
-                    "reason": f"executable not found: {executable}",
-                }
-            )
-        for path in _command_paths(rendered):
-            _append_missing(
-                root,
-                missing_paths,
-                f"reviewer {reviewer_id} command",
-                path,
-            )
-    return {
-        "background_auto_run": bool(settings["background_auto_run"]),
-        "quorum": quorum,
-        "reviewers": reviewers,
-    }
+
+
+def _check_reviewer_profile(
+    root: Path,
+    reviewer_id: str,
+    warnings: list[dict[str, str]],
+    missing_paths: list[dict[str, str]],
+) -> None:
+    profile = review_profile(root, reviewer_id)
+    if profile is None and reviewer_id not in _BUILT_IN_REVIEWERS:
+        warnings.append(
+            {
+                "source": f"reviewer {reviewer_id}",
+                "reason": "unknown reviewer profile",
+            }
+        )
+        return
+    if not isinstance(profile, dict) or profile.get("kind") != "command":
+        return
+    command = profile.get("command")
+    if not isinstance(command, list) or not command:
+        warnings.append(
+            {
+                "source": f"reviewer {reviewer_id} command",
+                "reason": "missing command",
+            }
+        )
+        return
+    rendered = [_render_review_token(root, str(part)) for part in command]
+    executable = rendered[0]
+    if "/" not in executable and shutil.which(executable) is None:
+        warnings.append(
+            {
+                "source": f"reviewer {reviewer_id} command",
+                "reason": f"executable not found: {executable}",
+            }
+        )
+    for path in _command_paths(rendered):
+        _append_missing(root, missing_paths, f"reviewer {reviewer_id} command", path)
 
 
 def _render_review_token(root: Path, value: str) -> str:

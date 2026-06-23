@@ -53,8 +53,11 @@ def load_task(root: Path, task_id: str) -> dict[str, Any]:
     if task.get("id") not in (None, task_id):
         raise ConfigError(f"task id mismatch for {task_id}")
     acceptance = task.get("acceptance")
-    if not isinstance(acceptance, dict) or acceptance.get("mode") != "generated":
-        raise ConfigError("acceptance.mode must be generated")
+    if not isinstance(acceptance, dict) or acceptance.get("mode") not in {
+        "generated",
+        "agent_generated",
+    }:
+        raise ConfigError("acceptance.mode must be generated or agent_generated")
     return task
 
 

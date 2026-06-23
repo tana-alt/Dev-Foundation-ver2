@@ -7,6 +7,12 @@ from workflow_core.contract_harness.application.services import (
     candidate_id_from_patch_sha256,
     record_authority_artifact,
 )
+from workflow_core.contract_harness.architecture_gate import (
+    ArchitectureGate,
+    architecture_gate_to_json,
+    canonical_architecture_gate,
+    evaluate_architecture_gate,
+)
 from workflow_core.contract_harness.contract import (
     ensure_prepared,
     load_verifier_plan,
@@ -44,12 +50,22 @@ def verify_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
     impact = scope_impact(paths, lock)
     violations = scope_violations(paths, lock)
     semantic_ok = _semantic_ok(root, task_id, lock)
+    architecture_gate = evaluate_architecture_gate(
+        root,
+        base_sha=str(lock["prepared_base_sha"]),
+        diff_text=diff_text,
+        changed_paths=paths,
+    )
     quality, tool_candidates = write_quality_artifacts(root, task_id, paths, plan)
-    verifiers = run_verifiers(root, plan) if not violations and semantic_ok else []
+    verifiers = (
+        run_verifiers(root, plan)
+        if not violations and semantic_ok and architecture_gate.status != "block"
+        else []
+    )
     verifiers.extend(
         [quality_gate_verifier(quality), tool_candidate_gate_verifier(tool_candidates)]
     )
-    status = "pass" if _passed(violations, semantic_ok, verifiers) else "fail"
+    status = "pass" if _passed(violations, semantic_ok, architecture_gate, verifiers) else "fail"
     result = _result(
         root,
         task_id,
@@ -58,10 +74,16 @@ def verify_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         impact,
         violations,
         semantic_ok,
+        architecture_gate,
         verifiers,
         status,
     )
     write_json(out_dir / "verify-result.json", result)
+    _record_verify_artifacts(root, task_id, result, status)
+    return result, 0 if status == "pass" else 1
+
+
+def _record_verify_artifacts(root: Path, task_id: str, result: dict[str, Any], status: str) -> None:
     record_authority_artifact(
         root,
         task_id,
@@ -89,7 +111,6 @@ def verify_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         },
         candidate_id=result["candidate_id"],
     )
-    return result, 0 if status == "pass" else 1
 
 
 def recompute_machine_evidence(verify_result: dict[str, Any]) -> str:
@@ -100,6 +121,7 @@ def recompute_machine_evidence(verify_result: dict[str, Any]) -> str:
         candidate_diff_sha256=str(verify_result["candidate_diff_sha256"]),
         contract_semantic_sha256=str(verify_result["contract_semantic_sha256"]),
         scope_violation_count=int(scope.get("violation_count", 0)),
+        architecture_gate=canonical_architecture_gate(verify_result.get("architecture_gate")),
         verifiers=[item for item in verify_result.get("verifiers", []) if isinstance(item, dict)],
     )
 
@@ -112,9 +134,17 @@ def _semantic_ok(root: Path, task_id: str, lock: dict[str, Any]) -> bool:
 
 
 def _passed(
-    violations: list[dict[str, str]], semantic_ok: bool, verifiers: list[dict[str, Any]]
+    violations: list[dict[str, str]],
+    semantic_ok: bool,
+    architecture_gate: ArchitectureGate,
+    verifiers: list[dict[str, Any]],
 ) -> bool:
-    return not violations and semantic_ok and all_passed(verifiers)
+    return (
+        not violations
+        and semantic_ok
+        and architecture_gate.status != "block"
+        and all_passed(verifiers)
+    )
 
 
 def _result(
@@ -125,6 +155,7 @@ def _result(
     impact: ImpactResult,
     violations: list[dict[str, str]],
     semantic_ok: bool,
+    architecture_gate: ArchitectureGate,
     verifiers: list[dict[str, Any]],
     status: str,
 ) -> dict[str, Any]:
@@ -146,6 +177,7 @@ def _result(
             ),
         },
         "impact_result": impact.model_dump(mode="json"),
+        "architecture_gate": architecture_gate_to_json(architecture_gate),
         "contract": {"semantic_reproducible": semantic_ok, "unapproved_change": not semantic_ok},
         "verifiers": verifiers,
         **machine_artifact_hashes(root, task_id),
