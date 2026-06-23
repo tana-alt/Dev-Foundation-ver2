@@ -104,7 +104,7 @@ FOUNDATION_AGENT_ID=<from_agent_id> HARNESS_ROLE=<from_role> \
 ```
 
 Strict daemon mode uses the same channel through ACP. Use the provided session
-environment; admin authority material is outside normal agent work.
+environment; admin actions are outside normal agent work.
 
 ```sh
 ./harness daemon run --foreground
@@ -196,13 +196,13 @@ or the task truly needs separate write lanes.
 
 Classify side effects before acting: local read, local write, external read,
 external write, dependency/tooling change, deploy/release/infra change,
-auth-material action, destructive or irreversible action.
+protected action, destructive or irreversible action.
 
 Human approval is required before release/deployment, CI/CD or infrastructure
-changes, dependency changes, auth-material handling, protected data or billing
-behavior, database migrations or schema changes, branch/worktree deletion,
-external writes outside the owned review branch or PR, public release, and
-destructive or irreversible/protected actions.
+changes, dependency changes, protected authority handling, protected data or
+billing behavior, database migrations or schema changes, branch/worktree
+deletion, external writes outside the owned review branch or PR, public release,
+and destructive or irreversible/protected actions.
 
 Do not use human-gate language for ordinary local implementation, local tests,
 or reversible local edits.
