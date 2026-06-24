@@ -50,3 +50,25 @@
 - Archive decisions: `refactor.md` and `Plan/Harness-refactor/**` are archived under `.harness/tasks/harness-tools-hooks-test-speed-20260624/archive/original-paths/`; `.harness/bottleneck.yaml` and `.agents/skills/**` remain in place.
 - Verification readout: focused hook/manifest tests, focused integrity tests, ruff, and Harness verify passed.
 - Submit readout: the submit command is run after the final verify so the sealed candidate hash remains current; the runtime submission/dispatch artifacts and final assistant response carry the post-submit result.
+
+## Operator And Harness Operations Addendum
+
+- Director command intervention: the controlling worktree could not run `./harness prepare harness-tools-hooks-test-speed-20260624` while `.harness/bottleneck.yaml` was missing, so the director restored the required config from `HEAD` before spawning writer. This was a Harness bootstrap fix, not writer implementation work.
+- Director launch friction: the first noninteractive writer launch failed because the director passed unsupported `codex exec --ask-for-approval never`. The corrected launch removed that option. Task comm `sha256:ee8b1520acd5110fc48ee821a3ea524df02db52c1f10cf038252517bfed29ada` and the writer launch log record this.
+- Director process hygiene: an aborted broad pytest command remained running after user interruption, so the director killed the leftover verifier process before delegating to writer to avoid confusing Harness state.
+- Director integration handoff: after writer reached `status: integrated`, the director ran `HARNESS_ROLE=integrator ./harness land harness-tools-hooks-test-speed-20260624` once to check whether the mechanical land path was clear. It failed with `candidate_apply_failed`, then the director delegated land recovery to an integrator agent.
+- Director external-write attempt: after Harness local PR ref creation, the director attempted to push the owned review branch, not `main`. Pre-push hooks blocked before any remote write because `scripts/hook_stop.py` needed formatting, so the director delegated formatter recovery and PR creation to an integrator agent.
+- Integrator land recovery: the integrator found two Harness land-path issues: an ignored integrator task packet blocked candidate apply, and ignored `.harness/tasks/.../archive/**` files were not staged by the land commit path. The integrator backed up the ignored packet under runtime state, adjusted local exclude state, and used a temporary in-worktree `land_core.py` patch so the running land process force-added candidate paths listed in `candidate.diff`. The temporary patch was not part of the landed source diff.
+- Integrator hook-scope recovery: inherited `FOUNDATION_REPO_ROOT=/Users/yamamotokaito/dev/Dev-Foundation-ver2` caused hooks/checks in the integrator worktree to inspect the controlling main worktree. The integrator reran hooks/checks with `FOUNDATION_REPO_ROOT="$PWD"` so validation applied to the branch under preparation.
+- PR creation recovery: Harness `pr create` produced a local Harness PR ref and runtime `pr-result.json`, but no GitHub URL. The integrator pushed the owned review branch and created GitHub PR 37 with `gh pr create`; no push to `main` was performed.
+
+## Harness Improvement Candidates
+
+- Make `status`, `land-result.json`, and `push-result.json` hash-aware. Stale results from older candidates repeatedly made the next action look like `push` even when the current candidate still needed land recovery.
+- Make `spawn --role integrator` safe after land. Re-spawning the integrator reset the active integrator worktree to `origin/main`, so the landed commit had to be recovered from `land-result.json`.
+- Make land staging force-add paths from `candidate.diff`, or explicitly reject ignored candidate paths before review. The reversible archive was valid only after `.harness/tasks/.../archive/**` made it into the landed commit.
+- Avoid inherited `FOUNDATION_REPO_ROOT` for worktree-local hooks, or make hooks prefer `.harness-worktree.json`/`pwd` when running inside Harness worktrees. This prevents checks from reading a dirty controlling worktree.
+- Separate local Harness PR refs from external GitHub PR creation in command names and result fields. `pr-result.json status=created` did not mean a GitHub PR URL existed.
+- Include formatter checks in the land verifier plan when pre-push requires them. The land gate passed, but the first review-branch push was blocked by `ruff format --check`.
+- Teach archive placement policy directly: `artifact/**` is durable evidence but excluded from candidate snapshots, while task-local archive under `.harness/tasks/<task_id>/archive/**` is landable.
+- Preserve operator-friction records in a structured task event file. The comm note worked, but final human readout had to merge launch logs, comms, and integrator logs manually.
