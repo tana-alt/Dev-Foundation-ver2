@@ -21,3 +21,29 @@ scopes:
       - "**/*token*"
       - "**/*.pem"
       - "**/*.key"
+  harness-tools-hooks-test-speed:
+    allowed_paths:
+      - .harness/owners.yaml
+      - .harness/tasks/harness-tools-hooks-test-speed-20260624/evidence.md
+      - .harness/tasks/harness-tools-hooks-test-speed-20260624/task.yaml
+      - .harness/verifiers.yaml
+      - .harness/tasks/harness-tools-hooks-test-speed-20260624/archive/**
+      - docs/reference/verification-ci-and-pr-reference.md
+      - Makefile
+      - Plan/Harness-refactor/**
+      - pyproject.toml
+      - refactor.md
+      - scripts/hook_post_tool_use.py
+      - scripts/hook_stop.py
+      - src/workflow_core/contract_harness/**
+      - tests/**
+      - uv.lock
+    forbidden_paths:
+      - harness-runtime/**
+      - .harness/state/**
+      - .serena/**
+      - "**/*secret*"
+      - "**/*credential*"
+      - "**/*token*"
+      - "**/*.pem"
+      - "**/*.key"

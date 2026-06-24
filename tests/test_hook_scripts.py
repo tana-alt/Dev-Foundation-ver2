@@ -23,7 +23,13 @@ _SCRIPTS = _REPO / "scripts"
 
 def _env(**overrides: str) -> dict[str, str]:
     """Merge os.environ with overrides so scripts can find the venv / python paths."""
-    return {**os.environ, **overrides}
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("FOUNDATION_") and key != "HARNESS_RUNTIME_ROOT"
+    }
+    env.update(overrides)
+    return env
 
 
 def _load_hook_stop() -> ModuleType:
@@ -108,7 +114,12 @@ def test_hook_post_tool_use_infers_repo_and_task_from_harness_worktree(
         capture_output=True,
         text=True,
         timeout=30,
-        env=_env(HARNESS_ROLE="writer"),
+        env=_env(
+            FOUNDATION_REPO_ROOT=str(tmp_path),
+            FOUNDATION_PROJECT_ID="wrong-inherited-project",
+            FOUNDATION_TASK_ID="wrong-inherited-task",
+            HARNESS_ROLE="writer",
+        ),
     )
 
     assert result.returncode == 0, f"stderr: {result.stderr}"
@@ -180,7 +191,12 @@ def test_hook_post_tool_use_in_linked_worktree_writes_to_canonical_artifact_root
         capture_output=True,
         text=True,
         timeout=30,
-        env=_env(HARNESS_ROLE="writer"),
+        env=_env(
+            FOUNDATION_REPO_ROOT=str(repo),
+            FOUNDATION_PROJECT_ID="wrong-inherited-project",
+            FOUNDATION_TASK_ID="wrong-inherited-task",
+            HARNESS_ROLE="writer",
+        ),
     )
 
     assert result.returncode == 0, f"stderr: {result.stderr}"
@@ -418,11 +434,11 @@ def test_hook_stop_infers_repo_and_task_from_linked_writer_worktree(
         encoding="utf-8",
     )
     harness.chmod(0o755)
-    env = _env()
-    for key in list(env):
-        if key.startswith("FOUNDATION_") or key == "HARNESS_RUNTIME_ROOT":
-            env.pop(key, None)
-
+    env = _env(
+        FOUNDATION_REPO_ROOT=str(repo),
+        FOUNDATION_PROJECT_ID="wrong-inherited-project",
+        FOUNDATION_TASK_ID="wrong-inherited-task",
+    )
     result = subprocess.run(
         [sys.executable, str(_SCRIPTS / "hook_stop.py")],
         input=json.dumps({}),

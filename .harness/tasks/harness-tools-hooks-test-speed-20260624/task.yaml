@@ -1,0 +1,125 @@
+schema_version: 1
+id: harness-tools-hooks-test-speed-20260624
+task_id: harness-tools-hooks-test-speed-20260624
+scope: harness-tools-hooks-test-speed
+base: main
+goal:
+  summary: >
+    Optimize Contract Harness role tool manifests, lifecycle hook context,
+    dead code, and pytest runtime so default CI pytest stays below 5 minutes.
+  done_when:
+    - Writer default tool manifests contain only hot-path implementation tools.
+    - Coordination and measurement tools remain available through explicit optional profiles.
+    - Hook context chooses task-scoped marker identity before inherited global env.
+    - Stop hook no longer evaluates unused plan-gate context before submitted-work dispatch.
+    - Default pytest keeps full coverage and completes below 5 minutes through parallel execution.
+    - HARNESS_ROLE=writer ./harness verify harness-tools-hooks-test-speed-20260624 passes.
+intent:
+  kind: implementation
+  summary: Reduce context size and pytest wall time without weakening forbidden paths or runtime/auth material handling.
+architecture:
+  summary: >
+    Keep the Contract Harness hot path lean by separating writer implementation
+    tools from optional coordination/measurement tools, making hook task
+    identity marker-first, and classifying long-running harness integration
+    tests through pytest-xdist parallel execution.
+  components:
+    - id: ROLE-TOOLS
+      responsibility: Defines default and optional role tool manifests.
+      primary_paths:
+        - src/workflow_core/contract_harness/agent_tools.py
+    - id: LIFECYCLE-HOOKS
+      responsibility: Records lifecycle observations without blocking or leaking inherited task context.
+      primary_paths:
+        - scripts/hook_post_tool_use.py
+        - scripts/hook_stop.py
+    - id: PYTEST-SPEED
+      responsibility: Keeps default pytest under the CI budget while preserving full coverage.
+      primary_paths:
+        - pyproject.toml
+        - uv.lock
+        - Makefile
+        - docs/reference/verification-ci-and-pr-reference.md
+    - id: ARCHIVE
+      responsibility: Reversibly moves stale refactor planning records into one task archive.
+      primary_paths:
+        - .harness/tasks/harness-tools-hooks-test-speed-20260624/archive/**
+        - Plan/Harness-refactor/**
+        - refactor.md
+scope_contract:
+  allowed_paths:
+    - .harness/owners.yaml
+    - .harness/tasks/harness-tools-hooks-test-speed-20260624/evidence.md
+    - .harness/tasks/harness-tools-hooks-test-speed-20260624/task.yaml
+    - .harness/verifiers.yaml
+    - .harness/tasks/harness-tools-hooks-test-speed-20260624/archive/**
+    - docs/reference/verification-ci-and-pr-reference.md
+    - Makefile
+    - Plan/Harness-refactor/**
+    - pyproject.toml
+    - refactor.md
+    - scripts/hook_post_tool_use.py
+    - scripts/hook_stop.py
+    - src/workflow_core/contract_harness/**
+    - tests/**
+    - uv.lock
+  allowed_paths_semantics:
+    hard_gate: false
+    meaning: expected impact area for this speed and harness-context task
+  forbidden_paths:
+    - harness-runtime/**
+    - .harness/state/**
+    - .serena/**
+    - "**/*secret*"
+    - "**/*credential*"
+    - "**/*token*"
+    - "**/*.pem"
+    - "**/*.key"
+  forbidden_paths_semantics:
+    hard_gate: true
+    meaning: runtime state and auth material remain blocked
+protected_invariants:
+  - id: INV-RUNTIME-AUTH-NOT-TRACKED
+    statement: Runtime queues, hook observations, daemon auth, and credentials must not be tracked.
+  - id: INV-ROLE-BOUNDARIES-PRESERVED
+    statement: Writer manifests must not expose reviewer or integrator authority tools.
+  - id: INV-HOOKS-FAIL-OPEN
+    statement: Lifecycle hooks remain observational and fail open for environment failures.
+  - id: INV-COVERAGE-PRESERVED
+    statement: Default pytest must keep full test coverage rather than deselecting long-running harness paths.
+acceptance:
+  mode: generated
+  criteria:
+    - id: ACCEPT-WRITER-HOT-PATH-TOOLS
+      claim: Writer default tools are limited to scope-map-forward, explain, context-audit, verify, and submit.
+    - id: ACCEPT-OPTIONAL-TOOLS
+      claim: Writer coordination and measurement tools remain discoverable with explicit profiles.
+    - id: ACCEPT-HOOK-MARKER-FIRST
+      claim: Hook scripts prefer .harness-worktree.json task identity over inherited FOUNDATION_TASK_ID/PROJECT_ID.
+    - id: ACCEPT-DEFAULT-PYTEST-UNDER-BUDGET
+      claim: uv run pytest -q completes all tests within 300 seconds in this worktree.
+adversarial_acceptance:
+  - input: Global FOUNDATION_TASK_ID differs from the linked writer worktree marker.
+    expected: Hook artifacts are written under the marker task id.
+  - input: Writer asks for default tools.
+    expected: Integration and optional coordination tools are absent from the default manifest.
+  - input: Maintainer runs default pytest.
+    expected: Full coverage runs in parallel without deselecting long-running tests.
+expected_evidence:
+  required:
+    - id: EVIDENCE-BASELINE
+      description: Baseline pytest exceeded 5 minutes before changes.
+    - id: EVIDENCE-HOOKS-MANIFESTS
+      description: Focused pytest for hook and role manifest behavior.
+    - id: EVIDENCE-PYTEST-SPEED
+      description: Default uv run pytest -q completes under 300 seconds.
+    - id: EVIDENCE-HARNESS-VERIFY
+      description: Required harness verify command passes.
+review_request:
+  architecture_review:
+    ask: Confirm optional profile split and parallel pytest execution preserve the role, hook, and coverage invariants.
+  code_review:
+    ask: Confirm marker-first hook context, dead-code removal, manifest membership, and verifier evidence are correct.
+allowed_outputs:
+  - source_diff
+  - evidence_note

@@ -36,6 +36,8 @@ def run_harness(
     env = {**os.environ, **(extra_env or {})}
     if role:
         env["HARNESS_ROLE"] = role
+    else:
+        env.pop("HARNESS_ROLE", None)
     return subprocess.run(
         [str(HARNESS), *args],
         cwd=repo,
@@ -491,16 +493,8 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "scope-map-forward",
         "explain",
         "context-audit",
-        "status",
-        "passport",
-        "comm-peers",
-        "comm-send",
-        "comm-inbox",
-        "spawn-writer",
         "verify",
         "submit",
-        "report-rfc",
-        "report-metric",
     }
     assert {
         "nfr-metric",
@@ -527,6 +521,28 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
     skill_groups = load_runtime_json(repo, "agent-skills.json")
     assert "security-check" in skill_names(skill_groups["reviewer"])
     assert "implementation-slice-verification" in skill_names(skill_groups["integrator"])
+
+    coordination = run_harness(
+        repo,
+        "tools",
+        TASK_ID,
+        "--role",
+        "writer",
+        "--profile",
+        "coordination",
+    )
+    assert coordination.returncode == 0, coordination.stdout + coordination.stderr
+    coordination_names = tool_names(json.loads(coordination.stdout)["tools"])
+    assert {
+        "status",
+        "passport",
+        "comm-peers",
+        "comm-send",
+        "comm-inbox",
+        "spawn-writer",
+        "report-rfc",
+        "report-metric",
+    } == coordination_names
 
     optional = run_harness(repo, "tools", TASK_ID, "--role", "writer", "--profile", "measurement")
     assert optional.returncode == 0, optional.stdout + optional.stderr
@@ -631,7 +647,7 @@ def test_explain_lists_agent_tools(tmp_path: Path) -> None:
     assert "writer tools:" in explained.stdout
     assert "writer skills:" in explained.stdout
     assert "scope-map-forward" in explained.stdout
-    assert "report-rfc" in explained.stdout
+    assert "report-rfc" not in explained.stdout
     assert "nfr-metric" not in explained.stdout
     assert "tdd-scope" in explained.stdout
 
@@ -3884,7 +3900,7 @@ def test_review_quorum_stale_malformed_and_gate_success(tmp_path: Path) -> None:
     assert gate_result["metrics"]["skill_usage_rate"] == 0.0
     exposure = gate_result["metrics"]["packet_exposure"]
     assert exposure["status"] == "present"
-    assert exposure["roles"]["writer"]["tool_count"] >= 6
+    assert exposure["roles"]["writer"]["tool_count"] == 5
     assert exposure["roles"]["writer"]["skill_count"] >= 3
     assert exposure["roles"]["reviewer"]["tool_count"] >= 2
     assert exposure["roles"]["integrator"]["tool_count"] >= 8

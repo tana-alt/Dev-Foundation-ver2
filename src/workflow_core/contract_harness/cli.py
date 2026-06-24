@@ -695,7 +695,11 @@ def _tools_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser.add_argument(
         "--role", choices=["writer", "reviewer", "integrator", "all"], default="all"
     )
-    parser.add_argument("--profile", choices=["default", "measurement"], default="default")
+    parser.add_argument(
+        "--profile",
+        choices=["default", "measurement", "coordination"],
+        default="default",
+    )
 
 
 def _launch_writer_command(sub: argparse._SubParsersAction[Any]) -> None:
@@ -712,7 +716,11 @@ def _spawn_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser.add_argument("--agent", choices=["codex", "claude", "custom"], required=True)
     parser.add_argument("--agent-command", default="codex --yolo")
     parser.add_argument("--reviewer-id")
-    parser.add_argument("--profile", choices=["default", "measurement"], default="default")
+    parser.add_argument(
+        "--profile",
+        choices=["default", "measurement", "coordination"],
+        default="default",
+    )
     parser.add_argument("--comm", action="store_true")
     parser.add_argument("--brief", default="")
 
