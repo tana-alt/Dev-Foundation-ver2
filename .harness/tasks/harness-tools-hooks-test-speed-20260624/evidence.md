@@ -72,3 +72,79 @@
 - Include formatter checks in the land verifier plan when pre-push requires them. The land gate passed, but the first review-branch push was blocked by `ruff format --check`.
 - Teach archive placement policy directly: `artifact/**` is durable evidence but excluded from candidate snapshots, while task-local archive under `.harness/tasks/<task_id>/archive/**` is landable.
 - Preserve operator-friction records in a structured task event file. The comm note worked, but final human readout had to merge launch logs, comms, and integrator logs manually.
+
+## Post-Review Gate Rework Addendum
+
+- Architecture Judge: review pass, mechanical verification, PR creation, PR
+  checks, and land are separate phases. After post-review gate passes, Harness
+  must recommend PR creation/checks before land rather than treating the
+  candidate as directly landable.
+- Coding Judge: `pr create` now reruns post-review gate against current review,
+  candidate, gate, and authority evidence. Existing
+  `post-review-gate-result.json` is not sufficient authority by itself.
+- Aggressive review result: stale or forged runtime artifacts were the main
+  bypass risk. Strict outbox PR recovery now validates `pr-result.json` against
+  StateStore `PR_CREATED`, ref head, candidate id, base sha, and candidate diff
+  hash before accepting recovered success.
+- Hook/root note: local PR creation now commits on an owned
+  `agent/<task_id>/integrator/pr-<candidate_id>` branch instead of detached
+  HEAD so worktree-local hooks can enforce branch ownership.
+- Remaining gap: `harness pr create` is still local Harness PR-ref creation,
+  not external GitHub PR creation. That command semantics split remains a
+  separate follow-up.
+
+## External PR Mechanization Addendum
+
+- Design correction: the main risk of leaving PR creation outside Harness is
+  worktree isolation. If changes remain only in a task worktree, later agents
+  can stack unrelated changes on top and create avoidable conflict pressure.
+- Implemented direction: `harness pr create` now succeeds only after preparing
+  the local Harness PR ref, pushing an owned PR branch, and creating or reusing
+  a GitHub PR through `gh`.
+- Compatibility judgment: the local Harness PR ref remains as the internal
+  pre-land verification surface for `pr checks` and `land`; it is no longer the
+  whole meaning of `pr create`.
+- Testability: local tests use a bare git remote for the actual branch push and
+  a fake `gh` binary configured through repo-local `harness.ghBin` plus
+  `harness.githubRepository`.
+- Authority note: `PR_CREATED` now records the GitHub PR URL/number,
+  repository, and remote branch in StateStore. Outbox recovery accepts
+  `pr-result.json` only when the GitHub URL, local ref, ref head, base sha,
+  candidate id, and candidate diff hash still match authority.
+- Validation: `uv run pytest -q` passed with 616 tests in 334.04 seconds.
+  Runtime exceeded five minutes, which is acceptable under the updated human
+  premise that CI under five minutes is useful but not a hard blocker.
+
+## CI Reconciliation Addendum
+
+- GitHub Actions found one stricter machine gate that local focused checks had
+  not run: `make check-foundation` executes `uv run mypy` before pytest.
+- Coding Judge: the fallback-without-PyYAML hook test now gives
+  `monkeypatch` and the `__import__` shim precise types. This preserves the
+  same runtime behavior while satisfying the required CI type gate.
+- Architecture Judge: task-local `evidence.md` is now treated like
+  task-local `task.yaml` in repo hygiene when `.harness/` is locally ignored.
+  This aligns the user-requested evidence placement with the existing
+  tracked-control-plane exception model.
+- Validation: `make check-foundation` passed locally after the reconciliation:
+  ruff format/check, mypy, shell syntax/static checks, repo hygiene, secret
+  scan, 616-test full pytest suite, Harness architecture/state/strict checks,
+  and CD readiness.
+
+## Strict Daemon Stability Addendum
+
+- GitHub Actions push-event CI exposed a daemon stability race that the
+  pull-request event and local focused checks did not hit on the first pass:
+  malformed JSON returned a structured error, but a client closing after a
+  partial read could turn the response newline write into `BrokenPipe` and
+  terminate the foreground daemon.
+- Architecture Judge: ACP-only operation depends on daemon survival across
+  bad or truncated client messages. A malformed single connection must be a
+  request-level failure, not a daemon-level failure.
+- Coding Judge: the daemon now writes the response plus newline in one
+  `sendall` and treats `BrokenPipeError`/`ConnectionResetError` as
+  connection-scoped failures inside the accept loop.
+- Validation: `uv run pytest -q
+  tests/workflow_core/contract_harness/test_strict_daemon_protocol.py -q`
+  passed, `uv run pytest -q tests/workflow_core/contract_harness -k strict -q`
+  passed, and `make check-foundation` passed again after the daemon fix.

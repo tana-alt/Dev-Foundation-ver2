@@ -1,9 +1,8 @@
 default:
-  quorum: 3
+  quorum: 2
   reviewers:
     - reader-correctness
     - reader-scope
-    - semantic-ai
   background_auto_run: true
   blocking_labels:
     - forbidden_path
@@ -19,9 +18,48 @@ default:
     - policy_weakening
     - gate_gaming
     - operation_protocol_leak
+modes:
+  normal:
+    quorum: 2
+    reviewers:
+      - semantic-ai
+      - aggressive-ai
+    background_auto_run: false
+  arch:
+    quorum: 1
+    reviewers:
+      - architecture-ai
+    background_auto_run: false
+  full:
+    quorum: 3
+    reviewers:
+      - semantic-ai
+      - aggressive-ai
+      - architecture-ai
+    background_auto_run: false
 profiles:
   semantic-ai:
     kind: command
+    ai_kind: semantic
+    mode: normal
+    command:
+      - python3
+      - "{repo_root}/.harness/semantic_ai_reviewer.py"
+      - "{review_packet}"
+      - "{review_output}"
+  aggressive-ai:
+    kind: command
+    ai_kind: aggressive
+    mode: normal
+    command:
+      - python3
+      - "{repo_root}/.harness/semantic_ai_reviewer.py"
+      - "{review_packet}"
+      - "{review_output}"
+  architecture-ai:
+    kind: command
+    ai_kind: architecture
+    mode: arch
     command:
       - python3
       - "{repo_root}/.harness/semantic_ai_reviewer.py"

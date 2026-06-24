@@ -40,7 +40,7 @@ from workflow_core.contract_harness.worktree import resolve_candidate_workspace
 from workflow_core.metrics_store import MetricsStore
 
 
-def gate_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
+def gate_task(root: Path, task_id: str, *, auto_review: bool = True) -> tuple[dict[str, Any], int]:
     base = _base_result(root, task_id)
     workspace = Path(str(base.get("candidate_workspace", {}).get("path", root)))
     if base["reason"] != "ok":
@@ -49,23 +49,27 @@ def gate_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         base = _with_completion(root, task_id, base, workspace)
     if base["reason"] == "ok":
         before_review = head_sha(workspace)
-        try:
-            _auto_review(root, task_id)
-        except ReviewRunnerError as exc:
-            base["review"] = {
-                "failed_reviewer": exc.reviewer_id,
-                "run_result": exc.result,
-            }
-            base["reason"] = f"reviewer_failed:{exc.reviewer_id}"
-            base["metrics"] = _metrics(root, task_id)
-            base = _apply_metrics_policy(root, base)
-            base["mergeable"] = False
-            write_json(task_dir(root, task_id) / "gate-result.json", base)
-            _record_gate(root, task_id, base)
-            return base, 1
-        after_review = head_sha(workspace)
-        if before_review != after_review:
-            base["reason"] = "reviewer_head_changed"
+        if auto_review:
+            try:
+                _auto_review(root, task_id)
+            except ReviewRunnerError as exc:
+                base["review"] = {
+                    "failed_reviewer": exc.reviewer_id,
+                    "run_result": exc.result,
+                }
+                base["reason"] = f"reviewer_failed:{exc.reviewer_id}"
+                base["metrics"] = _metrics(root, task_id)
+                base = _apply_metrics_policy(root, base)
+                base["mergeable"] = False
+                write_json(task_dir(root, task_id) / "gate-result.json", base)
+                _record_gate(root, task_id, base)
+                return base, 1
+            after_review = head_sha(workspace)
+            if before_review != after_review:
+                base["reason"] = "reviewer_head_changed"
+            else:
+                base["review"] = collect(root, task_id)
+                base["reason"] = _review_reason(base["review"])
         else:
             base["review"] = collect(root, task_id)
             base["reason"] = _review_reason(base["review"])
@@ -351,17 +355,13 @@ def _packet_exposure(root: Path, task_id: str) -> dict[str, Any]:
     out_dir = task_dir(root, task_id)
     try:
         tools = read_json(out_dir / "agent-tools.json")
-        skills = read_json(out_dir / "agent-skills.json")
     except (OSError, ValueError):
         return {"status": "absent", "roles": {}}
     roles: dict[str, dict[str, Any]] = {}
     for role in ("writer", "reviewer", "integrator"):
         role_tools = [item for item in tools.get(role, []) if isinstance(item, dict)]
-        role_skills = [item for item in skills.get(role, []) if isinstance(item, dict)]
         roles[role] = {
             "tool_count": len(role_tools),
-            "skill_count": len(role_skills),
             "tools": [str(item.get("name", "")) for item in role_tools],
-            "skills": [str(item.get("name", "")) for item in role_skills],
         }
     return {"status": "present", "roles": roles}

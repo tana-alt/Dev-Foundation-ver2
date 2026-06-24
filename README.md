@@ -114,11 +114,23 @@ Architecture:
 - Reviewer freshness is evidence-hash based. If diff, verifier output, quality
   evidence, scope map, metrics, mutation output, or reviewer-consumed artifacts
   change, stale reviewer lanes must be rerun instead of reusing old verdicts.
-- Policy controls external writes. Land and push use integrator authority and
-  write rescue, lock, sync, and result evidence where configured.
+- Rework is evidence-backed, not an implicit session transfer. Stale
+  submissions, reviewer subprocess failures, block verdicts, quorum failures,
+  completion failures, and land-gate failures write `rework_required` evidence.
+  `status` then points the next action back to writer rework.
+- Policy controls external writes. The tracked policy currently keeps
+  `origin/main` push in `dry_run`, so `push` records `protected_external_write`
+  without touching the remote. With explicit `mode: enabled`, `push` creates a
+  rescue ref, acquires/releases a remote lock, updates `refs/heads/main`, writes
+  `push-result.json`, and attempts to sync local `main` to the pushed SHA.
 
 An `integrated` result means gated and ready to land; it does not mean merged
 into the target branch. A `landed` result means the local land step completed.
+A complete enabled happy path has `dispatch.status=integrated`,
+`land.status=landed`, `push.status=pushed`, `sync.status=local_synced`, and
+local `main`, `origin/main`, `remote_sha_after`, and `landed_commit` all at the
+same SHA. If remote push succeeds but local sync cannot fast-forward, the remote
+is already updated and `push` exits nonzero with `reason: local_sync_required`.
 Rework is a normal workflow result: the writer should receive the evidence and
 continue unless the task is irreversible, policy-violating, or looping without
 progress.

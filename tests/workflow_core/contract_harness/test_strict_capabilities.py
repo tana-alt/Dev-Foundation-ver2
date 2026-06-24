@@ -36,11 +36,14 @@ def test_strict_writer_cannot_gate(harness_repo: Path) -> None:
     try:
         writer = create_session(harness_repo, "writer", agent_id="writer.codex.T-0001")
 
-        completed = strict_cli(harness_repo, "gate", TASK_ID, session=writer)
-
-        assert completed.returncode == 1
-        response = json.loads(completed.stdout)
-        assert response["error"]["code"] == "forbidden"
+        for args in [
+            ("gate", TASK_ID),
+            ("post-review-gate", TASK_ID),
+        ]:
+            completed = strict_cli(harness_repo, *args, session=writer)
+            assert completed.returncode == 1
+            response = json.loads(completed.stdout)
+            assert response["error"]["code"] == "forbidden"
     finally:
         daemon.stop()
 
@@ -106,6 +109,7 @@ def test_strict_reviewer_cannot_submit_gate_or_complete(harness_repo: Path) -> N
         for args in [
             ("submit", TASK_ID),
             ("gate", TASK_ID),
+            ("post-review-gate", TASK_ID),
             ("complete", TASK_ID),
         ]:
             completed = strict_cli(harness_repo, *args, session=reviewer)

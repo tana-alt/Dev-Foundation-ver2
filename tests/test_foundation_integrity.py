@@ -786,6 +786,7 @@ def test_repo_hygiene_behavior(tmp_path: Path) -> None:
         ".harness/policy.yaml",
         ".harness/review.yaml",
         ".harness/verifiers.yaml",
+        ".harness/tasks/example/evidence.md",
         ".harness/tasks/example/task.yaml",
     ):
         (harness_metadata_repo / relative_path).write_text("version: 1\n", encoding="utf-8")
@@ -801,6 +802,7 @@ def test_repo_hygiene_behavior(tmp_path: Path) -> None:
             ".harness/policy.yaml",
             ".harness/review.yaml",
             ".harness/semantic_ai_reviewer.py",
+            ".harness/tasks/example/evidence.md",
             ".harness/tasks/example/task.yaml",
             ".harness/verifiers.yaml",
         ],

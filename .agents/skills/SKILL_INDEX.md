@@ -77,6 +77,58 @@ boundaries.
 - `scope-routing-governance`
 - `spec-authority-governance`
 
+## Harness operation skills
+
+- `harness-acp-communication`
+- `harness-ai-review`
+- `harness-evidence-journal`
+
+## Harness tool-specific skills
+
+- `harness-tool-abrun`
+- `harness-tool-acp-list`
+- `harness-tool-acp-request-action`
+- `harness-tool-acp-send`
+- `harness-tool-affected`
+- `harness-tool-bench-compare`
+- `harness-tool-certify`
+- `harness-tool-check-runner`
+- `harness-tool-comm-inbox`
+- `harness-tool-comm-peers`
+- `harness-tool-comm-send`
+- `harness-tool-compose`
+- `harness-tool-compose-push`
+- `harness-tool-context-audit`
+- `harness-tool-context-scope-check`
+- `harness-tool-dispatch`
+- `harness-tool-explain`
+- `harness-tool-gate`
+- `harness-tool-integrate`
+- `harness-tool-issue-create`
+- `harness-tool-land`
+- `harness-tool-lane-map-check`
+- `harness-tool-measure-eval`
+- `harness-tool-nfr-metric`
+- `harness-tool-oracle`
+- `harness-tool-passport`
+- `harness-tool-post-tool-use-hook`
+- `harness-tool-post-review-gate`
+- `harness-tool-pr-checks`
+- `harness-tool-pr-create`
+- `harness-tool-push`
+- `harness-tool-quality-gate`
+- `harness-tool-review-collect`
+- `harness-tool-review-verdict`
+- `harness-tool-scope-map-forward`
+- `harness-tool-scope-map-reverse`
+- `harness-tool-session-start-context-hook`
+- `harness-tool-spawn`
+- `harness-tool-status`
+- `harness-tool-submit`
+- `harness-tool-surface-issues`
+- `harness-tool-verdict`
+- `harness-tool-verify`
+
 ## Archived heavy-contract routes
 
 These exist only for reading or migrating old records. Do not use them as

@@ -18,6 +18,7 @@ CONFIG_FILES = (
     "verifiers.yaml",
     "review.yaml",
 )
+REVIEW_MODES = {"normal", "arch", "full"}
 
 
 def harness_dir(root: Path) -> Path:
@@ -54,8 +55,46 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return raw
 
 
+def task_path(root: Path, task_id: str) -> Path:
+    base = harness_dir(root)
+    legacy = base / "tasks" / task_id / "task.yaml"
+    if legacy.is_file():
+        return legacy
+    matches = sorted(
+        path
+        for path in base.glob(f"*/tasks/{task_id}/task.yaml")
+        if path.parts[-4] not in {"state", "generated"}
+    )
+    if len(matches) > 1:
+        choices = ", ".join(str(path.relative_to(control_root(root))) for path in matches)
+        raise ConfigError(f"task id is ambiguous across harness projects: {task_id}: {choices}")
+    if matches:
+        return matches[0]
+    return legacy
+
+
+def task_config_dir(root: Path, task_id: str) -> Path:
+    path = task_path(root, task_id)
+    if path.parent.parent.name == "tasks":
+        return path.parent.parent.parent
+    return harness_dir(root)
+
+
+def config_path(root: Path, task_id: str, name: str) -> Path:
+    project_dir = task_config_dir(root, task_id)
+    if project_dir != harness_dir(root):
+        candidate = project_dir / name
+        if candidate.is_file():
+            return candidate
+    return harness_dir(root) / name
+
+
+def task_relative_path(root: Path, task_id: str) -> str:
+    return str(task_path(root, task_id).relative_to(control_root(root)))
+
+
 def load_task(root: Path, task_id: str) -> dict[str, Any]:
-    task = load_yaml(harness_dir(root) / "tasks" / task_id / "task.yaml")
+    task = load_yaml(task_path(root, task_id))
     if task.get("id") not in (None, task_id):
         raise ConfigError(f"task id mismatch for {task_id}")
     acceptance = task.get("acceptance")
@@ -91,20 +130,37 @@ def verifier_plan(verifiers: dict[str, Any], scope: str) -> list[dict[str, Any]]
     return normalized
 
 
-def review_settings(root: Path) -> dict[str, Any]:
+def review_settings(root: Path, mode: str = "default") -> dict[str, Any]:
     raw = load_yaml(harness_dir(root) / "review.yaml")
-    default_obj = raw.get("default")
+    default_obj = _review_mode_mapping(raw, mode)
     metrics_obj = raw.get("metrics")
     default: dict[str, Any] = default_obj if isinstance(default_obj, dict) else {}
     metrics: dict[str, Any] = metrics_obj if isinstance(metrics_obj, dict) else {}
-    reviewers = default.get("reviewers") or ["reader-correctness", "reader-scope"]
+    fallback = ["reader-correctness", "reader-scope"] if mode == "default" else []
+    reviewers = default.get("reviewers") or fallback
     return {
+        "mode": mode,
         "quorum": _positive_int(default.get("quorum", 2), "review.quorum"),
         "reviewers": [str(item) for item in reviewers],
-        "background_auto_run": bool(default.get("background_auto_run", True)),
+        "background_auto_run": bool(default.get("background_auto_run", mode == "default")),
         "blocking_labels": list(default.get("blocking_labels") or []),
         "reject_unexpected_actions": bool(metrics.get("reject_unexpected_actions", False)),
     }
+
+
+def review_mode_names(root: Path) -> list[str]:
+    raw = load_yaml(harness_dir(root) / "review.yaml")
+    modes = raw.get("modes")
+    if not isinstance(modes, dict):
+        return []
+    return [str(name) for name in modes if str(name) in REVIEW_MODES]
+
+
+def configured_ai_reviewers(root: Path) -> set[str]:
+    reviewers: set[str] = set()
+    for mode in review_mode_names(root):
+        reviewers.update(review_settings(root, mode=mode)["reviewers"])
+    return reviewers
 
 
 def review_profile(root: Path, reviewer_id: str) -> dict[str, Any] | None:
@@ -113,6 +169,17 @@ def review_profile(root: Path, reviewer_id: str) -> dict[str, Any] | None:
     profiles = profiles_obj if isinstance(profiles_obj, dict) else {}
     profile = profiles.get(reviewer_id)
     return profile if isinstance(profile, dict) else None
+
+
+def _review_mode_mapping(raw: dict[str, Any], mode: str) -> object:
+    if mode == "default":
+        return raw.get("default")
+    if mode not in REVIEW_MODES:
+        raise ConfigError(f"unknown review mode: {mode}")
+    modes = raw.get("modes")
+    if not isinstance(modes, dict):
+        return {}
+    return modes.get(mode)
 
 
 def mutation_profile(root: Path) -> dict[str, Any] | None:

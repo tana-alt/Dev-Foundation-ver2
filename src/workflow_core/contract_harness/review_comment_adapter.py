@@ -9,8 +9,11 @@ from typing import Literal
 ReviewMode = Literal["normal", "arch", "full"]
 
 _COMMANDS: dict[str, ReviewMode] = {
+    "review": "normal",
     "/review": "normal",
+    "architecture review": "arch",
     "/review arch": "arch",
+    "review full": "full",
     "/review full": "full",
 }
 _SAFE_REF_PART_RE = re.compile(r"^[A-Za-z0-9._-]+$")

@@ -1,4 +1,32 @@
 scopes:
+  harness-tools-hooks-test-speed:
+    allowed_paths:
+      - .harness/bottleneck.yaml
+      - .harness/owners.yaml
+      - .harness/policy.yaml
+      - .harness/review.yaml
+      - .harness/semantic_ai_reviewer.py
+      - .harness/tasks/**/evidence.md
+      - .harness/tasks/**/task.yaml
+      - .harness/verifiers.yaml
+      - AGENTS.md
+      - README.md
+      - docs/reference/**
+      - hooks/**
+      - scripts/**
+      - src/workflow_core/contract_harness/**
+      - tests/**
+      - pyproject.toml
+      - .github/workflows/**
+    forbidden_paths:
+      - harness-runtime/**
+      - .harness/state/**
+      - .serena/**
+      - "**/*secret*"
+      - "**/*credential*"
+      - "**/*token*"
+      - "**/*.pem"
+      - "**/*.key"
   policy-task-contract-refinement:
     allowed_paths:
       - .harness/bottleneck.yaml
@@ -12,32 +40,6 @@ scopes:
       - README.md
       - docs/reference/**
       - tests/**
-    forbidden_paths:
-      - harness-runtime/**
-      - .harness/state/**
-      - .serena/**
-      - "**/*secret*"
-      - "**/*credential*"
-      - "**/*token*"
-      - "**/*.pem"
-      - "**/*.key"
-  harness-tools-hooks-test-speed:
-    allowed_paths:
-      - .harness/owners.yaml
-      - .harness/tasks/harness-tools-hooks-test-speed-20260624/evidence.md
-      - .harness/tasks/harness-tools-hooks-test-speed-20260624/task.yaml
-      - .harness/verifiers.yaml
-      - .harness/tasks/harness-tools-hooks-test-speed-20260624/archive/**
-      - docs/reference/verification-ci-and-pr-reference.md
-      - Makefile
-      - Plan/Harness-refactor/**
-      - pyproject.toml
-      - refactor.md
-      - scripts/hook_post_tool_use.py
-      - scripts/hook_stop.py
-      - src/workflow_core/contract_harness/**
-      - tests/**
-      - uv.lock
     forbidden_paths:
       - harness-runtime/**
       - .harness/state/**

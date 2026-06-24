@@ -52,7 +52,14 @@ def run_command_profile(
         return "block", ["missing_repro"], str(exc)
     workspace_path = Path(str(workspace["path"]))
     before_hash = workspace_candidate_hash(workspace_path, task_id)
-    packet_path, output_path = _write_packet(root, task_id, reviewer_id, verify_result, workspace)
+    packet_path, output_path = _write_packet(
+        root,
+        task_id,
+        reviewer_id,
+        verify_result,
+        workspace,
+        profile,
+    )
     completed = run_command(
         _command(root, profile, packet_path, output_path, task_id),
         cwd=workspace_path,
@@ -103,19 +110,22 @@ def _write_packet(
     reviewer_id: str,
     verify_result: dict[str, Any],
     workspace: dict[str, Any],
+    profile: dict[str, Any],
 ) -> tuple[Path, Path]:
     reviews_dir = task_dir(root, task_id) / "reviews"
     packet_path = reviews_dir / f"{reviewer_id}.review-packet.json"
     output_path = reviews_dir / f"{reviewer_id}.review-output.json"
-    write_json(packet_path, _packet(root, task_id, verify_result, workspace))
+    write_json(packet_path, _packet(root, task_id, reviewer_id, verify_result, workspace, profile))
     return packet_path, output_path
 
 
 def _packet(
     root: Path,
     task_id: str,
+    reviewer_id: str,
     verify_result: dict[str, Any],
     workspace: dict[str, Any],
+    profile: dict[str, Any],
 ) -> dict[str, Any]:
     runtime = task_dir(root, task_id)
     mutation_result = _mutation_result(runtime)
@@ -129,6 +139,11 @@ def _packet(
     contract = read_json(runtime / "contract.lock.json")
     return {
         "task_id": task_id,
+        "reviewer": {
+            "id": reviewer_id,
+            "kind": str(profile.get("ai_kind") or "semantic"),
+            "mode": str(profile.get("mode") or ""),
+        },
         "capsule": _context_payload(read_json(runtime / "capsule.json")),
         "contract": contract,
         "scope_contract": contract["scope_contract"],

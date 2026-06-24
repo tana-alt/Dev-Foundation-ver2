@@ -26,7 +26,13 @@ from workflow_core.contract_harness.verify import recompute_machine_evidence
 _REVIEWER_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 
 
-def run_profile(root: Path, task_id: str, reviewer_id: str) -> dict[str, Any]:
+def run_profile(
+    root: Path,
+    task_id: str,
+    reviewer_id: str,
+    *,
+    allow_ai: bool = False,
+) -> dict[str, Any]:
     if reviewer_id in {"reader-scope", "reader-impact"}:
         verdict, labels, reason = _reader_scope(root, task_id)
     elif reviewer_id == "reader-correctness":
@@ -35,8 +41,18 @@ def run_profile(root: Path, task_id: str, reviewer_id: str) -> dict[str, Any]:
         profile = review_profile(root, reviewer_id)
         if profile is None or profile.get("kind") != "command":
             raise ConfigError(f"unknown reviewer: {reviewer_id}")
+        if _is_ai_reviewer(root, reviewer_id) and not allow_ai:
+            raise ConfigError("AI reviewers must be run through review --mode")
         verdict, labels, reason = run_command_profile(root, task_id, reviewer_id, profile)
-    return write_verdict(root, task_id, reviewer_id, verdict, labels=labels, reason=reason)
+    return write_verdict(
+        root,
+        task_id,
+        reviewer_id,
+        verdict,
+        labels=labels,
+        reason=reason,
+        allow_ai=allow_ai,
+    )
 
 
 def write_verdict(
@@ -47,8 +63,11 @@ def write_verdict(
     *,
     labels: list[str] | None = None,
     reason: str = "",
+    allow_ai: bool = False,
 ) -> dict[str, Any]:
     _validate_reviewer(root, reviewer_id)
+    if _is_ai_reviewer(root, reviewer_id) and not allow_ai:
+        raise ConfigError("AI reviewer verdicts must be written through review --mode")
     if verdict not in {"approve", "block"}:
         raise ConfigError("verdict must be approve or block")
     verify_result = _verify_result(root, task_id)
@@ -78,15 +97,19 @@ def write_verdict(
     return data
 
 
-def collect(root: Path, task_id: str) -> dict[str, Any]:
-    settings = review_settings(root)
+def collect(root: Path, task_id: str, *, mode: str = "default") -> dict[str, Any]:
+    settings = review_settings(root, mode=mode)
     verify_result = _verify_result(root, task_id)
     expected = set(settings["reviewers"])
     rows = [_read_verdict(path) for path in _reviews_dir(root, task_id).glob("*.json")]
     valid = [row for row in rows if isinstance(row, dict) and row.get("written_by") == "harness"]
     fresh = [row for row in valid if _known_fresh(root, task_id, row, expected, verify_result)]
+    fresh_ai = _fresh_ai_reviews(root, task_id, valid, verify_result) if mode == "default" else []
     unknown = [
-        str(row.get("reviewer_id")) for row in valid if row.get("reviewer_id") not in expected
+        str(row.get("reviewer_id"))
+        for row in valid
+        if row.get("reviewer_id") not in expected
+        and row.get("reviewer_id") not in _ai_reviewer_ids(root)
     ]
     stale = [
         str(row.get("reviewer_id"))
@@ -94,15 +117,48 @@ def collect(root: Path, task_id: str) -> dict[str, Any]:
         if _known_stale(root, task_id, row, expected, verify_result)
     ]
     blocks = [str(row["reviewer_id"]) for row in fresh if row.get("verdict") == "block"]
+    blocks.extend(str(row["reviewer_id"]) for row in fresh_ai if row.get("verdict") == "block")
     approves = [row for row in fresh if row.get("verdict") == "approve"]
-    return _collect_summary(root, task_id, settings, approves, blocks, stale, unknown)
+    semantic_review_satisfied = (
+        _normal_mode_satisfied(root, task_id, valid, verify_result) if mode == "default" else None
+    )
+    return _collect_summary(
+        root,
+        task_id,
+        settings,
+        approves,
+        fresh_ai,
+        blocks,
+        stale,
+        unknown,
+        semantic_review_satisfied=semantic_review_satisfied,
+    )
 
 
-def stale_or_missing(root: Path, task_id: str) -> list[str]:
-    settings = review_settings(root)
-    summary = collect(root, task_id)
+def stale_or_missing(root: Path, task_id: str, *, mode: str = "default") -> list[str]:
+    settings = review_settings(root, mode=mode)
+    summary = collect(root, task_id, mode=mode)
     fresh = set(summary["fresh_reviewers"])
     return [reviewer for reviewer in settings["reviewers"] if reviewer not in fresh]
+
+
+def run_mode(root: Path, task_id: str, mode: str) -> dict[str, Any]:
+    settings = review_settings(root, mode=mode)
+    reviewers = list(settings["reviewers"])
+    if not reviewers:
+        raise ConfigError(f"no reviewers configured for review mode: {mode}")
+    results = []
+    for reviewer_id in stale_or_missing(root, task_id, mode=mode):
+        results.append(run_profile(root, task_id, reviewer_id, allow_ai=True))
+    return {
+        "schema_version": 1,
+        "task_id": task_id,
+        "mode": mode,
+        "reviewers": reviewers,
+        "runs": results,
+        "review": collect(root, task_id, mode=mode),
+        "written_by": "harness",
+    }
 
 
 def _reader_scope(root: Path, task_id: str) -> tuple[str, list[str], str]:
@@ -138,6 +194,7 @@ def _validate_reviewer(root: Path, reviewer_id: str) -> None:
     if not _REVIEWER_ID.match(reviewer_id):
         raise ConfigError("invalid reviewer_id")
     configured = set(review_settings(root)["reviewers"])
+    configured.update(_ai_reviewer_ids(root))
     if "reader-scope" in configured:
         configured.add("reader-impact")
     if "reader-impact" in configured:
@@ -253,21 +310,30 @@ def _collect_summary(
     task_id: str,
     settings: dict[str, Any],
     approves: list[dict[str, Any]],
+    fresh_ai: list[dict[str, Any]],
     blocks: list[str],
     stale: list[str],
     unknown: list[str],
+    semantic_review_satisfied: bool | None,
 ) -> dict[str, Any]:
     semantic_required = _semantic_review_required(root, task_id)
     semantic_approves = [
-        row for row in approves if _uses_semantic_evidence(root, str(row["reviewer_id"]))
+        row
+        for row in [*approves, *fresh_ai]
+        if _satisfies_semantic_review(root, str(row["reviewer_id"]))
+        and row.get("verdict") == "approve"
     ]
+    semantic_ok = semantic_review_satisfied
+    if semantic_ok is None:
+        semantic_ok = bool(semantic_approves)
     review_pass = (
         len(approves) >= settings["quorum"]
         and not blocks
-        and (not semantic_required or bool(semantic_approves))
+        and (not semantic_required or semantic_ok)
     )
     return {
         "task_id": task_id,
+        "mode": settings.get("mode", "default"),
         "quorum": settings["quorum"],
         "fresh_approves": len(approves),
         "fresh_blocks": len(blocks),
@@ -288,3 +354,55 @@ def _semantic_review_required(root: Path, task_id: str) -> bool:
     quality = quality_result(root, task_id)
     tools = tool_candidates_result(root, task_id)
     return quality.get("status") == "review_required" or tools.get("status") == "review_required"
+
+
+def _satisfies_semantic_review(root: Path, reviewer_id: str) -> bool:
+    profile = review_profile(root, reviewer_id)
+    if not isinstance(profile, dict) or profile.get("kind") != "command":
+        return False
+    return str(profile.get("ai_kind") or "semantic") in {"semantic", "aggressive"}
+
+
+def _normal_mode_satisfied(
+    root: Path,
+    task_id: str,
+    rows: list[dict[str, Any]],
+    verify_result: dict[str, Any],
+) -> bool | None:
+    settings = review_settings(root, mode="normal")
+    expected = set(settings["reviewers"])
+    if not expected:
+        return None
+    fresh = [row for row in rows if _known_fresh(root, task_id, row, expected, verify_result)]
+    blocks = [row for row in fresh if row.get("verdict") == "block"]
+    approves = [
+        row
+        for row in fresh
+        if row.get("verdict") == "approve"
+        and _satisfies_semantic_review(root, str(row.get("reviewer_id") or ""))
+    ]
+    return len(approves) >= int(settings["quorum"]) and not blocks
+
+
+def _fresh_ai_reviews(
+    root: Path,
+    task_id: str,
+    rows: list[dict[str, Any]],
+    verify_result: dict[str, Any],
+) -> list[dict[str, Any]]:
+    expected = _ai_reviewer_ids(root)
+    return [row for row in rows if _known_fresh(root, task_id, row, expected, verify_result)]
+
+
+def _ai_reviewer_ids(root: Path) -> set[str]:
+    reviewers: set[str] = set()
+    for mode in ("normal", "arch", "full"):
+        reviewers.update(review_settings(root, mode=mode)["reviewers"])
+    return reviewers
+
+
+def _is_ai_reviewer(root: Path, reviewer_id: str) -> bool:
+    if reviewer_id in _ai_reviewer_ids(root):
+        return True
+    profile = review_profile(root, reviewer_id)
+    return isinstance(profile, dict) and "ai_kind" in profile
