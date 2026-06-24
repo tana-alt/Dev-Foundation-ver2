@@ -58,7 +58,8 @@ they are not default proof of goal completion.
 
 ## Fast And Full Gate Mapping
 
-`make test`: aggregate gate over `tests/test_*.py`.
+`make test`: aggregate pytest gate over `tests/test_*.py`, parallelized through
+pytest-xdist.
 
 `make check-contracts`, `make check-doc-consistency`, and `make check-cd` are
 targeted shortcuts, not automatic test classification.

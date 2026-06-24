@@ -12,3 +12,24 @@ default:
       - src/workflow_core/contract_harness/policy.py
       - tests/workflow_core/test_contract_harness_policy_acceptance.py
     always: true
+scopes:
+  harness-tools-hooks-test-speed:
+    - id: hook-and-manifest-tests
+      command: "uv run pytest -q tests/test_hook_scripts.py tests/workflow_core/test_hook_events.py tests/workflow_core/test_contract_harness.py -k 'hook or prepare_capsule or explain_lists_agent_tools or active_harness_surface'"
+      applies_to:
+        - scripts/hook_post_tool_use.py
+        - scripts/hook_stop.py
+        - src/workflow_core/contract_harness/agent_tools.py
+        - tests/test_hook_scripts.py
+        - tests/workflow_core/test_hook_events.py
+        - tests/workflow_core/test_contract_harness.py
+      always: true
+      timeout_s: 180
+    - id: default-pytest-speed
+      command: "uv run pytest -q"
+      applies_to:
+        - pyproject.toml
+        - uv.lock
+        - tests/**
+      always: true
+      timeout_s: 300

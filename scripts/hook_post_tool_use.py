@@ -84,14 +84,25 @@ def _common_dir_parent(root: Path) -> Path | None:
 
 
 def _project_id(root: Path) -> str:
-    for name in ("FOUNDATION_PROJECT_ID", "FOUNDATION_TASK_ID"):
-        if value := os.environ.get(name):
-            return value
-    for candidate in (Path.cwd(), root):
+    marker_root = _nearest_marker_root(Path.cwd())
+    candidates = (marker_root, root) if _marker_belongs_to_root(marker_root, root) else (root,)
+    for candidate in candidates:
         task_id = _marker_task_id(candidate)
         if task_id:
             return task_id
+    for name in ("FOUNDATION_PROJECT_ID", "FOUNDATION_TASK_ID"):
+        if value := os.environ.get(name):
+            return value
     return "default"
+
+
+def _marker_belongs_to_root(marker_root: Path | None, root: Path) -> bool:
+    if marker_root is None:
+        return False
+    if marker_root.resolve() == root.resolve():
+        return True
+    common_root = _common_dir_parent(marker_root)
+    return common_root is not None and common_root.resolve() == root.resolve()
 
 
 def _nearest_marker_root(start: Path) -> Path | None:

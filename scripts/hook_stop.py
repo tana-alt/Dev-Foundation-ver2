@@ -5,10 +5,7 @@ On stop, if task-scoped submission evidence exists, delegate reviewer and
 integrator processing to the harness. Ordinary reviewer, gate, or merge-preflight
 rework is recorded by the harness and must not become a fragile hook-level stop.
 
-Gating: a project is gated when Plan/<project>/plans/ holds an active
-Plan_N000X.md record (the agent-operated plan convention -- see Plan/README.md),
-or FOUNDATION_SPEC_PRESENT=1 forces it. A legacy Plan/<project>/spec.md still
-gates. Env: FOUNDATION_GATE_TIER, FOUNDATION_PROJECT_ID,
+Env: FOUNDATION_PROJECT_ID, FOUNDATION_TASK_ID, HARNESS_RUNTIME_ROOT,
 FOUNDATION_GATE_TIMEOUT_S (default 900).
 
 Fail-open by design: an environment problem (missing pydantic, hung check)
@@ -27,7 +24,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 _STRICT_ENFORCEMENT: tuple[str, ...] = ()
 _OBSERVATIONAL = (
-    "plan_gate_detection",
     "runtime_root_discovery",
     "submission_detection",
     "submitted_dispatch",
@@ -41,16 +37,6 @@ def hook_responsibilities() -> dict[str, list[str]]:
         "strict_enforcement": list(_STRICT_ENFORCEMENT),
         "observational": list(_OBSERVATIONAL),
     }
-
-
-def _gated(root: Path, project: str) -> bool:
-    from workflow_core.plans import plan_gated
-
-    if os.environ.get("FOUNDATION_SPEC_PRESENT") == "1":
-        return True
-    if plan_gated(root, project):
-        return True
-    return (root / "Plan" / project / "spec.md").is_file()
 
 
 def _timeout_s() -> int:
@@ -101,14 +87,25 @@ def _repo_root() -> Path:
 
 
 def _project_id(root: Path) -> str:
-    for name in ("FOUNDATION_PROJECT_ID", "FOUNDATION_TASK_ID"):
-        if value := os.environ.get(name):
-            return value
-    for candidate in (Path.cwd(), root):
+    marker_root = _nearest_marker_root(Path.cwd())
+    candidates = (marker_root, root) if _marker_belongs_to_root(marker_root, root) else (root,)
+    for candidate in candidates:
         task_id = _marker_task_id(candidate)
         if task_id:
             return task_id
+    for name in ("FOUNDATION_PROJECT_ID", "FOUNDATION_TASK_ID"):
+        if value := os.environ.get(name):
+            return value
     return "default"
+
+
+def _marker_belongs_to_root(marker_root: Path | None, root: Path) -> bool:
+    if marker_root is None:
+        return False
+    if marker_root.resolve() == root.resolve():
+        return True
+    common_root = _common_dir_parent(marker_root)
+    return common_root is not None and common_root.resolve() == root.resolve()
 
 
 def _nearest_marker_root(start: Path) -> Path | None:
@@ -238,12 +235,8 @@ def main() -> int:
 
     root = _repo_root()
     project = _project_id(root)
-    task_id = os.environ.get("FOUNDATION_TASK_ID", project)
-    submitted = _submitted(root, task_id)
-    if not submitted and not _gated(root, project):
-        return 0  # unplanned work: single pass, no loop
-
-    if not submitted:
+    task_id = project
+    if not _submitted(root, task_id):
         return 0
     return _run_harness_dispatch(root, task_id)
 

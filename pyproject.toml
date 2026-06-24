@@ -11,6 +11,7 @@ dev = [
     "mypy>=1.15.0",
     "pydantic>=2.7.0",
     "pytest>=8.3.0",
+    "pytest-xdist>=3.6.0",
     "pyyaml>=6.0.0",
     "ruff>=0.11.0",
     "types-PyYAML>=6.0.12",
@@ -52,6 +53,7 @@ max-complexity = 10
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = ["-n", "6"]
 
 [tool.mypy]
 python_version = "3.12"

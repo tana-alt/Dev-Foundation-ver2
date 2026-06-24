@@ -67,6 +67,8 @@ def role_optional_tools(
     role: str,
     profile: str,
 ) -> list[dict[str, Any]]:
+    if profile == "coordination":
+        return _coordination_tools(root, task_id, role)
     if profile != "measurement":
         raise ValueError(f"unknown optional tool profile: {profile}")
     if role == "writer":
@@ -128,7 +130,7 @@ def role_agent_skills(root: Path, role: str) -> list[dict[str, Any]]:
     return [_skill(root, name, phase, purpose) for name, phase, purpose in specs[role]]
 
 
-_WRITER_TOOL_SPECS = (
+_WRITER_CORE_TOOL_SPECS = (
     (
         "scope-map-forward",
         "before_edit",
@@ -147,6 +149,21 @@ _WRITER_TOOL_SPECS = (
         "{harness} context-audit {task_id}",
         "Quantify role packet size and required tool or skill visibility.",
     ),
+    (
+        "verify",
+        "before_submit",
+        "{harness} verify {task_id}",
+        "Write candidate diff and machine evidence for the current worktree.",
+    ),
+    (
+        "submit",
+        "handoff",
+        "{harness} submit {task_id}",
+        "Submit fresh verified evidence for reviewer and integrator processing.",
+    ),
+)
+
+_WRITER_COORDINATION_TOOL_SPECS = (
     (
         "status",
         "coordination",
@@ -182,18 +199,6 @@ _WRITER_TOOL_SPECS = (
         "coordination",
         "{harness} spawn {task_id} --role writer --agent codex",
         "Start or rebind a writer session without running verification.",
-    ),
-    (
-        "verify",
-        "before_submit",
-        "{harness} verify {task_id}",
-        "Write candidate diff and machine evidence for the current worktree.",
-    ),
-    (
-        "submit",
-        "handoff",
-        "{harness} submit {task_id}",
-        "Submit fresh verified evidence for reviewer and integrator processing.",
     ),
     (
         "report-rfc",
@@ -371,7 +376,19 @@ _MEASUREMENT_TOOL_SPECS = (
 
 def _writer_harness_tools(root: Path, task_id: str) -> list[dict[str, Any]]:
     harness = _harness_command(root)
-    return _harness_tools_from_specs("writer", harness, task_id, _WRITER_TOOL_SPECS)
+    return _harness_tools_from_specs("writer", harness, task_id, _WRITER_CORE_TOOL_SPECS)
+
+
+def _coordination_tools(root: Path, task_id: str, role: str) -> list[dict[str, Any]]:
+    if role == "writer":
+        harness = _harness_command(root)
+        return _harness_tools_from_specs(
+            "writer",
+            harness,
+            task_id,
+            _WRITER_COORDINATION_TOOL_SPECS,
+        )
+    return []
 
 
 def _reviewer_harness_tools(root: Path, task_id: str) -> list[dict[str, Any]]:

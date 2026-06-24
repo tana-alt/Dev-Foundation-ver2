@@ -577,7 +577,11 @@ def run_worktree_policy(
     repo: Path,
     extra_env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    env = os.environ.copy()
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in {"FOUNDATION_PROJECT_ID", "FOUNDATION_TASK_ID"}
+    }
     if extra_env is not None:
         env.update(extra_env)
 
@@ -1023,6 +1027,7 @@ def test_pytest_collection_is_aggregate_foundation_gate() -> None:
     testpaths = cast(list[str], pytest_ini_options()["testpaths"])
 
     assert testpaths == ["tests"]
+    assert pytest_ini_options()["addopts"] == ["-n", "6"]
     assert make_target_recipe(makefile, "test") == ["$(UV) run pytest"]
     expected_test_fast = (
         "$(UV) run pytest -q tests/test_contract_models.py "
@@ -1041,7 +1046,7 @@ def test_verification_reference_documents_pytest_aggregate_gate() -> None:
     verification_reference = read_text("docs/reference/verification-ci-and-pr-reference.md")
 
     for required_text in (
-        "`make test`: aggregate gate",
+        "`make test`: aggregate pytest gate",
         "`tests/test_*.py`",
         "`make check-contracts`, `make check-doc-consistency`, and `make check-cd`",
         "targeted shortcuts",
