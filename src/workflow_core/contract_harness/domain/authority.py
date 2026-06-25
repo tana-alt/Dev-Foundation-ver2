@@ -20,7 +20,6 @@ DIAGNOSTIC_ARTIFACTS = {
     "affected-set.json",
     "context-audit.json",
     "agent-tools.json",
-    "agent-skills.json",
     "writer-session.json",
     "integrator-session.json",
     "status-result.json",

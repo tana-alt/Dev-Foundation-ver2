@@ -3,7 +3,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .conftest import TASK_ID, create_session, git, start_daemon, strict_cli, strict_json
+from .conftest import (
+    TASK_ID,
+    create_session,
+    git,
+    install_fake_gh,
+    runtime_task_dir,
+    start_daemon,
+    strict_cli,
+    strict_json,
+)
 
 
 def test_strict_pr_create_effect_is_idempotent(harness_repo: Path, tmp_path: Path) -> None:
@@ -44,6 +53,43 @@ def test_strict_resume_requested_effect(harness_repo: Path, tmp_path: Path) -> N
         assert resumed["result"]["resumed"] == 1
         assert resumed["result"]["results"][0]["status"] == "succeeded"
         assert resumed["result"]["results"][0]["recovered"] is True
+    finally:
+        daemon.stop()
+
+
+def test_strict_resume_rejects_tampered_pr_observation(
+    harness_repo: Path,
+    tmp_path: Path,
+) -> None:
+    _drive_to_gate(harness_repo, tmp_path)
+    daemon = start_daemon(harness_repo)
+    try:
+        integrator = create_session(
+            harness_repo,
+            "integrator",
+            agent_id="integrator.codex.T-0001",
+        )
+        requested = strict_json(harness_repo, "pr", "create", TASK_ID, session=integrator)
+        effect_id = requested["result"]["effect"]["effect_id"]
+        strict_runtime = Path(
+            daemon.env.get(
+                "HARNESS_RUNTIME_ROOT",
+                str(runtime_task_dir(harness_repo).parents[2]),
+            )
+        )
+        pr_result_path = strict_runtime / "state" / "tasks" / TASK_ID / "pr-result.json"
+        pr_result = json.loads(pr_result_path.read_text(encoding="utf-8"))
+        pr_result["head_sha"] = "0" * 40
+        pr_result_path.write_text(
+            json.dumps(pr_result, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        _mark_effect_requested(harness_repo, effect_id)
+
+        resumed = strict_json(harness_repo, "outbox", "resume", session=integrator)
+        result = resumed["result"]["results"][0]
+
+        assert not (result["status"] == "succeeded" and result.get("recovered") is True)
     finally:
         daemon.stop()
 
@@ -93,6 +139,7 @@ def _add_remote(repo: Path, tmp_path: Path) -> None:
     git(repo, "remote", "add", "origin", str(remote))
     git(repo, "push", "-u", "origin", "main")
     git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
+    install_fake_gh(repo, tmp_path)
 
 
 def _mark_effect_requested(repo: Path, effect_id: str) -> None:

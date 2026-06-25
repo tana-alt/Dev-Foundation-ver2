@@ -19,7 +19,6 @@ from workflow_core.contract_harness.agent_comm import (
     send_peer_message,
 )
 from workflow_core.contract_harness.agent_tools import (
-    agent_skill_groups,
     agent_tool_groups,
     optional_agent_tool_groups,
     role_agent_tools,
@@ -38,12 +37,14 @@ from workflow_core.contract_harness.daemon.client import (
 )
 from workflow_core.contract_harness.daemon.errors import DaemonUnavailableError
 from workflow_core.contract_harness.gate import gate_task
+from workflow_core.contract_harness.github_issue import create_issue
 from workflow_core.contract_harness.gitutil import GitError, repo_root
 from workflow_core.contract_harness.integration import dispatch_task, integrate_task
 from workflow_core.contract_harness.land import land_task
 from workflow_core.contract_harness.manual_resolution import check_manual_resolution
 from workflow_core.contract_harness.merge_oracle import run_single_candidate_oracle
 from workflow_core.contract_harness.passport import proof_passport, proof_passport_markdown
+from workflow_core.contract_harness.post_review_gate import run_post_review_gate
 from workflow_core.contract_harness.push import push_task
 from workflow_core.contract_harness.report import write_report
 from workflow_core.contract_harness.roles import RoleError, current_role, require_allowed
@@ -92,6 +93,7 @@ def _command_handlers(root: Path, args: argparse.Namespace) -> dict[str, Callabl
         "explain": lambda: _explain(root, args.task_id),
         "verify": lambda: _json_pair(verify_task(root, args.task_id)),
         "gate": lambda: _json_pair(gate_task(root, args.task_id)),
+        "post-review-gate": lambda: _json_pair(run_post_review_gate(root, args.task_id)),
         "submit": lambda: _json_pair(
             submit_task(
                 root,
@@ -136,7 +138,19 @@ def _command_handlers(root: Path, args: argparse.Namespace) -> dict[str, Callabl
         "land": lambda: _json_pair(land_task(root, args.task_id)),
         "push": lambda: _json_pair(push_task(root, args.task_id)),
         "report": lambda: _json(write_report(root, args.task_id, args.type), 0),
+        "issue-create": lambda: _json_pair(_create_issue(root, args)),
     }
+
+
+def _create_issue(root: Path, args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    return create_issue(
+        root,
+        args.task_id,
+        reason=args.reason,
+        title=args.title,
+        body=args.body,
+        execute=bool(args.execute),
+    )
 
 
 def _strict_enabled(args: argparse.Namespace) -> bool:
@@ -267,6 +281,7 @@ def _strict_method(args: argparse.Namespace) -> tuple[str, dict[str, Any]]:
         "verify": "candidate.verify",
         "submit": "candidate.submit",
         "gate": "gate.run",
+        "post-review-gate": "gate.post_review",
         "land": "merge.local",
         "push": "push.remote",
         "complete": "task.complete",
@@ -291,6 +306,8 @@ def _strict_method(args: argparse.Namespace) -> tuple[str, dict[str, Any]]:
 def _strict_review_method(args: argparse.Namespace) -> tuple[str, dict[str, Any]]:
     if args.collect:
         return "review.collect", {"task_id": args.task_id}
+    if args.mode:
+        return "review.run_mode", {"task_id": args.task_id, "mode": args.mode}
     return "review.run", {"task_id": args.task_id, "reviewer_id": args.run}
 
 
@@ -348,6 +365,8 @@ def _review(root: Path, args: argparse.Namespace) -> int:
     require_allowed("review", action=action)
     if action == "run":
         return _json(review.run_profile(root, args.task_id, args.run), 0)
+    if action == "mode":
+        return _json(review.run_mode(root, args.task_id, args.mode), 0)
     if action == "write-verdict":
         labels = args.label or []
         data = review.write_verdict(
@@ -365,6 +384,8 @@ def _review(root: Path, args: argparse.Namespace) -> int:
 def _review_action(args: argparse.Namespace) -> str:
     if args.collect:
         return "collect"
+    if args.mode:
+        return "mode"
     if args.run:
         return "run"
     return "write-verdict"
@@ -416,15 +437,12 @@ def _explain(root: Path, task_id: str) -> int:
     runtime = task_dir(root, task_id)
     scope = contract["scope_contract"]
     tools = agent_tool_groups(root, task_id)
-    skills = agent_skill_groups(root)
     print(f"task: {task_id}")
     print(f"allowed paths: {', '.join(scope['allowed_paths'])}")
     print(f"forbidden paths: {', '.join(scope['forbidden_paths'])}")
     print(f"verifiers: {', '.join(item['id'] for item in contract['verifier_plan'])}")
     for role, items in tools.items():
         print(f"{role} tools: {', '.join(item['name'] for item in items)}")
-    for role, items in skills.items():
-        print(f"{role} skills: {', '.join(item['name'] for item in items)}")
     print(f"runtime: {runtime}")
     return 0
 
@@ -600,6 +618,7 @@ def _parser() -> argparse.ArgumentParser:
     _task_command(sub, "explain")
     _task_command(sub, "verify")
     _task_command(sub, "gate")
+    _task_command(sub, "post-review-gate")
     _submit_command(sub)
     _task_command(sub, "dispatch")
     _task_command(sub, "integrate")
@@ -621,6 +640,7 @@ def _parser() -> argparse.ArgumentParser:
     _compose_push_command(sub)
     _task_command(sub, "manual-resolution-check")
     _report_command(sub)
+    _issue_create_command(sub)
     _review_command(sub)
     _worktree_command(sub)
     _task_command(sub, "land")
@@ -697,7 +717,7 @@ def _tools_command(sub: argparse._SubParsersAction[Any]) -> None:
     )
     parser.add_argument(
         "--profile",
-        choices=["default", "measurement", "coordination"],
+        choices=["default", "coordination", "measurement"],
         default="default",
     )
 
@@ -718,7 +738,7 @@ def _spawn_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser.add_argument("--reviewer-id")
     parser.add_argument(
         "--profile",
-        choices=["default", "measurement", "coordination"],
+        choices=["default", "coordination", "measurement"],
         default="default",
     )
     parser.add_argument("--comm", action="store_true")
@@ -791,11 +811,25 @@ def _report_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser.add_argument("--type", choices=["incident", "rfc", "metric"], required=True)
 
 
+def _issue_create_command(sub: argparse._SubParsersAction[Any]) -> None:
+    parser = sub.add_parser("issue-create")
+    parser.add_argument("task_id")
+    parser.add_argument(
+        "--reason",
+        choices=["escalation", "not-algorithmically-resolvable"],
+        required=True,
+    )
+    parser.add_argument("--title", required=True)
+    parser.add_argument("--body", required=True)
+    parser.add_argument("--execute", action="store_true")
+
+
 def _review_command(sub: argparse._SubParsersAction[Any]) -> None:
     parser = sub.add_parser("review")
     parser.add_argument("task_id")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--run")
+    group.add_argument("--mode", choices=["normal", "arch", "full"])
     group.add_argument("--collect", action="store_true")
     group.add_argument("--write-verdict", dest="reviewer_id")
     parser.add_argument("verdict", nargs="?", choices=["approve", "block"])

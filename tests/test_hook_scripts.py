@@ -10,12 +10,17 @@ Tests exercise:
 
 from __future__ import annotations
 
+import builtins
 import importlib.util
 import json
 import os
 import sys
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import ModuleType
+from typing import Any
+
+import pytest
 
 _REPO = Path(__file__).resolve().parents[1]
 _SCRIPTS = _REPO / "scripts"
@@ -23,19 +28,25 @@ _SCRIPTS = _REPO / "scripts"
 
 def _env(**overrides: str) -> dict[str, str]:
     """Merge os.environ with overrides so scripts can find the venv / python paths."""
-    env = {
-        key: value
-        for key, value in os.environ.items()
-        if not key.startswith("FOUNDATION_") and key != "HARNESS_RUNTIME_ROOT"
-    }
-    env.update(overrides)
-    return env
+    return {**os.environ, **overrides}
 
 
 def _load_hook_stop() -> ModuleType:
     spec = importlib.util.spec_from_file_location(
         "hook_stop_test_module",
         _SCRIPTS / "hook_stop.py",
+    )
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_hook_session_start() -> ModuleType:
+    spec = importlib.util.spec_from_file_location(
+        "hook_session_start_test_module",
+        _SCRIPTS / "hook_session_start.py",
     )
     assert spec is not None
     module = importlib.util.module_from_spec(spec)
@@ -114,12 +125,7 @@ def test_hook_post_tool_use_infers_repo_and_task_from_harness_worktree(
         capture_output=True,
         text=True,
         timeout=30,
-        env=_env(
-            FOUNDATION_REPO_ROOT=str(tmp_path),
-            FOUNDATION_PROJECT_ID="wrong-inherited-project",
-            FOUNDATION_TASK_ID="wrong-inherited-task",
-            HARNESS_ROLE="writer",
-        ),
+        env=_env(HARNESS_ROLE="writer"),
     )
 
     assert result.returncode == 0, f"stderr: {result.stderr}"
@@ -191,12 +197,7 @@ def test_hook_post_tool_use_in_linked_worktree_writes_to_canonical_artifact_root
         capture_output=True,
         text=True,
         timeout=30,
-        env=_env(
-            FOUNDATION_REPO_ROOT=str(repo),
-            FOUNDATION_PROJECT_ID="wrong-inherited-project",
-            FOUNDATION_TASK_ID="wrong-inherited-task",
-            HARNESS_ROLE="writer",
-        ),
+        env=_env(HARNESS_ROLE="writer"),
     )
 
     assert result.returncode == 0, f"stderr: {result.stderr}"
@@ -434,11 +435,11 @@ def test_hook_stop_infers_repo_and_task_from_linked_writer_worktree(
         encoding="utf-8",
     )
     harness.chmod(0o755)
-    env = _env(
-        FOUNDATION_REPO_ROOT=str(repo),
-        FOUNDATION_PROJECT_ID="wrong-inherited-project",
-        FOUNDATION_TASK_ID="wrong-inherited-task",
-    )
+    env = _env()
+    for key in list(env):
+        if key.startswith("FOUNDATION_") or key == "HARNESS_RUNTIME_ROOT":
+            env.pop(key, None)
+
     result = subprocess.run(
         [sys.executable, str(_SCRIPTS / "hook_stop.py")],
         input=json.dumps({}),
@@ -555,3 +556,214 @@ def test_hook_session_start_empty_stdin_no_issues_exits_0(tmp_path: Path) -> Non
     )
     assert result.returncode == 0
     assert result.stdout == ""
+
+
+def test_hook_session_start_prints_bounded_harness_context(tmp_path: Path) -> None:
+    import subprocess
+
+    runtime = tmp_path / "runtime"
+    task_dir = runtime / "state" / "tasks" / "t"
+    task_dir.mkdir(parents=True)
+    tracked_task = tmp_path / ".harness" / "tasks" / "t" / "task.yaml"
+    tracked_task.parent.mkdir(parents=True)
+    tracked_task.write_text(
+        "id: t\n"
+        "review_request:\n"
+        "  architecture_review:\n"
+        "    ask: Check the responsibility split.\n"
+        "  code_review:\n"
+        "    ask: Check the hook output contract.\n",
+        encoding="utf-8",
+    )
+    (task_dir / "contract.lock.json").write_text(
+        json.dumps(
+            {
+                "goal": "Make the harness context visible to the active agent.",
+                "scope_contract": {
+                    "allowed_paths": ["scripts/**", "tests/**"],
+                    "forbidden_paths": ["harness-runtime/**"],
+                },
+                "acceptance": {"mode": "agent_generated", "audit": {"status": "pass"}},
+                "policy": {"id": "context-delivery"},
+                "verifier_plan": [{"id": "unit"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (task_dir / "agent-tools.json").write_text(
+        json.dumps({"writer": [{"name": "context-audit"}, {"name": "verify"}]}),
+        encoding="utf-8",
+    )
+    (task_dir / "agent-skills.json").write_text(
+        json.dumps(
+            {
+                "writer": [
+                    {"name": "tdd-scope"},
+                    {"name": "implementation-slice-verification"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (task_dir / "writer-session.json").write_text(
+        json.dumps({"handoff": {"verify": "harness verify t", "submit": "harness submit t"}}),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, str(_SCRIPTS / "hook_session_start.py")],
+        input=json.dumps({"secret": "do-not-echo"}),
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env=_env(
+            FOUNDATION_REPO_ROOT=str(tmp_path),
+            FOUNDATION_PROJECT_ID="t",
+            HARNESS_RUNTIME_ROOT=str(runtime),
+            HARNESS_ROLE="writer",
+        ),
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "[harness assignment]" in result.stdout
+    assert "- task_id: t" in result.stdout
+    assert "- role: writer" in result.stdout
+    assert "- agent_id: unset" in result.stdout
+    assert "- task yaml: .harness/tasks/t/task.yaml" in result.stdout
+    assert f"- packet dir: {task_dir}" in result.stdout
+    assert "- packets: contract.lock.json, agent-tools.json, writer-session.json" in result.stdout
+    assert "- review request architecture: Check the responsibility split." in result.stdout
+    assert "- review request code: Check the hook output contract." in result.stdout
+    assert "- goal: Make the harness context visible to the active agent." in result.stdout
+    assert "- allowed paths: scripts/**, tests/**" in result.stdout
+    assert "- acceptance: audit=pass, mode=agent_generated" in result.stdout
+    assert "- policy: context-delivery" in result.stdout
+    assert "- next action: implement verified candidate, then run harness verify and submit" in (
+        result.stdout
+    )
+    assert "- verifiers: unit" in result.stdout
+    assert "- handoff commands: verify, submit" in result.stdout
+    assert "- review output verdict: " in result.stdout
+    assert "- review output certificate: " in result.stdout
+    assert "- ACP local peers: " in result.stdout
+    assert "- ACP strict list: " in result.stdout
+    assert "- ACP strict request-action: " in result.stdout
+    assert (
+        "- issue escalation: HARNESS_ROLE=writer ./harness issue-create t "
+        "--reason escalation --title ISSUE_TITLE --body ISSUE_BODY --execute"
+    ) in result.stdout
+    assert "- role tools: context-audit, verify" in result.stdout
+    assert "- skills: " not in result.stdout
+    assert "tdd-scope" not in result.stdout
+    assert "do-not-echo" not in result.stdout
+
+
+def test_hook_session_start_review_request_fallback_without_pyyaml(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_hook_session_start()
+    task = tmp_path / "task.yaml"
+    task.write_text(
+        "id: t\n"
+        "review_request:\n"
+        "  architecture_review:\n"
+        "    ask: Check architecture without PyYAML.\n"
+        "  code_review:\n"
+        "    ask: Check code without PyYAML.\n",
+        encoding="utf-8",
+    )
+    original_import = builtins.__import__
+
+    def blocked_import(
+        name: str,
+        globals: Mapping[str, object] | None = None,
+        locals: Mapping[str, object] | None = None,
+        fromlist: Sequence[str] = (),
+        level: int = 0,
+    ) -> Any:
+        if name == "yaml":
+            raise ImportError("yaml intentionally unavailable")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
+
+    parsed = module._read_task_yaml(task)
+
+    assert parsed["review_request"]["architecture_review"]["ask"] == (
+        "Check architecture without PyYAML."
+    )
+    assert parsed["review_request"]["code_review"]["ask"] == "Check code without PyYAML."
+
+
+def test_hook_session_start_quotes_runnable_command_values(tmp_path: Path) -> None:
+    import subprocess
+
+    task_id = "task id; echo task"
+    agent_id = "agent id; echo agent"
+    runtime = tmp_path / "runtime"
+    task_dir = runtime / "state" / "tasks" / task_id
+    task_dir.mkdir(parents=True)
+    (task_dir / "contract.lock.json").write_text(json.dumps({"goal": "quote commands"}))
+
+    result = subprocess.run(
+        [sys.executable, str(_SCRIPTS / "hook_session_start.py")],
+        input="",
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env=_env(
+            FOUNDATION_REPO_ROOT=str(tmp_path),
+            FOUNDATION_PROJECT_ID=task_id,
+            FOUNDATION_AGENT_ID=agent_id,
+            HARNESS_RUNTIME_ROOT=str(runtime),
+            HARNESS_ROLE="writer",
+        ),
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "FOUNDATION_AGENT_ID='agent id; echo agent' HARNESS_ROLE=writer" in result.stdout
+    assert "./harness comm-peers 'task id; echo task'" in result.stdout
+    assert "./harness --strict acp list 'task id; echo task'" in result.stdout
+    assert "FOUNDATION_AGENT_ID=<" not in result.stdout
+
+
+def test_hook_session_start_infers_task_and_role_from_worktree_marker(tmp_path: Path) -> None:
+    import subprocess
+
+    task_id = "task-from-marker"
+    runtime = tmp_path / "runtime"
+    task_dir = runtime / "state" / "tasks" / task_id
+    task_dir.mkdir(parents=True)
+    (tmp_path / ".harness-worktree.json").write_text(
+        json.dumps({"task_id": task_id, "kind": "reviewer"}),
+        encoding="utf-8",
+    )
+    (task_dir / "capsule.json").write_text(
+        json.dumps(
+            {
+                "intent": {"summary": "Review the submitted candidate."},
+                "scope_contract": {"allowed_paths": ["src/**"], "forbidden_paths": []},
+                "agent_tools": [{"name": "review-verdict"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, str(_SCRIPTS / "hook_session_start.py")],
+        input="",
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        env=_env(HARNESS_RUNTIME_ROOT=str(runtime)),
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "[harness assignment]" in result.stdout
+    assert f"- task_id: {task_id}" in result.stdout
+    assert "- role: reviewer" in result.stdout
+    assert "- goal: Review the submitted candidate." in result.stdout
+    assert "- role tools: review-verdict" in result.stdout
+    assert "- next action: review submitted evidence and write a reviewer verdict" in result.stdout

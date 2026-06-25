@@ -3,7 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from workflow_core.contract_harness.application.pr_service import check_local_pr, create_local_pr
+from workflow_core.contract_harness.application.pr_service import (
+    check_local_pr,
+    create_local_pr,
+    validate_local_pr_created,
+)
 from workflow_core.contract_harness.application.services import state_store
 from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.hashing import file_hash
@@ -138,7 +142,7 @@ class OutboxService:
         if not path.is_file():
             return None
         result = _read_json(path)
-        if _is_successful_observation(effect, result):
+        if _is_successful_observation(self.root, effect, result):
             return result
         return None
 
@@ -255,7 +259,7 @@ def _commit_exists(root: Path, sha: str) -> bool:
     return git(root, ["cat-file", "-e", f"{sha}^{{commit}}"], check=False).returncode == 0
 
 
-def _is_successful_observation(effect: dict[str, Any], result: dict[str, Any]) -> bool:
+def _is_successful_observation(root: Path, effect: dict[str, Any], result: dict[str, Any]) -> bool:
     effect_type = str(effect["effect_type"])
     if result.get("task_id") != effect.get("task_id"):
         return False
@@ -263,11 +267,7 @@ def _is_successful_observation(effect: dict[str, Any], result: dict[str, Any]) -
     if candidate_id and result.get("candidate_id") != candidate_id:
         return False
     if effect_type == "create_pr":
-        return (
-            result.get("status") == "created"
-            and isinstance(result.get("ref"), str)
-            and isinstance(result.get("head_sha"), str)
-        )
+        return validate_local_pr_created(root, str(effect["task_id"]), result)
     if effect_type == "pr_checks":
         return result.get("status") == "pass" and isinstance(result.get("head_sha"), str)
     if effect_type == "merge_local":

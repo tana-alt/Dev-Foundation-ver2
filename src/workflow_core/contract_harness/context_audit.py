@@ -5,7 +5,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from workflow_core.contract_harness.agent_tools import role_agent_skills, role_agent_tools
+from workflow_core.contract_harness.agent_tools import role_agent_tools
 from workflow_core.contract_harness.contract import ensure_prepared
 from workflow_core.contract_harness.jsonio import read_json, write_json
 from workflow_core.contract_harness.runtime_paths import task_dir
@@ -32,25 +32,21 @@ def audit_context(root: Path, task_id: str) -> dict[str, Any]:
 
 def _role_context(root: Path, task_id: str, runtime: Path, role: str) -> dict[str, Any]:
     tools = role_agent_tools(root, task_id, role)
-    skills = role_agent_skills(root, role)
     payload = {
         "task_id": task_id,
         "role": role,
         "agent_tools": tools,
-        "agent_skills": skills,
         "available_artifacts": _available_artifacts(runtime),
         "context": _payload_context(runtime, role),
     }
-    missing = _missing_required(role, tools, skills)
+    missing = _missing_required(role, tools)
     pressure = _pressure(payload)
     return {
         "status": "pass" if not missing else "fail",
         "bytes": pressure["bytes"],
         "estimated_tokens": pressure["estimated_tokens"],
         "tool_count": len(tools),
-        "skill_count": len(skills),
         "tools": [str(tool.get("name", "")) for tool in tools],
-        "skills": [str(skill.get("name", "")) for skill in skills],
         "missing_required": missing,
     }
 
@@ -106,27 +102,14 @@ def _read_optional(path: Path) -> dict[str, Any] | None:
 def _missing_required(
     role: str,
     tools: list[dict[str, Any]],
-    skills: list[dict[str, Any]],
 ) -> list[str]:
     tool_names = {str(tool.get("name", "")) for tool in tools}
-    skills_by_name = {str(skill.get("name", "")): skill for skill in skills}
-    skill_names = set(skills_by_name)
     required_tools = {
         "writer": {"scope-map-forward", "verify", "submit", "context-audit"},
         "reviewer": {"scope-map-reverse", "review-verdict", "context-audit"},
         "integrator": {"review-collect", "dispatch", "gate", "context-audit"},
     }[role]
-    required_skills = {
-        "writer": {"tdd-scope", "implementation-slice-verification"},
-        "reviewer": {"security-check", "implementation-slice-verification"},
-        "integrator": {"scope-routing-governance", "implementation-slice-verification"},
-    }[role]
-    missing = [f"tool:{name}" for name in sorted(required_tools - tool_names)]
-    missing.extend(f"skill:{name}" for name in sorted(required_skills - skill_names))
-    for name in sorted(required_skills & skill_names):
-        if not skills_by_name[name].get("path"):
-            missing.append(f"skill_path:{name}")
-    return missing
+    return [f"tool:{name}" for name in sorted(required_tools - tool_names)]
 
 
 def _pressure(payload: dict[str, Any]) -> dict[str, int]:

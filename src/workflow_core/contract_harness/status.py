@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from workflow_core.contract_harness.application.services import latest_event_payload, state_summary
-from workflow_core.contract_harness.config import harness_dir
+from workflow_core.contract_harness.config import task_path
 from workflow_core.contract_harness.gitutil import git
 from workflow_core.contract_harness.health import config_health
 from workflow_core.contract_harness.jsonio import read_json
@@ -20,8 +20,11 @@ _ARTIFACTS = (
     "writer-worktree.json",
     "verify-result.json",
     "submission.json",
+    "post-review-gate-result.json",
     "gate-result.json",
     "integration-result.json",
+    "pr-result.json",
+    "pr-check-result.json",
     "land-result.json",
     "oracle-result.json",
     "push-result.json",
@@ -64,6 +67,16 @@ _NEXT_ACTIONS: dict[str, tuple[str, str | None, str]] = {
         "continue",
         "HARNESS_ROLE=integrator ./harness land {task_id}",
         "candidate is gated but not landed",
+    ),
+    "post_review_gated": (
+        "continue",
+        "HARNESS_ROLE=integrator ./harness pr create {task_id}",
+        "post-review mechanical gate passed and PR creation is next",
+    ),
+    "pr_created": (
+        "continue",
+        "HARNESS_ROLE=integrator ./harness pr checks {task_id}",
+        "PR evidence exists and PR checks are next",
     ),
     "landed": (
         "continue",
@@ -147,32 +160,96 @@ def _phase(root: Path, task_id: str, runtime: Path, present: list[str]) -> str:
         return pre_gate
     if "contract.lock.json" in present:
         return "prepared"
-    if (harness_dir(root) / "tasks" / task_id / "task.yaml").is_file():
+    if task_path(root, task_id).is_file():
         return "defined"
     return "unknown"
 
 
 def _terminal_phase(runtime: Path, present: list[str]) -> str | None:
-    if "push-result.json" in present:
-        if _json_status(runtime, "push-result.json") == "pushed":
-            return "pushed"
-        return "push_attempted"
-    if "rework-request.json" in present:
-        return "rework_required"
-    if "oracle-result.json" in present:
-        return "oracle_retry"
-    if "land-result.json" in present:
-        if _json_status(runtime, "land-result.json") == "landed":
-            return "landed"
-        return "rework_required"
-    if "integration-result.json" in present:
-        if _json_status(runtime, "integration-result.json") == "integrated":
-            return "integrated"
-        return "rework_required"
-    if "gate-result.json" in present:
-        gate = read_json(runtime / "gate-result.json")
-        return "integrated" if gate.get("mergeable") is True else "rework_required"
+    for checker in (
+        _push_phase,
+        _rework_phase,
+        _oracle_phase,
+        _land_phase,
+        _pr_check_phase,
+        _pr_phase,
+        _integration_phase,
+        _post_review_phase,
+        _gate_phase,
+    ):
+        phase = checker(runtime, present)
+        if phase is not None:
+            return phase
     return None
+
+
+def _push_phase(runtime: Path, present: list[str]) -> str | None:
+    if "push-result.json" not in present:
+        return None
+    return "pushed" if _json_status(runtime, "push-result.json") == "pushed" else "push_attempted"
+
+
+def _rework_phase(_runtime: Path, present: list[str]) -> str | None:
+    return "rework_required" if "rework-request.json" in present else None
+
+
+def _oracle_phase(_runtime: Path, present: list[str]) -> str | None:
+    return "oracle_retry" if "oracle-result.json" in present else None
+
+
+def _land_phase(runtime: Path, present: list[str]) -> str | None:
+    if "land-result.json" not in present:
+        return None
+    return (
+        "landed" if _json_status(runtime, "land-result.json") == "landed" else ("rework_required")
+    )
+
+
+def _pr_check_phase(runtime: Path, present: list[str]) -> str | None:
+    if "pr-check-result.json" not in present:
+        return None
+    return (
+        "integrated"
+        if _json_status(runtime, "pr-check-result.json") == "pass"
+        else ("rework_required")
+    )
+
+
+def _pr_phase(runtime: Path, present: list[str]) -> str | None:
+    if "pr-result.json" not in present:
+        return None
+    return (
+        "pr_created"
+        if _json_status(runtime, "pr-result.json") == "created"
+        else ("rework_required")
+    )
+
+
+def _integration_phase(runtime: Path, present: list[str]) -> str | None:
+    if "integration-result.json" not in present:
+        return None
+    return (
+        "post_review_gated"
+        if _json_status(runtime, "integration-result.json") == ("integrated")
+        else "rework_required"
+    )
+
+
+def _post_review_phase(runtime: Path, present: list[str]) -> str | None:
+    if "post-review-gate-result.json" not in present:
+        return None
+    return (
+        "post_review_gated"
+        if _json_status(runtime, "post-review-gate-result.json") == ("passed")
+        else "rework_required"
+    )
+
+
+def _gate_phase(runtime: Path, present: list[str]) -> str | None:
+    if "gate-result.json" not in present:
+        return None
+    gate = read_json(runtime / "gate-result.json")
+    return "post_review_gated" if gate.get("mergeable") is True else "rework_required"
 
 
 def _pre_gate_phase(present: list[str]) -> str | None:

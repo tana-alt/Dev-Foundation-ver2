@@ -6,23 +6,43 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from workflow_core.contract_harness.config import ConfigError, harness_dir, load_yaml
+from workflow_core.contract_harness.config import (
+    ConfigError,
+    control_root,
+    harness_dir,
+    load_yaml,
+    task_config_dir,
+)
 from workflow_core.contract_harness.jsonio import read_json, write_json
 from workflow_core.contract_harness.runtime_paths import task_dir
 
 
 def load_task_policy(root: Path, task: dict[str, Any]) -> dict[str, Any] | None:
     policy_id = str(task.get("policy") or "").strip()
-    if not policy_id:
+    task_id = str(task.get("id") or "")
+    project_dir = task_config_dir(root, task_id) if task_id else harness_dir(root)
+    has_project_policy = (
+        project_dir != harness_dir(root) and (project_dir / "policy.yaml").is_file()
+    )
+    if not policy_id and has_project_policy:
+        policy_id = project_dir.name
+        path = project_dir / "policy.yaml"
+    elif policy_id:
+        project_policy = project_dir / "policies" / f"{_safe_policy_id(policy_id)}.yaml"
+        path = (
+            project_policy
+            if project_dir != harness_dir(root) and project_policy.is_file()
+            else harness_dir(root) / "policies" / f"{_safe_policy_id(policy_id)}.yaml"
+        )
+    else:
         return None
-    path = harness_dir(root) / "policies" / f"{_safe_policy_id(policy_id)}.yaml"
     policy = load_yaml(path)
     declared = policy.get("id")
     if declared is not None and str(declared) != policy_id:
         raise ConfigError(f"policy id mismatch: {policy_id}")
     return {
         "id": policy_id,
-        "path": str(path.relative_to(root)),
+        "path": str(path.relative_to(control_root(root))),
         "goal": policy.get("goal"),
         "invariants": _list_of_maps(policy.get("invariants")),
         "acceptance_requirements": [

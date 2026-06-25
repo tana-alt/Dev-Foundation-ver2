@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,6 @@ import pytest
 import yaml
 
 from workflow_core.contract_harness.agent_tools import (
-    role_agent_skills,
     role_agent_tools,
     role_optional_tools,
 )
@@ -36,8 +36,6 @@ def run_harness(
     env = {**os.environ, **(extra_env or {})}
     if role:
         env["HARNESS_ROLE"] = role
-    else:
-        env.pop("HARNESS_ROLE", None)
     return subprocess.run(
         [str(HARNESS), *args],
         cwd=repo,
@@ -58,6 +56,40 @@ def git(repo: Path, *args: str) -> str:
         check=True,
     )
     return result.stdout.strip()
+
+
+def install_fake_gh(repo: Path, tmp_path: Path) -> Path:
+    fake = tmp_path / "fake-gh.py"
+    state = tmp_path / "fake-gh-state.json"
+    fake.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, pathlib, sys\n"
+        f"state = pathlib.Path({str(state)!r})\n"
+        "args = sys.argv[1:]\n"
+        "if args[:2] == ['pr', 'view']:\n"
+        "    if not state.is_file():\n"
+        "        raise SystemExit(1)\n"
+        "    print(state.read_text())\n"
+        "    raise SystemExit(0)\n"
+        "if args[:2] == ['pr', 'create']:\n"
+        "    data = {\n"
+        "        'number': 123,\n"
+        "        'url': 'https://github.com/example/repo/pull/123',\n"
+        "        'state': 'OPEN',\n"
+        "        'isDraft': True,\n"
+        "        'headRefName': args[args.index('--head') + 1],\n"
+        "        'baseRefName': args[args.index('--base') + 1],\n"
+        "    }\n"
+        "    state.write_text(json.dumps(data))\n"
+        "    print(data['url'])\n"
+        "    raise SystemExit(0)\n"
+        "raise SystemExit(2)\n",
+        encoding="utf-8",
+    )
+    fake.chmod(0o755)
+    git(repo, "config", "harness.githubRepository", "example/repo")
+    git(repo, "config", "harness.ghBin", str(fake))
+    return fake
 
 
 def init_repo(
@@ -107,6 +139,7 @@ def enable_policy_and_remote(tmp_path: Path, repo: Path) -> Path:
     git(repo, "remote", "add", "origin", str(remote))
     git(repo, "push", "-u", "origin", "main")
     git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
+    install_fake_gh(repo, tmp_path)
     return remote
 
 
@@ -272,54 +305,23 @@ def load_runtime_json(repo: Path, name: str, task_id: str = TASK_ID) -> dict[str
     return data
 
 
+def create_and_check_pr(repo: Path, task_id: str = TASK_ID) -> None:
+    created = run_harness(repo, "pr", "create", task_id, role="integrator")
+    assert created.returncode == 0, created.stdout + created.stderr
+    checked = run_harness(repo, "pr", "checks", task_id, role="integrator")
+    assert checked.returncode == 0, checked.stdout + checked.stderr
+
+
 def tool_names(tools: list[dict[str, Any]]) -> set[str]:
     return {str(tool.get("name")) for tool in tools}
 
 
-def skill_names(skills: list[dict[str, Any]]) -> set[str]:
-    return {str(skill.get("name")) for skill in skills}
-
-
-def test_harness_worktree_skill_paths_do_not_fallback_to_package_root(tmp_path: Path) -> None:
-    worktree = tmp_path / "writer"
-    skill = worktree / ".agents" / "skills" / "tdd-scope" / "SKILL.md"
-    skill.parent.mkdir(parents=True)
-    skill.write_text(
-        "---\nname: tdd-scope\ndescription: local writer skill\n---\n",
-        encoding="utf-8",
-    )
-    (worktree / ".harness-worktree.json").write_text("{}", encoding="utf-8")
-
-    skills = role_agent_skills(worktree, "writer")
-    by_name = {str(item["name"]): item for item in skills}
-
-    assert by_name["tdd-scope"]["path"] == str(skill)
-    assert by_name["implementation-slice-verification"]["path"] is None
-    assert by_name["scope-routing-governance"]["path"] is None
-
-
-def test_harness_worktree_skill_paths_can_use_marker_source_repo_root(
-    tmp_path: Path,
-) -> None:
-    source = tmp_path / "source"
-    source_skill = source / ".agents" / "skills" / "implementation-slice-verification" / "SKILL.md"
-    source_skill.parent.mkdir(parents=True)
-    source_skill.write_text(
-        "---\nname: implementation-slice-verification\ndescription: source skill\n---\n",
-        encoding="utf-8",
-    )
-    worktree = tmp_path / "writer"
-    worktree.mkdir(parents=True)
-    (worktree / ".harness-worktree.json").write_text(
-        json.dumps({"source_repo_common_dir": str(source / ".git")}),
-        encoding="utf-8",
-    )
-
-    skills = role_agent_skills(worktree, "writer")
-    by_name = {str(item["name"]): item for item in skills}
-
-    assert by_name["implementation-slice-verification"]["path"] == str(source_skill)
-    assert by_name["tdd-scope"]["path"] is None
+def assert_tool_skills_are_tool_specific(tools: list[dict[str, Any]]) -> None:
+    for tool in tools:
+        skill = str(tool.get("skill") or "")
+        assert skill.startswith("harness-tool-"), tool
+        assert skill != "harness-tool-manifest"
+        assert (ROOT / ".agents" / "skills" / skill / "SKILL.md").is_file(), skill
 
 
 def test_harness_worktree_tool_commands_use_current_harness_not_stale_local(
@@ -341,13 +343,17 @@ def test_harness_worktree_tool_commands_use_current_harness_not_stale_local(
 
 def test_script_tool_commands_use_absolute_paths_for_repo_local_scripts(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
+    context_script = repo / "scripts" / "hook_session_start.py"
     script = repo / "scripts" / "hook_post_tool_use.py"
     script.parent.mkdir()
+    context_script.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
     script.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
 
     tools = role_optional_tools(repo, TASK_ID, "writer", "measurement")
+    context_hook_tool = tool_by_name(tools, "session-start-context-hook")
     hook_tool = tool_by_name(tools, "post-tool-use-hook")
 
+    assert str(context_script) in context_hook_tool["command"]
     assert str(script) in hook_tool["command"]
     assert " python3 scripts/hook_post_tool_use.py" not in hook_tool["command"]
 
@@ -365,18 +371,26 @@ def test_snapshot_diff_can_include_ignored_control_plane_additions(tmp_path: Pat
     assert "+print('review')" in diff
 
 
-def test_active_review_config_wires_semantic_ai_to_repo_root_wrapper() -> None:
+def test_active_review_config_separates_machine_default_from_ai_modes() -> None:
     review = yaml.safe_load((ROOT / ".harness" / "review.yaml").read_text(encoding="utf-8"))
 
-    assert "semantic-ai" in review["default"]["reviewers"]
-    profile = review["profiles"]["semantic-ai"]
-    assert profile["kind"] == "command"
-    assert profile["command"] == [
-        "python3",
-        "{repo_root}/.harness/semantic_ai_reviewer.py",
-        "{review_packet}",
-        "{review_output}",
-    ]
+    assert review["default"]["reviewers"] == ["reader-correctness", "reader-scope"]
+    assert review["modes"]["normal"]["reviewers"] == ["semantic-ai", "aggressive-ai"]
+    assert review["modes"]["arch"]["reviewers"] == ["architecture-ai"]
+    for reviewer_id, kind in {
+        "semantic-ai": "semantic",
+        "aggressive-ai": "aggressive",
+        "architecture-ai": "architecture",
+    }.items():
+        profile = review["profiles"][reviewer_id]
+        assert profile["kind"] == "command"
+        assert profile["ai_kind"] == kind
+        assert profile["command"] == [
+            "python3",
+            "{repo_root}/.harness/semantic_ai_reviewer.py",
+            "{review_packet}",
+            "{review_output}",
+        ]
     assert (ROOT / ".harness" / "semantic_ai_reviewer.py").is_file()
 
 
@@ -410,6 +424,11 @@ def test_role_boundaries_reject_disallowed_commands(tmp_path: Path) -> None:
     repo = init_repo(tmp_path)
     assert run_harness(repo, "gate", TASK_ID).returncode != 0
     assert "role writer cannot run gate" in run_harness(repo, "gate", TASK_ID).stdout
+    assert run_harness(repo, "post-review-gate", TASK_ID).returncode != 0
+    assert (
+        "role writer cannot run post-review-gate"
+        in run_harness(repo, "post-review-gate", TASK_ID).stdout
+    )
     assert run_harness(repo, "dispatch", TASK_ID).returncode != 0
     assert run_harness(repo, "integrate", TASK_ID).returncode != 0
     writer_review = run_harness(
@@ -437,7 +456,7 @@ def test_role_boundaries_reject_disallowed_commands(tmp_path: Path) -> None:
 def test_active_harness_surface_has_no_phantom_rfc_and_tools_match_roles(
     tmp_path: Path,
 ) -> None:
-    repo = init_repo(tmp_path)
+    repo = init_repo(tmp_path, verifier_command=f"{sys.executable} -c 'raise SystemExit(0)'")
 
     help_result = run_harness(repo, "--help")
     assert help_result.returncode == 0
@@ -446,14 +465,103 @@ def test_active_harness_surface_has_no_phantom_rfc_and_tools_match_roles(
     phantom = run_harness(repo, "rfc", TASK_ID, "approve", "RFC-1", "--reason", "ok")
     assert phantom.returncode != 0
     assert "deferred_in_mvp" not in phantom.stdout
-    assert run_harness(repo, "report", TASK_ID, "--type", "rfc").returncode == 0
+    retired_report = run_harness(repo, "report", TASK_ID, "--type", "rfc")
+    assert retired_report.returncode != 0
+    issue = run_harness(
+        repo,
+        "issue-create",
+        TASK_ID,
+        "--reason",
+        "escalation",
+        "--title",
+        "Need policy decision",
+        "--body",
+        "Cannot resolve this from repository evidence.",
+    )
+    assert issue.returncode == 0, issue.stdout + issue.stderr
+    issue_payload = json.loads(issue.stdout)
+    assert issue_payload["status"] == "protected_external_write"
+    assert issue_payload["dry_run"] is True
+    fake_bin = tmp_path / "fake-bin"
+    fake_bin.mkdir()
+    gh_log = tmp_path / "gh-args.json"
+    fake_gh = fake_bin / "gh"
+    fake_gh.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, pathlib, sys\n"
+        f"pathlib.Path({json.dumps(str(gh_log))}).write_text(json.dumps(sys.argv[1:]))\n"
+        "print('https://github.example/issues/1')\n",
+        encoding="utf-8",
+    )
+    fake_gh.chmod(0o755)
+    created_issue = run_harness(
+        repo,
+        "issue-create",
+        TASK_ID,
+        "--reason",
+        "escalation",
+        "--title",
+        "Need policy decision",
+        "--body",
+        "Cannot resolve this from repository evidence.",
+        "--execute",
+        role="writer",
+        extra_env={"PATH": f"{fake_bin}:{os.environ['PATH']}"},
+    )
+    assert created_issue.returncode == 0, created_issue.stdout + created_issue.stderr
+    created_issue_payload = json.loads(created_issue.stdout)
+    assert created_issue_payload["status"] == "created"
+    assert created_issue_payload["dry_run"] is False
+    assert json.loads(gh_log.read_text(encoding="utf-8")) == [
+        "issue",
+        "create",
+        "--title",
+        "Need policy decision",
+        "--body",
+        "Cannot resolve this from repository evidence.",
+    ]
+    reviewer_issue = run_harness(
+        repo,
+        "issue-create",
+        TASK_ID,
+        "--reason",
+        "escalation",
+        "--title",
+        "Reviewer escalation",
+        "--body",
+        "Reviewer should ask writer to create the issue.",
+        "--execute",
+        role="reviewer",
+        extra_env={"PATH": f"{fake_bin}:{os.environ['PATH']}"},
+    )
+    assert reviewer_issue.returncode != 0
+    assert not gh_log.read_text(encoding="utf-8").endswith("Reviewer escalation")
 
     assert run_harness(repo, "prepare", TASK_ID).returncode == 0
     groups = load_runtime_json(repo, "agent-tools.json")
+    writer_tools = tool_names(groups["writer"])
     reviewer_tools = tool_names(groups["reviewer"])
     integrator_tools = tool_names(groups["integrator"])
+    assert writer_tools == {
+        "scope-map-forward",
+        "explain",
+        "context-audit",
+        "verify",
+        "submit",
+    }
+    assert {"acp-list", "acp-send", "acp-request-action", "issue-create"}.isdisjoint(writer_tools)
+    assert {"report-rfc", "report-metric", "spawn-writer"}.isdisjoint(writer_tools)
     assert "review-collect" not in reviewer_tools
     assert "review-collect" in integrator_tools
+    assert "post-review-gate" in integrator_tools
+    assert {"comm-peers", "comm-inbox", "comm-send"}.isdisjoint(reviewer_tools)
+    assert "issue-create" not in reviewer_tools
+    assert {"pr-create", "pr-checks"}.issubset(integrator_tools)
+    assert "issue-create" not in integrator_tools
+    assert all(tool["purpose"] == "" for group in groups.values() for tool in group)
+    assert all(tool.get("skill") for group in groups.values() for tool in group)
+    for group in groups.values():
+        assert_tool_skills_are_tool_specific(group)
     assert all(str(tool["command"]).startswith("HARNESS_ROLE=writer ") for tool in groups["writer"])
     assert all(
         str(tool["command"]).startswith("HARNESS_ROLE=reviewer ") for tool in groups["reviewer"]
@@ -469,6 +577,7 @@ def test_active_harness_surface_has_no_phantom_rfc_and_tools_match_roles(
             "dispatch",
             "integrate",
             "gate",
+            "post-review-gate",
             "land",
             "push",
         }
@@ -479,6 +588,22 @@ def test_active_harness_surface_has_no_phantom_rfc_and_tools_match_roles(
     collect_tool = tool_by_name(groups["integrator"], "review-collect")
     collect_smoke = run_tool_command(collect_tool["command"], repo / ".harness")
     assert collect_smoke.returncode == 0, collect_smoke.stdout + collect_smoke.stderr
+
+    coordination = run_harness(
+        repo,
+        "tools",
+        TASK_ID,
+        "--role",
+        "writer",
+        "--profile",
+        "coordination",
+    )
+    assert coordination.returncode == 0, coordination.stdout + coordination.stderr
+    coordination_tools = tool_names(json.loads(coordination.stdout)["tools"])
+    assert {"acp-list", "acp-send", "acp-request-action", "issue-create"}.issubset(
+        coordination_tools
+    )
+    assert_tool_skills_are_tool_specific(json.loads(coordination.stdout)["tools"])
 
 
 def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None:
@@ -508,6 +633,7 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "context-scope-check",
     }.isdisjoint(names)
     assert "agent_skills" not in capsule
+    assert not (runtime_task_dir(repo) / "agent-skills.json").exists()
     assert all(not str(tool["command"]).startswith("./harness") for tool in capsule["agent_tools"])
     assert all("nfr_metric.py" not in tool["command"] for tool in capsule["agent_tools"])
     scope_tool = tool_by_name(capsule["agent_tools"], "scope-map-forward")
@@ -518,36 +644,12 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
     assert "review-collect" not in tool_names(groups["reviewer"])
     assert "affected" in tool_names(groups["integrator"])
     assert "review-collect" in tool_names(groups["integrator"])
-    skill_groups = load_runtime_json(repo, "agent-skills.json")
-    assert "security-check" in skill_names(skill_groups["reviewer"])
-    assert "implementation-slice-verification" in skill_names(skill_groups["integrator"])
-
-    coordination = run_harness(
-        repo,
-        "tools",
-        TASK_ID,
-        "--role",
-        "writer",
-        "--profile",
-        "coordination",
-    )
-    assert coordination.returncode == 0, coordination.stdout + coordination.stderr
-    coordination_names = tool_names(json.loads(coordination.stdout)["tools"])
-    assert {
-        "status",
-        "passport",
-        "comm-peers",
-        "comm-send",
-        "comm-inbox",
-        "spawn-writer",
-        "report-rfc",
-        "report-metric",
-    } == coordination_names
 
     optional = run_harness(repo, "tools", TASK_ID, "--role", "writer", "--profile", "measurement")
     assert optional.returncode == 0, optional.stdout + optional.stderr
     optional_tools = json.loads(optional.stdout)["tools"]
     optional_names = tool_names(optional_tools)
+    assert_tool_skills_are_tool_specific(optional_tools)
     assert {
         "nfr-metric",
         "bench-compare",
@@ -557,8 +659,21 @@ def test_prepare_capsule_exposes_existing_agent_tool_set(tmp_path: Path) -> None
         "quality-gate",
         "measure-eval",
         "surface-issues",
+        "session-start-context-hook",
         "post-tool-use-hook",
     }.issubset(optional_names)
+    context_hook = tool_by_name(optional_tools, "session-start-context-hook")
+    context_smoke = run_tool_command(context_hook["command"], repo / ".harness")
+    assert context_smoke.returncode == 0, context_smoke.stdout + context_smoke.stderr
+    assert "[harness assignment]" in context_smoke.stdout
+    assert f"- task_id: {TASK_ID}" in context_smoke.stdout
+    assert "- role: writer" in context_smoke.stdout
+    assert f"- task yaml: .harness/tasks/{TASK_ID}/task.yaml" in context_smoke.stdout
+    assert "- packet dir: " in context_smoke.stdout
+    assert "- verifiers: unit" in context_smoke.stdout
+    assert "- ACP strict list: " in context_smoke.stdout
+    assert "- role tools: " in context_smoke.stdout
+    assert "- skills: " not in context_smoke.stdout
 
 
 def test_measurement_tool_ingests_observed_trajectory_into_task_metrics(
@@ -645,11 +760,13 @@ def test_explain_lists_agent_tools(tmp_path: Path) -> None:
     explained = run_harness(repo, "explain", TASK_ID)
     assert explained.returncode == 0, explained.stdout + explained.stderr
     assert "writer tools:" in explained.stdout
-    assert "writer skills:" in explained.stdout
     assert "scope-map-forward" in explained.stdout
+    assert "acp-list" not in explained.stdout
+    assert "issue-create" not in explained.stdout
+    assert "writer skills:" not in explained.stdout
     assert "report-rfc" not in explained.stdout
     assert "nfr-metric" not in explained.stdout
-    assert "tdd-scope" in explained.stdout
+    assert "tdd-scope" not in explained.stdout
 
 
 def test_launch_writer_prepares_worktree_and_returns_interactive_command(
@@ -1092,6 +1209,123 @@ def test_passport_marks_semantic_review_stale_when_semantic_evidence_changes(
     assert after.returncode == 0, after.stdout + after.stderr
     after_review = json.loads(after.stdout)["review_proof"]
     assert "semantic-ai" not in after_review["fresh_reviewers"]
+
+
+def test_explicit_review_modes_run_ai_reviewers_without_default_auto_run(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    script = repo / ".harness" / "ai_reviewer.py"
+    script.write_text(
+        "import json, pathlib, sys\n"
+        "packet = json.loads(pathlib.Path(sys.argv[1]).read_text())\n"
+        "reviewer = packet['reviewer']\n"
+        "pathlib.Path(sys.argv[2]).write_text(json.dumps({\n"
+        "  'verdict': 'approve',\n"
+        "  'labels': [reviewer['kind']],\n"
+        "  'reason': reviewer['id'] + ' reviewed ' + reviewer['kind']\n"
+        "}))\n",
+        encoding="utf-8",
+    )
+    (repo / ".harness" / "review.yaml").write_text(
+        "default:\n"
+        "  quorum: 2\n"
+        "  reviewers:\n"
+        "    - reader-correctness\n"
+        "    - reader-scope\n"
+        "  background_auto_run: true\n"
+        "modes:\n"
+        "  normal:\n"
+        "    quorum: 2\n"
+        "    reviewers:\n"
+        "      - semantic-ai\n"
+        "      - aggressive-ai\n"
+        "  arch:\n"
+        "    quorum: 1\n"
+        "    reviewers:\n"
+        "      - architecture-ai\n"
+        "profiles:\n"
+        "  semantic-ai:\n"
+        "    kind: command\n"
+        "    ai_kind: semantic\n"
+        "    mode: normal\n"
+        "    command:\n"
+        '      - "python"\n'
+        '      - ".harness/ai_reviewer.py"\n'
+        "  aggressive-ai:\n"
+        "    kind: command\n"
+        "    ai_kind: aggressive\n"
+        "    mode: normal\n"
+        "    command:\n"
+        '      - "python"\n'
+        '      - ".harness/ai_reviewer.py"\n'
+        "  architecture-ai:\n"
+        "    kind: command\n"
+        "    ai_kind: architecture\n"
+        "    mode: arch\n"
+        "    command:\n"
+        '      - "python"\n'
+        '      - ".harness/ai_reviewer.py"\n',
+        encoding="utf-8",
+    )
+    git(repo, "add", ".harness/review.yaml", ".harness/ai_reviewer.py")
+    git(repo, "commit", "-m", "configure explicit ai review modes")
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+
+    dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
+
+    assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    reviews_dir = runtime_task_dir(repo) / "reviews"
+    assert (reviews_dir / "reader-correctness.json").is_file()
+    assert (reviews_dir / "reader-scope.json").is_file()
+    assert not (reviews_dir / "semantic-ai.json").exists()
+    assert not (reviews_dir / "aggressive-ai.json").exists()
+    assert not (reviews_dir / "architecture-ai.json").exists()
+    direct_ai = run_harness(repo, "review", TASK_ID, "--run", "semantic-ai", role="reviewer")
+    assert direct_ai.returncode != 0
+    assert "AI reviewers must be run through review --mode" in direct_ai.stdout
+    manual_ai = run_harness(
+        repo,
+        "review",
+        TASK_ID,
+        "--write-verdict",
+        "semantic-ai",
+        "approve",
+        role="reviewer",
+    )
+    assert manual_ai.returncode != 0
+    assert "AI reviewer verdicts must be written through review --mode" in manual_ai.stdout
+
+    normal = run_harness(repo, "review", TASK_ID, "--mode", "normal", role="reviewer")
+
+    assert normal.returncode == 0, normal.stdout + normal.stderr
+    normal_payload = json.loads(normal.stdout)
+    assert normal_payload["review"]["mode"] == "normal"
+    assert normal_payload["review"]["fresh_approves"] == 2
+    assert load_runtime_json(repo, "reviews/semantic-ai.review-packet.json")["reviewer"] == {
+        "id": "semantic-ai",
+        "kind": "semantic",
+        "mode": "normal",
+    }
+    assert load_runtime_json(repo, "reviews/aggressive-ai.review-packet.json")["reviewer"] == {
+        "id": "aggressive-ai",
+        "kind": "aggressive",
+        "mode": "normal",
+    }
+
+    arch = run_harness(repo, "review", TASK_ID, "--mode", "arch", role="reviewer")
+
+    assert arch.returncode == 0, arch.stdout + arch.stderr
+    arch_payload = json.loads(arch.stdout)
+    assert arch_payload["review"]["mode"] == "arch"
+    assert arch_payload["review"]["fresh_approves"] == 1
+    assert load_runtime_json(repo, "reviews/architecture-ai.review-packet.json")["reviewer"] == {
+        "id": "architecture-ai",
+        "kind": "architecture",
+        "mode": "arch",
+    }
 
 
 def test_daemon_start_returns_actionable_guidance(tmp_path: Path) -> None:
@@ -1917,7 +2151,7 @@ def test_launch_writer_resumes_existing_dirty_sealed_writer_worktree(
     )
 
 
-def test_context_audit_from_writer_worktree_flags_missing_required_skill_paths(
+def test_context_audit_from_writer_worktree_uses_tool_manifest_without_skills(
     tmp_path: Path,
 ) -> None:
     repo = init_repo(tmp_path)
@@ -1929,14 +2163,15 @@ def test_context_audit_from_writer_worktree_flags_missing_required_skill_paths(
 
     audited = run_harness(writer_path, "context-audit", TASK_ID)
 
-    assert audited.returncode != 0
+    assert audited.returncode == 0, audited.stdout + audited.stderr
     audit = json.loads(audited.stdout)
-    assert audit["status"] == "fail"
+    assert audit["status"] == "pass"
     writer_audit = audit["roles"]["writer"]
-    assert writer_audit["status"] == "fail"
-    assert "skill_path:implementation-slice-verification" in writer_audit["missing_required"]
-    assert "skill_path:tdd-scope" in writer_audit["missing_required"]
+    assert writer_audit["status"] == "pass"
+    assert writer_audit["missing_required"] == []
     assert "scope-map-forward" in writer_audit["tools"]
+    assert "agent_skills" not in json.dumps(audit)
+    assert "skill_path:" not in json.dumps(audit)
     assert "budget" not in json.dumps(audit)
 
 
@@ -1960,7 +2195,8 @@ def test_context_audit_quantifies_role_context_without_budget_escape(
         assert packet["estimated_tokens"] > 0
         assert packet["missing_required"] == []
         assert packet["tool_count"] > 0
-        assert packet["skill_count"] > 0
+        assert "skill_count" not in packet
+        assert "skills" not in packet
     assert "scope-map-forward" in audit["roles"]["writer"]["tools"]
     assert "scope-map-reverse" in audit["roles"]["reviewer"]["tools"]
     assert "dispatch" in audit["roles"]["integrator"]["tools"]
@@ -2308,6 +2544,7 @@ def test_e2e_integrator_dispatch_land_then_push_blocks_under_dry_run(
     assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
     status = git(integrator_path, "status", "--porcelain=v1")
     assert status == ""
+    create_and_check_pr(repo)
 
     landed = run_harness(repo, "land", TASK_ID, role="integrator")
     assert landed.returncode == 0, landed.stdout + landed.stderr
@@ -2339,6 +2576,7 @@ def test_land_default_gate_reruns_task_verifiers_not_broad_make(tmp_path: Path) 
     assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
     dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
     assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    create_and_check_pr(repo)
 
     landed = run_harness(repo, "land", TASK_ID, role="integrator")
 
@@ -2367,6 +2605,7 @@ def test_land_explicit_gate_tier_blocks_and_records_gate_result(tmp_path: Path) 
     assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
     dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
     assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    create_and_check_pr(repo)
 
     landed = run_harness(
         repo,
@@ -2424,6 +2663,7 @@ def test_land_commits_on_agent_branch_when_hooks_reject_detached_head(
     assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
     dispatched = run_harness(repo, "dispatch", TASK_ID, role="integrator")
     assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+    create_and_check_pr(repo)
 
     landed = run_harness(repo, "land", TASK_ID, role="integrator")
 
@@ -2470,6 +2710,7 @@ def test_parallel_land_same_branch_blocks_one_task_without_mixing_evidence(
         assert run_harness(writer_path, "submit", task_id).returncode == 0
         dispatched = run_harness(repo, "dispatch", task_id, role="integrator")
         assert dispatched.returncode == 0, dispatched.stdout + dispatched.stderr
+        create_and_check_pr(repo, task_id)
 
     first = subprocess.Popen(
         [str(HARNESS), "land", task_a],
@@ -2531,6 +2772,7 @@ def test_land_blocked_by_corrupt_local_lock_reports_lock_diagnostics(tmp_path: P
     assert run_harness(writer_path, "verify", TASK_ID).returncode == 0
     assert run_harness(writer_path, "submit", TASK_ID).returncode == 0
     assert run_harness(repo, "dispatch", TASK_ID, role="integrator").returncode == 0
+    create_and_check_pr(repo)
     lock_dir = runtime_root(repo) / "locks"
     lock_dir.mkdir(parents=True, exist_ok=True)
     lock_path = next(lock_dir.glob("land-*.lock"), None)
@@ -3901,7 +4143,7 @@ def test_review_quorum_stale_malformed_and_gate_success(tmp_path: Path) -> None:
     exposure = gate_result["metrics"]["packet_exposure"]
     assert exposure["status"] == "present"
     assert exposure["roles"]["writer"]["tool_count"] == 5
-    assert exposure["roles"]["writer"]["skill_count"] >= 3
+    assert "skill_count" not in exposure["roles"]["writer"]
     assert exposure["roles"]["reviewer"]["tool_count"] >= 2
     assert exposure["roles"]["integrator"]["tool_count"] >= 8
     assert (repo / "artifact" / TASK_ID / "tier" / "called.txt").read_text() == "custom"
@@ -3912,6 +4154,94 @@ def test_review_quorum_stale_malformed_and_gate_success(tmp_path: Path) -> None:
     assert run_harness(repo, "verify", TASK_ID).returncode == 0
     stale = run_harness(repo, "review", TASK_ID, "--collect", role="integrator")
     assert json.loads(stale.stdout)["fresh_approves"] == 0
+
+
+def test_post_review_gate_records_mechanical_pass_after_review_pass(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo, "review", TASK_ID, "--run", "reader-correctness", role="reviewer"
+        ).returncode
+        == 0
+    )
+    assert (
+        run_harness(repo, "review", TASK_ID, "--run", "reader-scope", role="reviewer").returncode
+        == 0
+    )
+
+    gated = run_harness(repo, "post-review-gate", TASK_ID, role="integrator")
+
+    assert gated.returncode == 0, gated.stdout + gated.stderr
+    result = json.loads(gated.stdout)
+    assert result["status"] == "passed"
+    assert result["classification"] == "mechanical_gate_passed"
+    assert result["reason"] == "ok"
+    assert result["review"]["review_pass"] is True
+    assert result["gate"]["mergeable"] is True
+    assert result["next_action"]["status"] == "continue"
+    assert (
+        result["next_action"]["command"] == f"HARNESS_ROLE=integrator ./harness pr create {TASK_ID}"
+    )
+    assert load_runtime_json(repo, "post-review-gate-result.json")["classification"] == (
+        "mechanical_gate_passed"
+    )
+    assert not (runtime_task_dir(repo) / "pr-result.json").exists()
+
+
+def test_post_review_gate_classifies_hash_mismatch_as_integrator_fallback(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    (repo / "src" / "app.txt").write_text("candidate\n", encoding="utf-8")
+    assert run_harness(repo, "verify", TASK_ID).returncode == 0
+    assert run_harness(repo, "submit", TASK_ID).returncode == 0
+    assert (
+        run_harness(
+            repo, "review", TASK_ID, "--run", "reader-correctness", role="reviewer"
+        ).returncode
+        == 0
+    )
+    assert (
+        run_harness(repo, "review", TASK_ID, "--run", "reader-scope", role="reviewer").returncode
+        == 0
+    )
+    (runtime_task_dir(repo) / "candidate.diff").write_text("random broken diff\n", encoding="utf-8")
+
+    gated = run_harness(repo, "post-review-gate", TASK_ID, role="integrator")
+
+    assert gated.returncode == 1
+    result = json.loads(gated.stdout)
+    assert result["status"] == "blocked"
+    assert result["classification"] == "integrator_required"
+    assert result["reason"] == "candidate_hash_mismatch"
+    assert result["adversarial_axis"] == "error_input_resilience"
+    assert result["next_action"]["status"] == "fallback"
+    assert "integrator" in result["next_action"]["reason"]
+
+
+def test_post_review_gate_handles_corrupt_runtime_json_as_harness_error(
+    tmp_path: Path,
+) -> None:
+    repo = init_repo(tmp_path)
+    assert run_harness(repo, "prepare", TASK_ID).returncode == 0
+    runtime = runtime_task_dir(repo)
+    (runtime / "verify-result.json").write_text("{not json", encoding="utf-8")
+
+    gated = run_harness(repo, "post-review-gate", TASK_ID, role="integrator")
+
+    assert gated.returncode == 1
+    result = json.loads(gated.stdout)
+    assert result["status"] == "blocked"
+    assert result["classification"] == "harness_error"
+    assert result["reason"] == "invalid_runtime_state"
+    assert result["adversarial_axis"] == "error_input_resilience"
+    assert "Expecting property name" in result["error"]
+    assert load_runtime_json(repo, "post-review-gate-result.json")["classification"] == (
+        "harness_error"
+    )
 
 
 def test_review_collect_ignores_structurally_valid_manual_verdicts(tmp_path: Path) -> None:

@@ -14,6 +14,13 @@ def test_parse_review_command_modes() -> None:
     normal = parse_review_command("/review", sha="abc123", comment_id="1", actor="dev")
     arch = parse_review_command("/review arch", sha="abc123", comment_id="2", actor="dev")
     full = parse_review_command("/review full", sha="abc123", comment_id="3", actor="dev")
+    bare = parse_review_command("review", sha="abc123", comment_id="4", actor="dev")
+    architecture = parse_review_command(
+        "architecture review",
+        sha="abc123",
+        comment_id="5",
+        actor="dev",
+    )
 
     assert normal is not None
     assert normal.mode == "normal"
@@ -21,6 +28,10 @@ def test_parse_review_command_modes() -> None:
     assert arch.mode == "arch"
     assert full is not None
     assert full.mode == "full"
+    assert bare is not None
+    assert bare.mode == "normal"
+    assert architecture is not None
+    assert architecture.mode == "arch"
 
 
 def test_parse_review_command_ignores_unknown_comment() -> None:

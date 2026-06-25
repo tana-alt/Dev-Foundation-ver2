@@ -11,17 +11,19 @@ from workflow_core.contract_harness.acceptance import (
 )
 from workflow_core.contract_harness.agent_tools import (
     role_agent_tools,
-    write_agent_skills,
     write_agent_tools,
 )
 from workflow_core.contract_harness.application.services import record_authority_artifact
 from workflow_core.contract_harness.config import (
     CONFIG_FILES,
     ConfigError,
+    config_path,
     harness_dir,
     load_task,
     load_yaml,
     scope_paths,
+    task_config_dir,
+    task_path,
     verifier_plan,
 )
 from workflow_core.contract_harness.domain.models import WorkflowPhase
@@ -51,7 +53,7 @@ def prepare(root: Path, task_id: str) -> dict[str, Any]:
     write_json(out_dir / "capsule.json", compiled["capsule"])
     write_json(out_dir / "resume-capsule.json", compiled["resume_capsule"])
     write_agent_tools(root, task_id)
-    write_agent_skills(root, task_id)
+    _remove_stale_agent_skills(out_dir)
     write_forward_scope_map(root, task_id)
     record_authority_artifact(
         root,
@@ -65,6 +67,12 @@ def prepare(root: Path, task_id: str) -> dict[str, Any]:
         },
     )
     return cast(dict[str, Any], compiled["contract"])
+
+
+def _remove_stale_agent_skills(out_dir: Path) -> None:
+    path = out_dir / "agent-skills.json"
+    if path.is_file():
+        path.unlink()
 
 
 def ensure_prepared(root: Path, task_id: str) -> dict[str, Any]:
@@ -97,11 +105,11 @@ def compile_contract(
     prepared_base_sha: str | None = None,
 ) -> dict[str, Any]:
     task = load_task(root, task_id)
-    configs = {name: load_yaml(harness_dir(root) / name) for name in CONFIG_FILES}
+    configs = {name: load_yaml(config_path(root, task_id, name)) for name in CONFIG_FILES}
     scope = str(task.get("scope") or "")
     allowed, local_forbidden = scope_paths(configs["owners.yaml"], scope)
     verifiers = verifier_plan(configs["verifiers.yaml"], scope)
-    policy = load_task_policy(root, task)
+    policy = load_task_policy(root, {**task, "id": task_id})
     acceptance, acceptance_proposal = build_acceptance(root, task_id, task, policy, verifiers)
     audit = acceptance.get("audit") if isinstance(acceptance.get("audit"), dict) else None
     if audit is not None and audit.get("status") != "pass":
@@ -176,15 +184,37 @@ def _contract_payload(
 
 
 def _input_hashes(root: Path, task_id: str) -> dict[str, str]:
+    hashes: dict[str, str] = {}
+    for name in CONFIG_FILES:
+        path = config_path(root, task_id, name)
+        hashes[_hash_key(root, path, name)] = file_hash(path)
     base = harness_dir(root)
-    hashes = {name: file_hash(base / name) for name in CONFIG_FILES}
     hashes["rfc-decisions"] = directory_hash(base / "rfc-decisions")
-    hashes["task.yaml"] = file_hash(base / "tasks" / task_id / "task.yaml")
-    task = load_yaml(base / "tasks" / task_id / "task.yaml")
+    task_yaml = task_path(root, task_id)
+    hashes[_task_hash_key(root, task_yaml)] = file_hash(task_yaml)
+    task = load_yaml(task_path(root, task_id))
     policy_id = str(task.get("policy") or "").strip()
     if policy_id:
-        hashes[f"policies/{policy_id}.yaml"] = file_hash(base / "policies" / f"{policy_id}.yaml")
+        project_policy = task_config_dir(root, task_id) / "policies" / f"{policy_id}.yaml"
+        policy_path = (
+            project_policy if project_policy.is_file() else base / "policies" / f"{policy_id}.yaml"
+        )
+        hashes[str(policy_path.relative_to(base))] = file_hash(policy_path)
     return hashes
+
+
+def _hash_key(root: Path, path: Path, fallback: str) -> str:
+    try:
+        return str(path.relative_to(harness_dir(root)))
+    except ValueError:
+        return fallback
+
+
+def _task_hash_key(root: Path, path: Path) -> str:
+    legacy = harness_dir(root) / "tasks" / path.parent.name / "task.yaml"
+    if path == legacy:
+        return "task.yaml"
+    return str(path.relative_to(harness_dir(root)))
 
 
 def _dedupe(values: list[str]) -> list[str]:

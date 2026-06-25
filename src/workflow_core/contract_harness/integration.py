@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from workflow_core.contract_harness.gate import gate_task
 from workflow_core.contract_harness.gitutil import head_sha
 from workflow_core.contract_harness.jsonio import write_json
+from workflow_core.contract_harness.post_review_gate import run_post_review_gate
 from workflow_core.contract_harness.review_runner import (
     ReviewRunnerError,
     run_missing_reviewers,
@@ -53,10 +53,10 @@ def integrate_task(
         }
         write_json(task_dir(root, task_id) / "integration-result.json", result)
         return result, 1
-    gate_result, gate_code = gate_task(root, task_id)
+    post_gate_result, gate_code = run_post_review_gate(root, task_id)
     after = head_sha(root)
     status = "integrated" if gate_code == 0 else "rework_required"
-    result = _from_gate(task_id, status, gate_result, before == after, root)
+    result = _from_post_review_gate(task_id, status, post_gate_result, before == after, root)
     write_json(task_dir(root, task_id) / "integration-result.json", result)
     return result, 0 if status == "integrated" else 1
 
@@ -92,6 +92,26 @@ def _from_gate(
             "head_unchanged": head_unchanged,
         },
     }
+
+
+def _from_post_review_gate(
+    task_id: str,
+    status: str,
+    post_gate_result: dict[str, Any],
+    head_unchanged: bool,
+    root: Path,
+) -> dict[str, Any]:
+    gate_result = post_gate_result.get("gate")
+    if not isinstance(gate_result, dict) or not gate_result:
+        gate_result = post_gate_result
+    result = _from_gate(task_id, status, gate_result, head_unchanged, root)
+    result["post_review_gate"] = {
+        "status": post_gate_result.get("status"),
+        "classification": post_gate_result.get("classification"),
+        "reason": post_gate_result.get("reason"),
+        "next_action": post_gate_result.get("next_action"),
+    }
+    return result
 
 
 def _result(

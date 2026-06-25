@@ -7,6 +7,7 @@ from .conftest import (
     TASK_ID,
     create_session,
     git,
+    install_fake_gh,
     start_daemon,
     strict_cli,
     strict_env,
@@ -158,6 +159,7 @@ def _add_remote(repo: Path, tmp_path: Path) -> Path:
     git(repo, "remote", "add", "origin", str(remote))
     git(repo, "push", "-u", "origin", "main")
     git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
+    install_fake_gh(repo, tmp_path)
     return remote
 
 

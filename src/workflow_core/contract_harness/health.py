@@ -7,9 +7,10 @@ from typing import Any
 
 from workflow_core.contract_harness.config import (
     ConfigError,
-    harness_dir,
+    config_path,
     load_task,
     load_yaml,
+    review_mode_names,
     review_profile,
     review_settings,
     scope_paths,
@@ -35,8 +36,8 @@ def config_health(root: Path, task_id: str) -> dict[str, Any]:
     try:
         task = load_task(root, task_id)
         scope = str(task.get("scope") or "")
-        _check_scope_paths(root, scope, missing_paths)
-        _check_verifiers(root, scope, missing_paths)
+        _check_scope_paths(root, task_id, scope, missing_paths)
+        _check_verifiers(root, task_id, scope, missing_paths)
         review = _review_health(root, warnings, missing_paths)
     except ConfigError as exc:
         warnings.append({"source": "config", "reason": str(exc)})
@@ -49,15 +50,25 @@ def config_health(root: Path, task_id: str) -> dict[str, Any]:
     }
 
 
-def _check_scope_paths(root: Path, scope: str, missing_paths: list[dict[str, str]]) -> None:
-    owners = load_yaml(harness_dir(root) / "owners.yaml")
+def _check_scope_paths(
+    root: Path,
+    task_id: str,
+    scope: str,
+    missing_paths: list[dict[str, str]],
+) -> None:
+    owners = load_yaml(config_path(root, task_id, "owners.yaml"))
     allowed, _forbidden = scope_paths(owners, scope)
     for path in allowed:
         _append_missing(root, missing_paths, "owners.yaml allowed_paths", path)
 
 
-def _check_verifiers(root: Path, scope: str, missing_paths: list[dict[str, str]]) -> None:
-    verifiers = verifier_plan(load_yaml(harness_dir(root) / "verifiers.yaml"), scope)
+def _check_verifiers(
+    root: Path,
+    task_id: str,
+    scope: str,
+    missing_paths: list[dict[str, str]],
+) -> None:
+    verifiers = verifier_plan(load_yaml(config_path(root, task_id, "verifiers.yaml")), scope)
     for verifier in verifiers:
         verifier_id = str(verifier.get("id") or "unknown")
         for path in list(verifier.get("applies_to") or []):
@@ -84,11 +95,38 @@ def _review_health(
     settings = review_settings(root)
     reviewers = [str(reviewer) for reviewer in settings["reviewers"]]
     quorum = int(settings["quorum"])
-    _check_review_settings(settings, reviewers, quorum, warnings)
-    for reviewer_id in reviewers:
+    _check_review_settings(
+        settings,
+        reviewers,
+        quorum,
+        warnings,
+        source="review",
+        warn_manual=True,
+    )
+    mode_settings = {mode: review_settings(root, mode=mode) for mode in review_mode_names(root)}
+    all_reviewers = set(reviewers)
+    for mode, mode_config in mode_settings.items():
+        mode_reviewers = [str(reviewer) for reviewer in mode_config["reviewers"]]
+        all_reviewers.update(mode_reviewers)
+        _check_review_settings(
+            mode_config,
+            mode_reviewers,
+            int(mode_config["quorum"]),
+            warnings,
+            source=f"review.modes.{mode}",
+            warn_manual=False,
+        )
+    for reviewer_id in sorted(all_reviewers):
         _check_reviewer_profile(root, reviewer_id, warnings, missing_paths)
     return {
         "background_auto_run": bool(settings["background_auto_run"]),
+        "modes": {
+            mode: {
+                "quorum": mode_config["quorum"],
+                "reviewers": mode_config["reviewers"],
+            }
+            for mode, mode_config in mode_settings.items()
+        },
         "quorum": quorum,
         "reviewers": reviewers,
     }
@@ -99,18 +137,21 @@ def _check_review_settings(
     reviewers: list[str],
     quorum: int,
     warnings: list[dict[str, str]],
+    *,
+    source: str,
+    warn_manual: bool,
 ) -> None:
     if quorum > len(reviewers):
         warnings.append(
             {
-                "source": "review.quorum",
+                "source": f"{source}.quorum",
                 "reason": f"quorum {quorum} exceeds reviewer count {len(reviewers)}",
             }
         )
-    if settings["background_auto_run"] is False:
+    if warn_manual and settings["background_auto_run"] is False:
         warnings.append(
             {
-                "source": "review.background_auto_run",
+                "source": f"{source}.background_auto_run",
                 "reason": "manual reviewer runs required",
             }
         )

@@ -12,7 +12,7 @@ from workflow_core.contract_harness.command_runner import (
     env_timeout_s,
     run_command,
 )
-from workflow_core.contract_harness.config import review_settings
+from workflow_core.contract_harness.config import configured_ai_reviewers, review_settings
 from workflow_core.contract_harness.jsonio import write_json
 from workflow_core.contract_harness.review import run_profile, stale_or_missing
 from workflow_core.contract_harness.runtime_paths import task_dir
@@ -34,7 +34,10 @@ def run_missing_reviewers(
     if not settings["background_auto_run"]:
         return []
     results: list[dict[str, Any]] = []
+    ai_reviewers = configured_ai_reviewers(root)
     for reviewer_id in stale_or_missing(root, task_id):
+        if reviewer_id in ai_reviewers:
+            continue
         results.append(run_one(reviewer_id))
     return results
 

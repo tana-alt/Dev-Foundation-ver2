@@ -228,6 +228,40 @@ def load_runtime_json(repo: Path, name: str, task_id: str = TASK_ID) -> dict[str
     return data
 
 
+def install_fake_gh(repo: Path, tmp_path: Path) -> Path:
+    fake = tmp_path / "fake-gh.py"
+    state = tmp_path / "fake-gh-state.json"
+    fake.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, pathlib, sys\n"
+        f"state = pathlib.Path({str(state)!r})\n"
+        "args = sys.argv[1:]\n"
+        "if args[:2] == ['pr', 'view']:\n"
+        "    if not state.is_file():\n"
+        "        raise SystemExit(1)\n"
+        "    print(state.read_text())\n"
+        "    raise SystemExit(0)\n"
+        "if args[:2] == ['pr', 'create']:\n"
+        "    data = {\n"
+        "        'number': 123,\n"
+        "        'url': 'https://github.com/example/repo/pull/123',\n"
+        "        'state': 'OPEN',\n"
+        "        'isDraft': True,\n"
+        "        'headRefName': args[args.index('--head') + 1],\n"
+        "        'baseRefName': args[args.index('--base') + 1],\n"
+        "    }\n"
+        "    state.write_text(json.dumps(data))\n"
+        "    print(data['url'])\n"
+        "    raise SystemExit(0)\n"
+        "raise SystemExit(2)\n",
+        encoding="utf-8",
+    )
+    fake.chmod(0o755)
+    git(repo, "config", "harness.githubRepository", "example/repo")
+    git(repo, "config", "harness.ghBin", str(fake))
+    return fake
+
+
 @pytest.fixture
 def harness_repo(tmp_path: Path) -> Path:
     repo = tmp_path / "repo"

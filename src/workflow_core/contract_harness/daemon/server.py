@@ -47,7 +47,9 @@ from workflow_core.contract_harness.domain.models import WorkflowPhase
 from workflow_core.contract_harness.gate import gate_task
 from workflow_core.contract_harness.gitutil import GitError, repo_root
 from workflow_core.contract_harness.jsonio import read_json, write_json_atomic
+from workflow_core.contract_harness.post_review_gate import run_post_review_gate
 from workflow_core.contract_harness.review import collect as collect_reviews
+from workflow_core.contract_harness.review import run_mode as run_review_mode
 from workflow_core.contract_harness.review import run_profile
 from workflow_core.contract_harness.runtime_paths import runtime_root, task_dir
 from workflow_core.contract_harness.status import task_status
@@ -110,7 +112,10 @@ class DaemonServer:
             while not self._shutdown_requested:
                 conn, _addr = sock.accept()
                 with conn:
-                    self._handle_connection(conn)
+                    try:
+                        self._handle_connection(conn)
+                    except (BrokenPipeError, ConnectionResetError):
+                        continue
         except KeyboardInterrupt:
             return 0
         finally:
@@ -169,8 +174,8 @@ class DaemonServer:
     def _handle_connection(self, conn: socket.socket) -> None:
         raw = _read_line(conn)
         response = self._response_for_raw(raw)
-        conn.sendall(json.dumps(response.model_dump(mode="json"), sort_keys=True).encode("utf-8"))
-        conn.sendall(b"\n")
+        payload = json.dumps(response.model_dump(mode="json"), sort_keys=True).encode("utf-8")
+        conn.sendall(payload + b"\n")
 
     def _response_for_raw(self, raw: bytes) -> DaemonResponse:
         try:
@@ -326,8 +331,10 @@ class DaemonServer:
             "candidate.verify": self._handle_candidate_verify,
             "candidate.submit": self._handle_candidate_submit,
             "review.run": self._handle_review_run,
+            "review.run_mode": self._handle_review_run_mode,
             "review.collect": self._handle_review_collect,
             "gate.run": self._handle_gate_run,
+            "gate.post_review": self._handle_gate_post_review,
             "pr.create": self._handle_pr_create,
             "pr.checks": self._handle_pr_checks,
             "merge.local": self._handle_merge_local,
@@ -369,11 +376,21 @@ class DaemonServer:
             str(params["reviewer_id"]),
         )
 
+    def _handle_review_run_mode(self, params: dict[str, Any]) -> dict[str, Any]:
+        return run_review_mode(
+            self.repo_root,
+            str(params["task_id"]),
+            str(params["mode"]),
+        )
+
     def _handle_review_collect(self, params: dict[str, Any]) -> dict[str, Any]:
         return collect_reviews(self.repo_root, str(params["task_id"]))
 
     def _handle_gate_run(self, params: dict[str, Any]) -> dict[str, Any]:
         return _with_exit_code(gate_task(self.repo_root, str(params["task_id"])))
+
+    def _handle_gate_post_review(self, params: dict[str, Any]) -> dict[str, Any]:
+        return _with_exit_code(run_post_review_gate(self.repo_root, str(params["task_id"])))
 
     def _handle_pr_create(self, params: dict[str, Any]) -> dict[str, Any]:
         return self._request_effect("create_pr", str(params["task_id"]), params)

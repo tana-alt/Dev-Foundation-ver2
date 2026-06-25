@@ -25,6 +25,7 @@ tracked_ignored="$(
         path == ".harness/review.yaml" ||
         path == ".harness/semantic_ai_reviewer.py" ||
         path == ".harness/verifiers.yaml" ||
+        path ~ /^\.harness\/tasks\/[^\/]+\/evidence\.md$/ ||
         path ~ /^\.harness\/tasks\/[^\/]+\/task\.yaml$/
     }
     !allowed_tracked_ignored($0) { print $0 }

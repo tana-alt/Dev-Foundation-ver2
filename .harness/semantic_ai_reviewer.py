@@ -76,8 +76,11 @@ def _run_codex(
 
 
 def _prompt(packet_path: Path, output_path: Path, packet: dict[str, Any]) -> str:
+    reviewer = packet.get("reviewer") if isinstance(packet.get("reviewer"), dict) else {}
+    reviewer_kind = str(reviewer.get("kind") or "semantic")
     summary = {
         "task_id": packet.get("task_id"),
+        "reviewer": reviewer,
         "candidate_diff_sha256": packet.get("candidate_diff_sha256"),
         "candidate_diff_index": packet.get("candidate_diff_index"),
         "test_interpretation": packet.get("test_interpretation"),
@@ -86,21 +89,42 @@ def _prompt(packet_path: Path, output_path: Path, packet: dict[str, Any]) -> str
         "reviewer_policy": packet.get("reviewer_policy"),
         "diff_instruction": packet.get("diff_instruction"),
     }
+    posture = _posture(reviewer_kind)
     return (
-        "You are the semantic AI reviewer for a contract harness task.\n"
+        f"You are the {reviewer_kind} AI reviewer for a contract harness task.\n"
         "Read the review packet and decide whether to approve or block the candidate.\n"
         "Do not edit files. Do not run broad tests. Use the packet's diff, diff index, "
         "machine evidence, test interpretation, quality flags, tool candidates, and "
         "reviewer policy as the review basis.\n"
-        "Approve only when the diff appears aligned with the task goal and the machine "
-        "evidence is meaningful. Block if the implementation is semantically wrong, "
-        "under-tested for the stated goal, gaming a gate, task-specific as a proposed "
-        "general tool, or missing required evidence.\n"
+        f"{posture}\n"
         f"Review packet path: {packet_path}\n"
         f"Harness output path: {output_path}\n"
         "Packet summary:\n"
         f"{json.dumps(summary, indent=2, sort_keys=True)}\n"
         "Return only JSON matching the provided schema.\n"
+    )
+
+
+def _posture(kind: str) -> str:
+    if kind == "architecture":
+        return (
+            "Focus on responsibility boundaries, state ownership, dependency direction, "
+            "artifact placement, failure behavior, extensibility, and whether the task "
+            "contract made architecture reviewable. Block architecture gaps that make "
+            "the candidate hard to operate or safely extend."
+        )
+    if kind == "aggressive":
+        return (
+            "Search adversarially for the cheapest counterexample, hidden fragility, "
+            "security or operational weakness, and materially better simplifications or "
+            "optimizations. Block only when the weakness invalidates the candidate or "
+            "would create meaningful maintenance or correctness risk."
+        )
+    return (
+        "Approve only when the diff appears aligned with the task goal and the machine "
+        "evidence is meaningful. Block if the implementation is semantically wrong, "
+        "under-tested for the stated goal, gaming a gate, task-specific as a proposed "
+        "general tool, or missing required evidence."
     )
 
 

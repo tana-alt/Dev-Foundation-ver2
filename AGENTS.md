@@ -15,8 +15,6 @@ implement the smallest compatible runnable slice; verify the closest real path;
 report changed paths, verification, skipped or blocked checks with reasons,
 unverified surfaces, remaining risk, and next action.
 
-Use lightweight `Plan/<project_id>/` records only for substantial, multi-file,
-or resumable work.
 
 ## Coding Principles
 
@@ -82,6 +80,49 @@ An `integrated` result means integration evidence exists and the candidate is
 ready to land. It does not mean landed or pushed. A `landed` result means the
 local land step completed.
 
+Current Harness flow:
+
+```sh
+./harness prepare <task_id>
+HARNESS_ROLE=integrator ./harness worktree <task_id> --writer
+# run the printed writer command or work in the writer worktree
+HARNESS_ROLE=writer ./harness verify <task_id>
+HARNESS_ROLE=writer ./harness submit <task_id> --wait
+```
+
+`submit --wait` stays inside the integrator boundary after writer submission:
+it creates or reuses the integrator worktree, runs `dispatch`, auto-runs stale
+or missing reviewers when configured, runs the completion gate, and writes
+`integration-result.json`. If submission validation, reviewer execution, review
+quorum, review block verdicts, completion, or evidence freshness fails, the
+result is `rework_required`; `status` then reports next action as writer rework.
+Harness records the fallback evidence and next action, but it does not
+automatically spawn or mutate a writer session.
+
+After `integrated`, the integrator-owned landing flow is:
+
+```sh
+HARNESS_ROLE=integrator ./harness land <task_id>
+HARNESS_ROLE=integrator ./harness push <task_id>
+```
+
+`land` requires a mergeable gate result, classifies target drift, applies the
+candidate diff in the task integrator worktree, reruns the machine gate, and
+commits `land <task_id>` there. Rebase conflicts, apply failures, and land-gate
+failures produce `rework_required`; missing or non-mergeable gate evidence
+blocks land.
+
+`push` requires `land-result.json` with `status: landed`. External writes are
+policy controlled: the current repo policy keeps `origin/main` in `dry_run`, so
+push records `protected_external_write` without acquiring a remote lock, writing
+the remote, or syncing local `main`. When policy is explicitly `mode: enabled`
+for the integrator role, `push` fetches and checks `origin/main`, acquires the
+remote push lock, writes a rescue ref, pushes the landed commit to
+`refs/heads/main`, releases the lock, and syncs local `main` to the pushed SHA.
+Completion authority requires the pushed result and StateStore COMPLETE event;
+if remote push succeeds but local sync cannot fast-forward, the result remains
+`status: pushed` with `reason: local_sync_required` and a nonzero exit.
+
 ## ACP And Agent Communication
 
 Use task-scoped communication only. Messages are coordination records, not
@@ -104,7 +145,7 @@ FOUNDATION_AGENT_ID=<from_agent_id> HARNESS_ROLE=<from_role> \
 ```
 
 Strict daemon mode uses the same channel through ACP. Use the provided session
-environment; admin actions are outside normal agent work.
+environment; admin authority material is outside normal agent work.
 
 ```sh
 ./harness daemon run --foreground
@@ -157,15 +198,8 @@ change, rerun stale reviewer lanes instead of reusing old verdicts.
 ## Hard Rules
 
 - Start from the provided request, scope, and named refs.
-- Prefer implementation and verification over records.
-- A mock, draft, or records-only output is incomplete unless the user only asked
-  for that artifact.
 - Before local writes, inspect current contents and relevant VCS status.
 - Do not revert user changes.
-- Use explicit branch/worktree ownership only when parallelism is actually
-  needed.
-- Do not create or update PRs unless the user asked for PR work or approved that
-  external write.
 - Create a GitHub issue only for escalation or for a problem that cannot be
   resolved algorithmically from repo evidence. Do not create issues for routine
   TODOs, ordinary bugs, missing tests, or rework that can be fixed directly.
@@ -196,13 +230,13 @@ or the task truly needs separate write lanes.
 
 Classify side effects before acting: local read, local write, external read,
 external write, dependency/tooling change, deploy/release/infra change,
-protected action, destructive or irreversible action.
+auth-material action, destructive or irreversible action.
 
 Human approval is required before release/deployment, CI/CD or infrastructure
-changes, dependency changes, protected authority handling, protected data or
-billing behavior, database migrations or schema changes, branch/worktree
-deletion, external writes outside the owned review branch or PR, public release,
-and destructive or irreversible/protected actions.
+changes, dependency changes, auth-material handling, protected data or billing
+behavior, database migrations or schema changes, branch/worktree deletion,
+external writes outside the owned review branch or PR, public release, and
+destructive or irreversible/protected actions.
 
 Do not use human-gate language for ordinary local implementation, local tests,
 or reversible local edits.
