@@ -40,19 +40,22 @@ check tools, then runs the same gate through `.github/workflows/ci.yml`. Run
 The contract harness is the active agent execution path for task-oriented work.
 It is intentionally small: the writer gets a bounded task packet and tool list,
 the reviewer reads fresh machine evidence plus the candidate diff, and the
-integrator performs review collection, integration checks, land, and optional
-push under policy.
+integrator performs review collection, PR-first integration checks, local land,
+and policy-controlled push.
 
-Minimal flow:
+Canonical writer entrypoint:
 
 ```sh
 ./harness prepare <task_id>
-./harness launch-writer <task_id> --agent-command "codex --yolo"
+./harness launch-writer <task_id> --shell
 ```
 
-`launch-writer` creates or resumes the writer worktree and prints the command
-to run the interactive writer there. The writer should implement the task,
-then run:
+`launch-writer` creates or resumes the writer worktree at call time. The writer
+worktree owns a task branch named `agent/<task_id>/writer/candidate`; reviewer
+worktrees remain sealed evidence readers, and the integrator owns
+`agent/<task_id>/integrator/land`.
+
+Run the printed writer command, implement the task in that worktree, then run:
 
 ```sh
 HARNESS_ROLE=writer ./harness verify <task_id>
@@ -60,8 +63,22 @@ HARNESS_ROLE=writer ./harness submit <task_id> --wait
 ```
 
 `submit --wait` hands off to the integrator boundary. The integrator runs
-missing reviewers, collects verdicts, and writes the integration result. Manual
-inspection commands are still available when needed:
+missing reviewers, collects verdicts, and writes the integration result. The
+canonical PR-first continuation is:
+
+```sh
+HARNESS_ROLE=integrator ./harness pr create <task_id>
+HARNESS_ROLE=integrator ./harness pr checks <task_id>
+HARNESS_ROLE=integrator ./harness land <task_id>
+HARNESS_ROLE=integrator ./harness push <task_id>
+```
+
+`land` applies the accepted candidate in the integrator worktree, runs the local
+machine gate, commits the land result, fast-forwards local `main` when safe, and
+then removes clean task-owned worktrees. Dirty or currently-running worktrees
+are reported in `worktree_cleanup` rather than hidden.
+
+Manual inspection commands are still available when needed:
 
 ```sh
 HARNESS_ROLE=reviewer ./harness review <task_id> --run <reviewer_id>
@@ -105,8 +122,8 @@ Architecture:
   verdicts, and `integration-result.json`.
 - Semantic reviewers read `reviews/<reviewer>.review-packet.json` plus the
   sealed candidate workspace and write `reviews/<reviewer>.json`. After review,
-  the integrator handoff is `review --collect`, `dispatch` or `integrate`, then
-  `land`, then policy-controlled `push`.
+  the integrator handoff is `review --collect`, `dispatch` or `integrate`,
+  `pr create`, `pr checks`, `land`, then policy-controlled `push`.
 - Task-scoped agent communication uses `comm-peers`, `comm-send`, and
   `comm-inbox` in local mode. The strict daemon exposes the same channel through
   `acp send`, `acp list`, and `acp request-action`; `acp list` is the candidate
@@ -124,16 +141,16 @@ Architecture:
   rescue ref, acquires/releases a remote lock, updates `refs/heads/main`, writes
   `push-result.json`, and attempts to sync local `main` to the pushed SHA.
 
-An `integrated` result means gated and ready to land; it does not mean merged
-into the target branch. A `landed` result means the local land step completed.
-A complete enabled happy path has `dispatch.status=integrated`,
-`land.status=landed`, `push.status=pushed`, `sync.status=local_synced`, and
-local `main`, `origin/main`, `remote_sha_after`, and `landed_commit` all at the
-same SHA. If remote push succeeds but local sync cannot fast-forward, the remote
-is already updated and `push` exits nonzero with `reason: local_sync_required`.
-Rework is a normal workflow result: the writer should receive the evidence and
-continue unless the task is irreversible, policy-violating, or looping without
-progress.
+An `integrated` result means gated and ready for PR-first continuation; it does
+not mean landed or pushed. A `landed` result means the local land step completed
+and local `main` was fast-forwarded when possible. A complete enabled happy path
+has `dispatch.status=integrated`, PR evidence, `land.status=landed`,
+`push.status=pushed`, `sync.status=local_synced`, and local `main`,
+`origin/main`, `remote_sha_after`, and `landed_commit` all at the same SHA. If
+remote push succeeds but local sync cannot fast-forward, the remote is already
+updated and `push` exits nonzero with `reason: local_sync_required`. Rework is a
+normal workflow result: the writer should receive the evidence and continue
+unless the task is irreversible, policy-violating, or looping without progress.
 
 ## Restore Agent Environment
 

@@ -20,7 +20,8 @@ from workflow_core.contract_harness.lock import LockBlocked, local_lock
 from workflow_core.contract_harness.policy import integration_target, load_policy
 from workflow_core.contract_harness.runtime_paths import task_dir
 from workflow_core.contract_harness.submission import validate_submission
-from workflow_core.contract_harness.worktree import create_worktree
+from workflow_core.contract_harness.sync import sync_landed_local_target_branch
+from workflow_core.contract_harness.worktree import cleanup_task_worktrees, create_worktree
 
 
 def land_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
@@ -76,6 +77,8 @@ def land_task(root: Path, task_id: str) -> tuple[dict[str, Any], int]:
         result = _result(root, task_id, affected, status="blocked", reason="blocked_by_lock")
         result["lock"] = exc.diagnostics
         code = 1
+    if result.get("status") == "landed":
+        result, code = _finalize_landed(root, task_id, branch, result, code)
     write_json(task_dir(root, task_id) / "land-result.json", result)
     _record_land(root, task_id, result)
     return result, code
@@ -114,6 +117,28 @@ def _land_with_lock(
         ),
         0,
     )
+
+
+def _finalize_landed(
+    root: Path,
+    task_id: str,
+    branch: str,
+    result: dict[str, Any],
+    code: int,
+) -> tuple[dict[str, Any], int]:
+    landed_commit = str(result.get("landed_commit") or "")
+    sync = sync_landed_local_target_branch(
+        root,
+        task_id=task_id,
+        branch=branch,
+        landed_commit=landed_commit,
+    )
+    cleanup = cleanup_task_worktrees(root, task_id)
+    result = {**result, "local_main_sync": sync, "worktree_cleanup": cleanup}
+    if sync.get("status") != "local_synced" or cleanup.get("status") != "pass":
+        result["reason"] = str(sync.get("reason") or cleanup.get("status") or "finalize_failed")
+        return result, 1
+    return result, code
 
 
 def _rework_result(
@@ -201,6 +226,8 @@ def _record_land(root: Path, task_id: str, result: dict[str, Any]) -> None:
             "machine_evidence_sha256": result.get("machine_evidence_sha256"),
             "status": result.get("status"),
             "landed_commit": result.get("landed_commit"),
+            "local_main_sync": result.get("local_main_sync"),
+            "worktree_cleanup": result.get("worktree_cleanup"),
         },
         candidate_id=candidate_id_from_patch_sha256(candidate_sha) if candidate_sha else None,
     )
