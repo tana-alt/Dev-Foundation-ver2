@@ -69,7 +69,7 @@ def spawn_session(
     )
     _write_session(canonical, task_id, session, role=target_role, reviewer_id=reviewer_id)
     _write_rebind(canonical, task_id, session)
-    if comm:
+    if comm or target_role == "writer":
         _write_comm_session(canonical, task_id, session)
     return session
 
@@ -174,13 +174,7 @@ def _role_env(
     return env
 
 
-def _initial_context(
-    root: Path,
-    task_id: str,
-    *,
-    role: str,
-    profile: str,
-) -> dict[str, Any]:
+def _initial_context(root: Path, task_id: str, *, role: str, profile: str) -> dict[str, Any]:
     tools = (
         role_agent_tools(root, task_id, role)
         if profile == "default"
@@ -196,8 +190,43 @@ def _initial_context(
         "acceptance": _acceptance_summary(contract.get("acceptance")),
         "policy": _policy_summary(contract.get("policy")),
         "artifact_refs": _artifact_refs(),
+        "workflow": _workflow_summary(task_id, role),
+        "communication": _communication_summary(task_id, role),
         "next_action": _next_action(role),
         "agent_tools": tools,
+    }
+
+
+def _workflow_summary(task_id: str, role: str) -> dict[str, Any]:
+    if role == "writer":
+        return {
+            "canonical_writer_entrypoint": f"./harness launch-writer {task_id} --shell",
+            "handoff_order": ["verify", "submit --wait"],
+            "post_submit_owner": "integrator",
+            "integration_model": "PR-first",
+        }
+    if role == "integrator":
+        return {
+            "integration_order": ["dispatch", "pr create", "pr checks", "land", "push"],
+            "land_result": "syncs local main when fast-forwardable, then cleans task worktrees",
+        }
+    return {"review_order": ["read packet", "write verdict"], "authority": "review verdict only"}
+
+
+def _communication_summary(task_id: str, role: str) -> dict[str, Any]:
+    return {
+        "rule": "coordination messages are not completion, review, gate, land, push, or merge authority",
+        "local": {
+            "peers": f"./harness comm-peers {task_id}",
+            "inbox": f"./harness comm-inbox {task_id} --agent-id $FOUNDATION_AGENT_ID",
+            "send": f"./harness comm-send {task_id} --to-agent <id> --to-role <role>",
+        },
+        "strict": {
+            "list": f"./harness --strict acp list {task_id} --agent-id $FOUNDATION_AGENT_ID",
+            "send": f"./harness --strict acp send {task_id} --to-agent <id> --to-role <role>",
+            "request_action": "./harness --strict acp request-action <message_id>",
+        },
+        "role": role,
     }
 
 
@@ -236,10 +265,10 @@ def _artifact_refs() -> dict[str, str]:
 
 def _next_action(role: str) -> str:
     if role == "writer":
-        return "implement verified candidate, then run harness verify and submit"
+        return "implement candidate, check ACP/local inbox if needed, then verify and submit --wait"
     if role == "reviewer":
         return "review submitted evidence and write a reviewer verdict"
-    return "collect reviews, run gate, then land or return rework"
+    return "dispatch, create/check PR, land to local main, then push under policy"
 
 
 def _write_session(
@@ -323,7 +352,8 @@ def _handoff_commands(
         }
     return {
         "dispatch": f"HARNESS_ROLE=integrator {harness} dispatch {task_id}",
-        "gate": f"HARNESS_ROLE=integrator {harness} gate {task_id}",
+        "pr_create": f"HARNESS_ROLE=integrator {harness} pr create {task_id}",
+        "pr_checks": f"HARNESS_ROLE=integrator {harness} pr checks {task_id}",
         "land": f"HARNESS_ROLE=integrator {harness} land {task_id}",
         "push": f"HARNESS_ROLE=integrator {harness} push {task_id}",
         "status": f"{harness} status {task_id}",
