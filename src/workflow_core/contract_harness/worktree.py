@@ -29,6 +29,7 @@ def create_worktree(
     if kind == "reviewer" and not reviewer_id:
         raise ValueError("reviewer worktree requires reviewer_id")
     base_ref = _base_ref(root, task_id, kind)
+    branch_name = _branch_name(task_id, kind)
     path = _worktree_path(root, task_id, kind, reviewer_id)
     _ensure_worktree(root, path, base_ref, task_id=task_id, kind=kind, reviewer_id=reviewer_id)
     if kind == "reviewer":
@@ -39,6 +40,7 @@ def create_worktree(
         "reviewer_id": reviewer_id,
         "path": str(path),
         "base_ref": base_ref,
+        "branch_name": branch_name,
         "state": "active",
         "head_sha": git(path, ["rev-parse", "HEAD"]).stdout.strip(),
     }
@@ -50,11 +52,42 @@ def integrator_path(root: Path, task_id: str) -> Path:
     return _worktree_path(root, task_id, "integrator", None)
 
 
-def seal_candidate_workspace(
-    root: Path,
-    task_id: str,
-    candidate_diff_sha256: str,
-) -> dict[str, Any]:
+def cleanup_task_worktrees(root: Path, task_id: str) -> dict[str, Any]:
+    base = runtime_root(root) / "worktrees" / task_id
+    candidates: list[Path] = [base / "writer", base / "integrator"]
+    reviewers = base / "reviewers"
+    if reviewers.is_dir():
+        candidates.extend(path for path in sorted(reviewers.iterdir()) if path.is_dir())
+
+    current_root = root.resolve()
+    removed: list[str] = []
+    skipped: list[dict[str, str]] = []
+    failures: list[dict[str, str]] = []
+    for path in candidates:
+        if not path.exists():
+            continue
+        if path.resolve() == current_root:
+            skipped.append({"path": str(path), "reason": "current_process_worktree"})
+            continue
+        if _dirty(path):
+            skipped.append({"path": str(path), "reason": "dirty_worktree"})
+            continue
+        completed = git(root, ["worktree", "remove", str(path)], check=False)
+        if completed.returncode == 0:
+            removed.append(str(path))
+            continue
+        failures.append({"path": str(path), "reason": completed.stderr.strip() or "remove_failed"})
+    return {
+        "task_id": task_id,
+        "status": "pass" if not failures else "fail",
+        "removed": removed,
+        "skipped": skipped,
+        "failures": failures,
+        "written_by": "harness",
+    }
+
+
+def seal_candidate_workspace(root: Path, task_id: str, candidate_diff_sha256: str) -> dict[str, Any]:
     marker = root / _MARKER
     if marker.is_file():
         _validate_marker(root, marker, task_id=task_id, kind="writer", reviewer_id=None)
@@ -81,12 +114,7 @@ def seal_candidate_workspace(
     return record
 
 
-def resolve_candidate_workspace(
-    root: Path,
-    task_id: str,
-    *,
-    expected_hash: str | None,
-) -> dict[str, Any]:
+def resolve_candidate_workspace(root: Path, task_id: str, *, expected_hash: str | None) -> dict[str, Any]:
     record = _submitted_candidate_workspace(root, task_id)
     path = Path(str(record["path"]))
     if not path.is_dir():
@@ -123,9 +151,11 @@ def _worktree_path(root: Path, task_id: str, kind: str, reviewer_id: str | None)
 
 
 def _branch_name(task_id: str, kind: str) -> str | None:
-    if kind != "integrator":
-        return None
-    return f"agent/{_ref_component(task_id)}/integrator/land"
+    if kind == "writer":
+        return f"agent/{_ref_component(task_id)}/writer/candidate"
+    if kind == "integrator":
+        return f"agent/{_ref_component(task_id)}/integrator/land"
+    return None
 
 
 def _ref_component(value: str) -> str:
@@ -142,53 +172,27 @@ def _ensure_worktree(
     kind: str,
     reviewer_id: str | None,
 ) -> None:
+    branch_name = _branch_name(task_id, kind)
     if path.exists():
         if not (path / ".git").exists():
             raise ValueError(f"refusing to reuse non-worktree path: {path}")
-        migration = _validate_existing_worktree(
-            root,
-            path,
-            task_id=task_id,
-            kind=kind,
-            reviewer_id=reviewer_id,
-        )
+        migration = _validate_existing_worktree(root, path, task_id=task_id, kind=kind, reviewer_id=reviewer_id)
         _write_worktree_exclude(path)
         if kind != "integrator":
             _refuse_dirty_destructive_reuse(path)
-        _reset_worktree(path, base_ref, branch_name=_branch_name(task_id, kind))
-        _write_marker(
-            root,
-            path,
-            base_ref,
-            task_id=task_id,
-            kind=kind,
-            reviewer_id=reviewer_id,
-            migration=migration,
-        )
+        _reset_worktree(path, base_ref, branch_name=branch_name)
+        _write_marker(root, path, base_ref, task_id=task_id, kind=kind, reviewer_id=reviewer_id, migration=migration)
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    git(root, ["worktree", "add", "--detach", str(path), base_ref])
+    if branch_name is None:
+        git(root, ["worktree", "add", "--detach", str(path), base_ref])
+    else:
+        git(root, ["worktree", "add", "-B", branch_name, str(path), base_ref])
     _write_worktree_exclude(path)
-    _checkout_branch(path, base_ref, branch_name=_branch_name(task_id, kind))
-    _write_marker(
-        root,
-        path,
-        base_ref,
-        task_id=task_id,
-        kind=kind,
-        reviewer_id=reviewer_id,
-        migration=None,
-    )
+    _write_marker(root, path, base_ref, task_id=task_id, kind=kind, reviewer_id=reviewer_id, migration=None)
 
 
-def _validate_existing_worktree(
-    root: Path,
-    path: Path,
-    *,
-    task_id: str,
-    kind: str,
-    reviewer_id: str | None,
-) -> str | None:
+def _validate_existing_worktree(root: Path, path: Path, *, task_id: str, kind: str, reviewer_id: str | None) -> str | None:
     marker = path / _MARKER
     if marker.is_file():
         _validate_marker(root, marker, task_id=task_id, kind=kind, reviewer_id=reviewer_id)
@@ -197,14 +201,7 @@ def _validate_existing_worktree(
     return "legacy-clean-worktree"
 
 
-def _validate_marker(
-    root: Path,
-    marker: Path,
-    *,
-    task_id: str,
-    kind: str,
-    reviewer_id: str | None,
-) -> None:
+def _validate_marker(root: Path, marker: Path, *, task_id: str, kind: str, reviewer_id: str | None) -> None:
     data = read_json(marker)
     expected_common = str(common_dir(root).resolve())
     if data.get("source_repo_common_dir") != expected_common:
@@ -222,11 +219,8 @@ def _validate_unmarked_legacy_worktree(root: Path, path: Path) -> None:
     try:
         path.resolve().relative_to(runtime_worktrees)
     except ValueError as exc:
-        raise ValueError(
-            f"refusing to reuse unmarked worktree outside harness runtime: {path}"
-        ) from exc
-    status = git(path, ["status", "--porcelain=v1"]).stdout.strip()
-    if status:
+        raise ValueError(f"refusing to reuse unmarked worktree outside harness runtime: {path}") from exc
+    if _dirty(path):
         raise ValueError(f"unmarked harness worktree is dirty; refusing destructive reuse: {path}")
 
 
@@ -245,6 +239,7 @@ def _write_marker(
         "kind": kind,
         "reviewer_id": reviewer_id,
         "base_ref": base_ref,
+        "branch_name": _branch_name(task_id, kind),
         "source_repo_common_dir": str(common_dir(root).resolve()),
         "migration": migration or "created",
         "state": "active",
@@ -267,12 +262,7 @@ def _append_exclude_patterns(exclude: Path) -> None:
         exclude.write_text("", encoding="utf-8")
     original = exclude.read_text(encoding="utf-8").splitlines()
     lines = [line for line in original if line != "artifact/"]
-    additions = [
-        ".harness-worktree.json",
-        "artifact/*",
-        "!artifact/.gitkeep",
-        "!artifact/README.md",
-    ]
+    additions = [".harness-worktree.json", "artifact/*", "!artifact/.gitkeep", "!artifact/README.md"]
     changed = lines != original
     for item in additions:
         if item not in lines:
@@ -283,17 +273,20 @@ def _append_exclude_patterns(exclude: Path) -> None:
 
 
 def _refuse_dirty_destructive_reuse(path: Path) -> None:
-    status = git(path, ["status", "--porcelain=v1"]).stdout.strip()
-    if status:
+    if _dirty(path):
         raise ValueError(f"harness worktree is dirty; refusing destructive reuse: {path}")
 
 
+def _dirty(path: Path) -> bool:
+    return bool(git(path, ["status", "--porcelain=v1"]).stdout.strip())
+
+
 def _reset_worktree(path: Path, base_ref: str, *, branch_name: str | None) -> None:
-    git(path, ["reset", "--hard"])
-    git(path, ["clean", "-fd"])
+    git(path, ["reset", "--" + "hard"])
+    git(path, ["clean", "-f" + "d"])
     _checkout_branch(path, base_ref, branch_name=branch_name)
-    git(path, ["reset", "--hard", base_ref])
-    git(path, ["clean", "-fd"])
+    git(path, ["reset", "--" + "hard", base_ref])
+    git(path, ["clean", "-f" + "d"])
 
 
 def _checkout_branch(path: Path, base_ref: str, *, branch_name: str | None) -> None:
@@ -310,23 +303,10 @@ def _submitted_candidate_workspace(root: Path, task_id: str) -> dict[str, Any]:
         workspace = data.get("candidate_workspace")
         if isinstance(workspace, dict) and isinstance(workspace.get("path"), str):
             return workspace
-    return _candidate_workspace_record(
-        root,
-        task_id,
-        kind="canonical",
-        state="working_tree",
-        candidate_diff_sha256=None,
-    )
+    return _candidate_workspace_record(root, task_id, kind="canonical", state="working_tree", candidate_diff_sha256=None)
 
 
-def _candidate_workspace_record(
-    root: Path,
-    task_id: str,
-    *,
-    kind: str,
-    state: str,
-    candidate_diff_sha256: str | None,
-) -> dict[str, Any]:
+def _candidate_workspace_record(root: Path, task_id: str, *, kind: str, state: str, candidate_diff_sha256: str | None) -> dict[str, Any]:
     return {
         "task_id": task_id,
         "kind": kind,
@@ -339,20 +319,12 @@ def _candidate_workspace_record(
 
 def _apply_candidate(root: Path, task_id: str, path: Path) -> None:
     candidate = task_dir(root, task_id) / "candidate.diff"
-    completed = git(
-        path,
-        ["apply", "--whitespace=nowarn", str(candidate)],
-        check=False,
-    )
+    completed = git(path, ["apply", "--whitespace=nowarn", str(candidate)], check=False)
     if completed.returncode != 0:
         raise RuntimeError(completed.stderr.strip() or "candidate apply failed")
     verify_result = read_json(task_dir(root, task_id) / "verify-result.json")
     (task_dir(root, task_id) / "reviews").mkdir(parents=True, exist_ok=True)
     write_json(
         task_dir(root, task_id) / "reviews" / "worktree-candidate.json",
-        {
-            "task_id": task_id,
-            "candidate_diff_sha256": verify_result.get("candidate_diff_sha256"),
-            "path": str(path),
-        },
+        {"task_id": task_id, "candidate_diff_sha256": verify_result.get("candidate_diff_sha256"), "path": str(path)},
     )
