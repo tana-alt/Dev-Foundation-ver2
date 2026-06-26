@@ -51,6 +51,46 @@ def sync_local_target_branch(
     return _write(root, task_id, result)
 
 
+def sync_landed_local_target_branch(
+    root: Path,
+    *,
+    task_id: str,
+    branch: str,
+    landed_commit: str,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    old_local_sha = _rev_parse(root, branch)
+    result = _base_result(
+        task_id=task_id,
+        remote="local",
+        branch=branch,
+        old_local_sha=old_local_sha,
+        remote_sha=landed_commit,
+        expected_sha=landed_commit,
+    )
+    if old_local_sha == landed_commit:
+        result["status"] = "local_synced"
+        result["reason"] = "already_current"
+        result["final_local_sha"] = old_local_sha
+        return _write(root, task_id, result)
+    if not _is_ancestor(root, old_local_sha, landed_commit):
+        result["status"] = "local_sync_required"
+        result["reason"] = "non_fast_forward"
+        return _write(root, task_id, result)
+    if _current_branch(root) == branch:
+        if _dirty(root):
+            result["status"] = "local_sync_required"
+            result["reason"] = "dirty_worktree"
+            return _write(root, task_id, result)
+        git(root, ["merge", "--ff-only", landed_commit], env=env)
+    else:
+        git(root, ["update-ref", f"refs/heads/{branch}", landed_commit, old_local_sha], env=env)
+    result["status"] = "local_synced"
+    result["reason"] = "ok"
+    result["final_local_sha"] = _rev_parse(root, branch)
+    return _write(root, task_id, result)
+
+
 def _base_result(
     *,
     task_id: str,
